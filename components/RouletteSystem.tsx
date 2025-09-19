@@ -1,0 +1,537 @@
+'use client'
+
+import React, { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
+import { getNumberProperties, detectAnomalies, NUMBERS } from '@/lib/roulette-logic'
+import type { Session, Spin, Anomaly } from '@/lib/types'
+
+export default function RouletteSystem() {
+  const [session, setSession] = useState<Session | null>(null)
+  const [spins, setSpins] = useState<Spin[]>([])
+  const [anomalies, setAnomalies] = useState<Anomaly[]>([])
+  const [inputNumber, setInputNumber] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState<'entry' | 'history' | 'anomalies' | 'stats'>('entry')
+
+  useEffect(() => {
+    initializeSession()
+  }, [])
+
+  useEffect(() => {
+    if (session) {
+      loadSpins()
+      loadAnomalies()
+    }
+  }, [session])
+
+  const initializeSession = async () => {
+    // Check for active session first
+    const { data: existingSession } = await supabase
+      .from('sessions')
+      .select('*')
+      .eq('is_active', true)
+      .single()
+
+    if (existingSession) {
+      setSession(existingSession)
+    } else {
+      // Create new session
+      const { data: newSession, error } = await supabase
+        .from('sessions')
+        .insert({ is_active: true })
+        .select()
+        .single()
+      
+      if (newSession) {
+        setSession(newSession)
+        // Set as active session
+        await supabase.rpc('set_active_session', { session_uuid: newSession.id })
+      }
+    }
+  }
+
+  const loadSpins = async () => {
+    if (!session) return
+    
+    const { data, error } = await supabase
+      .from('spins')
+      .select('*')
+      .eq('session_id', session.id)
+      .order('spin_number', { ascending: false })
+      .limit(100)
+    
+    if (data) {
+      setSpins(data)
+      // Check for anomalies
+      const detected = detectAnomalies(data)
+      if (detected.length > 0) {
+        saveAnomalies(detected)
+      }
+    }
+  }
+
+  const loadAnomalies = async () => {
+    if (!session) return
+    
+    const { data } = await supabase
+      .from('anomalies')
+      .select('*')
+      .eq('session_id', session.id)
+      .eq('resolved', false)
+      .order('detected_at', { ascending: false })
+    
+    if (data) setAnomalies(data)
+  }
+
+  const saveAnomalies = async (detectedAnomalies: Anomaly[]) => {
+    if (!session) return
+    
+    for (const anomaly of detectedAnomalies) {
+      const { error } = await supabase
+        .from('anomalies')
+        .insert({
+          ...anomaly,
+          session_id: session.id
+        })
+      
+      if (!error) {
+        setAnomalies(prev => [anomaly, ...prev])
+      }
+    }
+  }
+
+  const addNumber = async () => {
+    const num = parseInt(inputNumber)
+    if (isNaN(num) || num < 0 || num > 36 || !session) return
+    
+    setLoading(true)
+    const properties = getNumberProperties(num)
+    const nextSpinNumber = spins.length > 0 ? spins[0].spin_number + 1 : 1
+    
+    const spinData: Omit<Spin, 'id' | 'created_at'> = {
+      ...properties,
+      session_id: session.id,
+      spin_number: nextSpinNumber
+    }
+    
+    const { data, error } = await supabase
+      .from('spins')
+      .insert(spinData)
+      .select()
+      .single()
+    
+    if (data) {
+      const newSpins = [data, ...spins]
+      setSpins(newSpins)
+      
+      // Check for anomalies with updated history
+      const detected = detectAnomalies(newSpins)
+      if (detected.length > 0) {
+        saveAnomalies(detected)
+      }
+      
+      // Update local session stats
+      setSession(prev => prev ? {
+        ...prev,
+        total_spins: prev.total_spins + 1
+      } : null)
+    }
+    
+    setInputNumber('')
+    setLoading(false)
+  }
+
+  const resetSession = async () => {
+    const { data: newSession, error } = await supabase
+      .from('sessions')
+      .insert({ is_active: true })
+      .select()
+      .single()
+    
+    if (newSession) {
+      await supabase.rpc('set_active_session', { session_uuid: newSession.id })
+      setSession(newSession)
+      setSpins([])
+      setAnomalies([])
+    }
+  }
+
+  const getStatistics = () => {
+    if (spins.length === 0) return null
+    
+    const stats = {
+      reds: spins.filter(s => s.color === 'red').length,
+      blacks: spins.filter(s => s.color === 'black').length,
+      greens: spins.filter(s => s.color === 'green').length,
+      evens: spins.filter(s => s.even_odd === 'even').length,
+      odds: spins.filter(s => s.even_odd === 'odd').length,
+      lows: spins.filter(s => s.low_high === 'low').length,
+      highs: spins.filter(s => s.low_high === 'high').length,
+      firstDozen: spins.filter(s => s.dozen === 'first').length,
+      secondDozen: spins.filter(s => s.dozen === 'second').length,
+      thirdDozen: spins.filter(s => s.dozen === 'third').length,
+      col1: spins.filter(s => s.column_num === 1).length,
+      col2: spins.filter(s => s.column_num === 2).length,
+      col3: spins.filter(s => s.column_num === 3).length,
+    }
+    
+    return stats
+  }
+
+  const stats = getStatistics()
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 bg-clip-text text-transparent">
+            Advanced Roulette Analysis System
+          </h1>
+          <p className="text-gray-400 mt-2">Anomaly Detection • Pattern Analysis • Statistical Tracking</p>
+        </div>
+
+        {/* Session Info Bar */}
+        {session && (
+          <div className="bg-gray-800 rounded-xl p-4 mb-6 flex flex-wrap justify-between items-center gap-4">
+            <div className="flex gap-6">
+              <div>
+                <span className="text-gray-400 text-sm">Session ID</span>
+                <p className="font-mono text-sm">{session.id.slice(0, 8)}</p>
+              </div>
+              <div>
+                <span className="text-gray-400 text-sm">Total Spins</span>
+                <p className="text-xl font-bold">{session.total_spins}</p>
+              </div>
+            </div>
+            <div className="flex gap-4 items-center">
+              <div className="text-right">
+                <span className="text-gray-400 text-sm">Balance</span>
+                <p className="text-2xl font-bold text-green-400">${session.balance.toFixed(2)}</p>
+              </div>
+              <button
+                onClick={resetSession}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition"
+              >
+                New Session
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Anomaly Alert */}
+        {anomalies.filter(a => a.severity === 'critical').length > 0 && (
+          <div className="bg-red-900/50 border-2 border-red-500 rounded-xl p-4 mb-6 animate-pulse">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div>
+                <h3 className="text-red-400 font-bold">CRITICAL ANOMALY DETECTED!</h3>
+                <p className="text-red-200">
+                  {anomalies.filter(a => a.severity === 'critical')[0].description}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6 overflow-x-auto">
+          {(['entry', 'history', 'stats', 'anomalies'] as const).map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-6 py-3 rounded-lg font-medium transition whitespace-nowrap ${
+                activeTab === tab
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                  : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+              }`}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div className="bg-gray-800 rounded-xl p-6">
+          {activeTab === 'entry' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold mb-4">Enter Winning Number</h2>
+              
+              <div className="flex gap-4">
+                <input
+                  type="number"
+                  min="0"
+                  max="36"
+                  value={inputNumber}
+                  onChange={(e) => setInputNumber(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && addNumber()}
+                  className="flex-1 px-4 py-3 bg-gray-700 rounded-lg text-white text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter number (0-36)"
+                  disabled={loading}
+                />
+                <button
+                  onClick={addNumber}
+                  disabled={loading || !inputNumber}
+                  className="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  {loading ? 'Adding...' : 'Add Number'}
+                </button>
+              </div>
+
+              {/* Quick Number Buttons */}
+              <div className="space-y-4">
+                <h3 className="text-gray-400">Quick Select:</h3>
+                <div className="grid grid-cols-12 gap-2">
+                  <button
+                    onClick={() => setInputNumber('0')}
+                    className="col-span-12 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-bold transition"
+                  >
+                    0
+                  </button>
+                  {[...Array(36)].map((_, i) => {
+                    const num = i + 1
+                    const color = NUMBERS.RED.includes(num) ? 'bg-red-600 hover:bg-red-700' : 
+                                 'bg-gray-700 hover:bg-gray-600'
+                    return (
+                      <button
+                        key={num}
+                        onClick={() => setInputNumber(num.toString())}
+                        className={`py-3 ${color} rounded-lg font-bold transition`}
+                      >
+                        {num}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'history' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold mb-4">Spin History</h2>
+              
+              {spins.length === 0 ? (
+                <p className="text-gray-400 text-center py-8">No spins recorded yet</p>
+              ) : (
+                <>
+                  {/* Last 10 Spins Visual */}
+                  <div>
+                    <h3 className="text-gray-400 mb-3">Recent Numbers</h3>
+                    <div className="flex gap-2 flex-wrap">
+                      {spins.slice(0, 20).map((spin, idx) => (
+                        <div
+                          key={spin.id || idx}
+                          className={`
+                            w-12 h-12 rounded-full flex items-center justify-center font-bold
+                            ${spin.color === 'red' ? 'bg-red-600' : 
+                              spin.color === 'black' ? 'bg-gray-900 border-2 border-gray-600' : 
+                              'bg-green-600'}
+                          `}
+                        >
+                          {spin.number}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Detailed History Table */}
+                  <div>
+                    <h3 className="text-gray-400 mb-3">Detailed History</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-gray-700">
+                            <th className="text-left py-2">Spin #</th>
+                            <th className="text-left py-2">Number</th>
+                            <th className="text-left py-2">Color</th>
+                            <th className="text-left py-2">Even/Odd</th>
+                            <th className="text-left py-2">Dozen</th>
+                            <th className="text-left py-2">Column</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {spins.slice(0, 10).map(spin => (
+                            <tr key={spin.id} className="border-b border-gray-700/50">
+                              <td className="py-2">{spin.spin_number}</td>
+                              <td className="py-2 font-bold">{spin.number}</td>
+                              <td className="py-2">
+                                <span className={`
+                                  px-2 py-1 rounded text-xs
+                                  ${spin.color === 'red' ? 'bg-red-600/30 text-red-400' :
+                                    spin.color === 'black' ? 'bg-gray-600/30 text-gray-400' :
+                                    'bg-green-600/30 text-green-400'}
+                                `}>
+                                  {spin.color}
+                                </span>
+                              </td>
+                              <td className="py-2">{spin.even_odd}</td>
+                              <td className="py-2">{spin.dozen}</td>
+                              <td className="py-2">{spin.column_num || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'stats' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold mb-4">Statistics</h2>
+              
+              {!stats ? (
+                <p className="text-gray-400 text-center py-8">No data to analyze yet</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Color Stats */}
+                  <div className="bg-gray-700 rounded-lg p-4">
+                    <h3 className="text-gray-400 text-sm mb-3">Colors</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-red-400">Red</span>
+                        <span className="font-bold">{stats.reds} ({Math.round(stats.reds / spins.length * 100)}%)</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Black</span>
+                        <span className="font-bold">{stats.blacks} ({Math.round(stats.blacks / spins.length * 100)}%)</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-green-400">Green</span>
+                        <span className="font-bold">{stats.greens} ({Math.round(stats.greens / spins.length * 100)}%)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Even/Odd Stats */}
+                  <div className="bg-gray-700 rounded-lg p-4">
+                    <h3 className="text-gray-400 text-sm mb-3">Even/Odd</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span>Even</span>
+                        <span className="font-bold">{stats.evens} ({Math.round(stats.evens / spins.length * 100)}%)</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Odd</span>
+                        <span className="font-bold">{stats.odds} ({Math.round(stats.odds / spins.length * 100)}%)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* High/Low Stats */}
+                  <div className="bg-gray-700 rounded-lg p-4">
+                    <h3 className="text-gray-400 text-sm mb-3">High/Low</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span>Low (1-18)</span>
+                        <span className="font-bold">{stats.lows} ({Math.round(stats.lows / spins.length * 100)}%)</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>High (19-36)</span>
+                        <span className="font-bold">{stats.highs} ({Math.round(stats.highs / spins.length * 100)}%)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dozens Stats */}
+                  <div className="bg-gray-700 rounded-lg p-4">
+                    <h3 className="text-gray-400 text-sm mb-3">Dozens</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span>1st (1-12)</span>
+                        <span className="font-bold">{stats.firstDozen}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>2nd (13-24)</span>
+                        <span className="font-bold">{stats.secondDozen}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>3rd (25-36)</span>
+                        <span className="font-bold">{stats.thirdDozen}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Columns Stats */}
+                  <div className="bg-gray-700 rounded-lg p-4">
+                    <h3 className="text-gray-400 text-sm mb-3">Columns</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span>Column 1</span>
+                        <span className="font-bold">{stats.col1}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Column 2</span>
+                        <span className="font-bold">{stats.col2}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Column 3</span>
+                        <span className="font-bold">{stats.col3}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'anomalies' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold mb-4">Anomaly Detection</h2>
+              
+              {anomalies.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-400">No anomalies detected</p>
+                  <p className="text-sm text-gray-500 mt-2">System monitors for statistical impossibilities</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {anomalies.map(anomaly => (
+                    <div
+                      key={anomaly.id}
+                      className={`
+                        p-4 rounded-lg border-2 
+                        ${anomaly.severity === 'critical' ? 'border-red-500 bg-red-900/20' :
+                          anomaly.severity === 'high' ? 'border-orange-500 bg-orange-900/20' :
+                          anomaly.severity === 'medium' ? 'border-yellow-500 bg-yellow-900/20' :
+                          'border-blue-500 bg-blue-900/20'}
+                      `}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="font-bold text-lg">
+                              {anomaly.anomaly_type.replace('_', ' ').toUpperCase()}
+                            </h3>
+                            <span className={`
+                              px-3 py-1 rounded-full text-xs font-bold uppercase
+                              ${anomaly.severity === 'critical' ? 'bg-red-600' :
+                                anomaly.severity === 'high' ? 'bg-orange-600' :
+                                anomaly.severity === 'medium' ? 'bg-yellow-600' :
+                                'bg-blue-600'}
+                            `}>
+                              {anomaly.severity}
+                            </span>
+                          </div>
+                          <p className="text-gray-300">{anomaly.description}</p>
+                          {anomaly.pattern_data && (
+                            <div className="mt-2 text-xs text-gray-400">
+                              Pattern data: {JSON.stringify(anomaly.pattern_data)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
