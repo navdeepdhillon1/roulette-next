@@ -172,7 +172,236 @@ export default function RouletteSystem() {
     
     return stats
   }
+// Add these helper functions after your existing getStatistics function in RouletteSystem.tsx
 
+const calculateGroupStats = () => {
+  if (spins.length === 0) return null;
+  
+  // Helper function to get spins for different windows
+  const getLastNSpins = (n: number) => spins.slice(0, Math.min(n, spins.length));
+  
+  // Helper function to check if a spin matches a group
+  const matchesGroup = (spin: Spin, group: string): boolean => {
+    const num = spin.number;
+    
+    switch(group) {
+      case 'red': return spin.color === 'red';
+      case 'black': return spin.color === 'black';
+      case 'green': return spin.color === 'green';
+      case 'even': return spin.even_odd === 'even';
+      case 'odd': return spin.even_odd === 'odd';
+      case 'low': return spin.low_high === 'low';
+      case 'high': return spin.low_high === 'high';
+      case '1st_dozen': return spin.dozen === 'first';
+      case '2nd_dozen': return spin.dozen === 'second';
+      case '3rd_dozen': return spin.dozen === 'third';
+      case '1st_column': return spin.column_num === 1;
+      case '2nd_column': return spin.column_num === 2;
+      case '3rd_column': return spin.column_num === 3;
+      
+      // Alt1 groups (A/B pattern)
+      case 'alt1_a': return num > 0 && [1,2,3,7,8,9,13,14,15,19,20,21,25,26,27,31,32,33].includes(num);
+      case 'alt1_b': return num > 0 && [4,5,6,10,11,12,16,17,18,22,23,24,28,29,30,34,35,36].includes(num);
+      
+      // Alt2 groups (AA/BB pattern)
+      case 'alt2_aa': return num > 0 && [1,2,3,4,5,6,13,14,15,16,17,18,25,26,27,28,29,30].includes(num);
+      case 'alt2_bb': return num > 0 && [7,8,9,10,11,12,19,20,21,22,23,24,31,32,33,34,35,36].includes(num);
+      
+      // Alt3 groups (AAA/BBB pattern)
+      case 'alt3_aaa': return num > 0 && [1,2,3,4,5,6,7,8,9,19,20,21,22,23,24,25,26,27].includes(num);
+      case 'alt3_bbb': return num > 0 && [10,11,12,13,14,15,16,17,18,28,29,30,31,32,33,34,35,36].includes(num);
+      
+      // Edge/Center
+      case 'edge': return num > 0 && [1,2,3,4,5,6,7,8,9,28,29,30,31,32,33,34,35,36].includes(num);
+      case 'center': return num > 0 && [10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27].includes(num);
+      
+      // Sixes
+      case '1st_six': return num >= 1 && num <= 6;
+      case '2nd_six': return num >= 7 && num <= 12;
+      case '3rd_six': return num >= 13 && num <= 18;
+      case '4th_six': return num >= 19 && num <= 24;
+      case '5th_six': return num >= 25 && num <= 30;
+      case '6th_six': return num >= 31 && num <= 36;
+      
+      default: return false;
+    }
+  };
+  
+  // Calculate hit counts for different windows
+  const calculateHitCounts = (group: string) => {
+    const windows = [9, 18, 27, 36];
+    const counts: number[] = [];
+    
+    windows.forEach(window => {
+      const lastNSpins = getLastNSpins(window);
+      const hits = lastNSpins.filter(spin => matchesGroup(spin, group)).length;
+      counts.push(hits);
+    });
+    
+    return counts;
+  };
+  
+  // Calculate absence (spins since last hit)
+  const calculateAbsence = (group: string): { now: number, max: number } => {
+    let currentAbsence = 0;
+    let maxAbsence = 0;
+    let tempAbsence = 0;
+    
+    for (let i = 0; i < spins.length; i++) {
+      if (matchesGroup(spins[i], group)) {
+        if (i === 0) {
+          currentAbsence = 0;
+        }
+        maxAbsence = Math.max(maxAbsence, tempAbsence);
+        tempAbsence = 0;
+      } else {
+        tempAbsence++;
+        if (i === 0) {
+          currentAbsence = tempAbsence;
+        }
+      }
+    }
+    maxAbsence = Math.max(maxAbsence, tempAbsence);
+    
+    // If the group hasn't hit yet in recent spins, count from the start
+    const lastHitIndex = spins.findIndex(spin => matchesGroup(spin, group));
+    if (lastHitIndex === -1) {
+      currentAbsence = spins.length;
+    } else {
+      currentAbsence = lastHitIndex;
+    }
+    
+    return { now: currentAbsence, max: maxAbsence };
+  };
+  
+  // Calculate consecutive hits
+  const calculateConsecutive = (group: string): { now: number, max: number } => {
+    let currentConsecutive = 0;
+    let maxConsecutive = 0;
+    let tempConsecutive = 0;
+    
+    for (let i = 0; i < spins.length; i++) {
+      if (matchesGroup(spins[i], group)) {
+        tempConsecutive++;
+        if (i === 0 || (i === 1 && tempConsecutive === 2)) {
+          currentConsecutive = tempConsecutive;
+        }
+        maxConsecutive = Math.max(maxConsecutive, tempConsecutive);
+      } else {
+        tempConsecutive = 0;
+        if (i === 0) {
+          currentConsecutive = 0;
+        }
+      }
+    }
+    
+    return { now: currentConsecutive, max: maxConsecutive };
+  };
+  
+  // Calculate percentage
+  const calculatePercentage = (group: string): number => {
+    const hits = spins.filter(spin => matchesGroup(spin, group)).length;
+    return (hits / spins.length) * 100;
+  };
+  
+  // Get expected percentage for each group
+  const getExpectedPercentage = (group: string): number => {
+    const expectedMap: { [key: string]: number } = {
+      'red': 48.65, 'black': 48.65, 'green': 2.70,
+      'even': 48.65, 'odd': 48.65,
+      'low': 48.65, 'high': 48.65,
+      '1st_dozen': 32.43, '2nd_dozen': 32.43, '3rd_dozen': 32.43,
+      '1st_column': 32.43, '2nd_column': 32.43, '3rd_column': 32.43,
+      'alt1_a': 48.65, 'alt1_b': 48.65,
+      'alt2_aa': 48.65, 'alt2_bb': 48.65,
+      'alt3_aaa': 48.65, 'alt3_bbb': 48.65,
+      'edge': 48.65, 'center': 48.65,
+      '1st_six': 16.22, '2nd_six': 16.22, '3rd_six': 16.22,
+      '4th_six': 16.22, '5th_six': 16.22, '6th_six': 16.22
+    };
+    return expectedMap[group] || 0;
+  };
+  
+  // Determine status based on deviation
+  const getStatus = (percentage: number, expected: number, absence: number): string => {
+    const deviation = percentage - expected;
+    const absDeviation = Math.abs(deviation);
+    
+    // Check for critical absence
+    if (absence > 15 && expected > 30) return 'ALERT';
+    if (absence > 20 && expected > 15) return 'ALERT';
+    if (absence > 30 && expected > 2) return 'ALERT';
+    
+    // Check deviation
+    if (absDeviation < expected * 0.1) return 'NORM';
+    if (deviation > expected * 0.15) return 'HOT';
+    if (deviation < -expected * 0.15) return 'COLD';
+    return 'NORM';
+  };
+  
+  // Build stats for all groups
+  const groups = [
+    { id: 'red', name: 'Red', color: 'text-red-400' },
+    { id: 'black', name: 'Black', color: 'text-gray-300' },
+    { id: 'green', name: 'Green', color: 'text-green-400' },
+    { id: 'even', name: 'Even', color: 'text-purple-400' },
+    { id: 'odd', name: 'Odd', color: 'text-cyan-400' },
+    { id: 'low', name: '1-18', color: 'text-amber-400' },
+    { id: 'high', name: '19-36', color: 'text-gray-300' },
+    { id: '1st_dozen', name: '1st Doz', color: 'text-red-500' },
+    { id: '2nd_dozen', name: '2nd Doz', color: 'text-cyan-500' },
+    { id: '3rd_dozen', name: '3rd Doz', color: 'text-green-500' },
+    { id: '1st_column', name: '1st Col', color: 'text-orange-400' },
+    { id: '2nd_column', name: '2nd Col', color: 'text-teal-400' },
+    { id: '3rd_column', name: '3rd Col', color: 'text-lime-400' },
+    { id: 'alt1_a', name: 'Alt1 A', color: 'text-indigo-400' },
+    { id: 'alt1_b', name: 'Alt1 B', color: 'text-pink-400' },
+    { id: 'alt2_aa', name: 'Alt2 AA', color: 'text-lime-500' },
+    { id: 'alt2_bb', name: 'Alt2 BB', color: 'text-purple-500' },
+    { id: 'alt3_aaa', name: 'Alt3 AAA', color: 'text-blue-400' },
+    { id: 'alt3_bbb', name: 'Alt3 BBB', color: 'text-yellow-500' },
+    { id: 'edge', name: 'Edge', color: 'text-purple-400' },
+    { id: 'center', name: 'Center', color: 'text-orange-500' },
+    { id: '1st_six', name: '1st Six', color: 'text-red-400' },
+    { id: '2nd_six', name: '2nd Six', color: 'text-blue-500' },
+    { id: '3rd_six', name: '3rd Six', color: 'text-green-500' },
+    { id: '4th_six', name: '4th Six', color: 'text-green-500' },
+    { id: '5th_six', name: '5th Six', color: 'text-blue-500' },
+    { id: '6th_six', name: '6th Six', color: 'text-red-400' }
+  ];
+  
+  const groupStats = groups.map(group => {
+    const hitCounts = calculateHitCounts(group.id);
+    const absence = calculateAbsence(group.id);
+    const consecutive = calculateConsecutive(group.id);
+    const percentage = calculatePercentage(group.id);
+    const expected = getExpectedPercentage(group.id);
+    const deviation = percentage - expected;
+    const status = getStatus(percentage, expected, absence.now);
+    
+    return {
+      ...group,
+      l9: hitCounts[0],
+      l18: hitCounts[1],
+      l27: hitCounts[2],
+      l36: hitCounts[3],
+      absenceNow: absence.now,
+      absenceMax: absence.max,
+      consecutiveNow: consecutive.now,
+      consecutiveMax: consecutive.max,
+      lastSpin: absence.now, // Same as absence now
+      percentage,
+      expected,
+      deviation,
+      status
+    };
+  });
+  
+  return groupStats;
+};
+
+// Get the calculated stats
+const groupStats = calculateGroupStats();
   const stats = getStatistics()
 
   return (
@@ -296,210 +525,69 @@ export default function RouletteSystem() {
             </div>
           )}
 
-          {activeTab === 'history' && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold mb-4">Winning Numbers History</h2>
-              
-              {spins.length === 0 ? (
-                <p className="text-gray-400 text-center py-8">No spins recorded yet</p>
-              ) : (
-                <>
-                  {/* Color Legend */}
-                  <div className="flex gap-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-red-600 rounded"></div>
-                      <span className="text-sm">Red</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-gray-900 border border-gray-600 rounded"></div>
-                      <span className="text-sm">Black</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-green-600 rounded"></div>
-                      <span className="text-sm">Green (0)</span>
-                    </div>
-                  </div>
+{activeTab === 'history' && (
+  <div className="space-y-6">
+    <h2 className="text-2xl font-bold mb-4">Winning Numbers History</h2>
+    
+    {spins.length === 0 ? (
+      <p className="text-gray-400 text-center py-8">No spins recorded yet</p>
+    ) : (
+      <>
+        {/* Color Legend */}
+        <div className="flex gap-4 mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-red-600 rounded"></div>
+            <span className="text-sm">Red</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-gray-900 border border-gray-600 rounded"></div>
+            <span className="text-sm">Black</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-green-600 rounded"></div>
+            <span className="text-sm">Green (0)</span>
+          </div>
+        </div>
 
-                  {/* Comprehensive History Table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                    
-  
-
-                      <tbody>
-                        {spins.map((spin, index) => {
-                          const num = spin.number
-                          const isRed = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(num)
-                          const isBlack = [2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35].includes(num)
-                          
-                          // Calculate all betting groups
-                          const alt1 = num === 0 ? '-' : 
-                            [1,2,3,7,8,9,13,14,15,19,20,21,25,26,27,31,32,33].includes(num) ? 'A' : 'B'
-                          
-                          const alt2 = num === 0 ? '-' :
-                            [1,2,3,4,5,6,13,14,15,16,17,18,25,26,27,28,29,30].includes(num) ? 'AA' : 'BB'
-                          
-                          const alt3 = num === 0 ? '-' :
-                            [1,2,3,4,5,6,7,8,9,19,20,21,22,23,24,25,26,27].includes(num) ? 'AAA' : 'BBB'
-                          
-                          const edgeCenter = num === 0 ? '-' :
-                            [10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27].includes(num) ? 'C' : 'E'
-                          
-                          const sixGroup = num === 0 ? '-' :
-                            num <= 6 ? '1st' :
-                            num <= 12 ? '2nd' :
-                            num <= 18 ? '3rd' :
-                            num <= 24 ? '4th' :
-                            num <= 30 ? '5th' : '6th'
-                          
-                          return (
-                            <tr key={spin.id || index} className="border-b border-gray-700/50 hover:bg-gray-800/50">
-                              {/* Number with color background */}
-                              <td className="p-2 text-center">
-                                <div className={`
-                                  inline-flex items-center justify-center w-10 h-10 rounded-full font-bold
-                                  ${isRed ? 'bg-red-600' : isBlack ? 'bg-gray-900 border border-gray-600' : 'bg-green-600'}
-                                `}>
-                                  {num}
-                                </div>
-                              </td>
-                              
-                              {/* Color */}
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${isRed ? 'bg-red-600/30 text-red-400' :
-                                    isBlack ? 'bg-gray-600/30 text-gray-300' :
-                                    'bg-green-600/30 text-green-400'}
-                                `}>
-                                  {isRed ? 'R' : isBlack ? 'B' : 'G'}
-                                </span>
-                              </td>
-                              
-                              {/* Even/Odd */}
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${spin.even_odd === 'even' ? 'bg-purple-600/30 text-purple-400' :
-                                    spin.even_odd === 'odd' ? 'bg-cyan-600/30 text-cyan-400' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {spin.even_odd === 'even' ? 'E' : spin.even_odd === 'odd' ? 'O' : '-'}
-                                </span>
-                              </td>
-                              
-                              {/* Low/High */}
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${spin.low_high === 'low' ? 'bg-amber-700/30 text-amber-400' :
-                                    spin.low_high === 'high' ? 'bg-gray-600/30 text-gray-300' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {spin.low_high === 'low' ? 'L' : spin.low_high === 'high' ? 'H' : '-'}
-                                </span>
-                              </td>
-                              
-                              {/* Column */}
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-3 py-1 rounded text-xs font-bold
-                                  ${spin.column_num === 1 ? 'bg-orange-600/30 text-orange-400' :
-                                    spin.column_num === 2 ? 'bg-teal-600/30 text-teal-400' :
-                                    spin.column_num === 3 ? 'bg-lime-600/30 text-lime-400' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {spin.column_num > 0 ? `${spin.column_num}st` : '-'}
-                                </span>
-                              </td>
-                              
-                              {/* Dozen */}
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${spin.dozen === 'first' ? 'bg-red-700/30 text-red-400' :
-                                    spin.dozen === 'second' ? 'bg-cyan-700/30 text-cyan-400' :
-                                    spin.dozen === 'third' ? 'bg-green-700/30 text-green-400' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {spin.dozen === 'first' ? '1st' : 
-                                   spin.dozen === 'second' ? '2nd' : 
-                                   spin.dozen === 'third' ? '3rd' : '-'}
-                                </span>
-                              </td>
-                              
-                              {/* Alt 1 (Streets A/B) */}
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${alt1 === 'A' ? 'bg-emerald-600/30 text-emerald-400' :
-                                    alt1 === 'B' ? 'bg-pink-600/30 text-pink-400' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {alt1}
-                                </span>
-                              </td>
-                              
-                              {/* Alt 2 (Streets AA/BB) */}
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${alt2 === 'AA' ? 'bg-lime-700/30 text-lime-400' :
-                                    alt2 === 'BB' ? 'bg-purple-700/30 text-purple-400' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {alt2}
-                                </span>
-                              </td>
-                              
-                              {/* Alt 3 (Streets AAA/BBB) */}
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${alt3 === 'AAA' ? 'bg-blue-600/30 text-blue-400' :
-                                    alt3 === 'BBB' ? 'bg-yellow-700/30 text-yellow-400' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {alt3}
-                                </span>
-                              </td>
-                              
-                              {/* Edge/Center */}
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${edgeCenter === 'E' ? 'bg-purple-600/30 text-purple-400' :
-                                    edgeCenter === 'C' ? 'bg-orange-600/30 text-orange-400' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {edgeCenter}
-                                </span>
-                              </td>
-                              
-                              {/* Sixes */}
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${sixGroup === '1st' || sixGroup === '6th' ? 'bg-red-700/30 text-red-400' :
-                                    sixGroup === '2nd' || sixGroup === '5th' ? 'bg-blue-700/30 text-blue-400' :
-                                    sixGroup === '3rd' || sixGroup === '4th' ? 'bg-green-700/30 text-green-400' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {sixGroup}
-                                </span>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-{activeTab === 'stats' && (
+        {/* Comprehensive History Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-800">
+              <tr>
+                <th className="p-2 text-center">Number</th>
+                <th className="p-2 text-center">Color</th>
+                <th className="p-2 text-center">Even/Odd</th>
+                <th className="p-2 text-center">Low/High</th>
+                <th className="p-2 text-center">Column</th>
+                <th className="p-2 text-center">Dozen</th>
+                {/* Add more headers as needed */}
+              </tr>
+            </thead>
+            <tbody>
+              {spins.map((spin, index) => (
+                <tr key={spin.id || index} className="border-b border-gray-700/50 hover:bg-gray-800/50">
+                  <td className="p-2 text-center">
+                    <div className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold
+                      ${spin.color === 'red' ? 'bg-red-600' : 
+                        spin.color === 'black' ? 'bg-gray-900 border border-gray-600' : 
+                        'bg-green-600'}`}>
+                      {spin.number}
+                    </div>
+                  </td>
+                  <td className="p-2 text-center">{spin.color}</td>
+                  <td className="p-2 text-center">{spin.even_odd}</td>
+                  <td className="p-2 text-center">{spin.low_high}</td>
+                  <td className="p-2 text-center">{spin.column_num}</td>
+                  <td className="p-2 text-center">{spin.dozen}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>
+    )}
+  </div>
+)}
   <div className="space-y-6">
     <h2 className="text-2xl font-bold mb-4">Statistical Analysis</h2>
     
@@ -611,688 +699,58 @@ export default function RouletteSystem() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-600">
-                {/* Red */}
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-red-400 border-r border-gray-600">Red</td>
-                  <td className="text-center py-1 px-1">4</td>
-                  <td className="text-center py-1 px-1">7</td>
-                  <td className="text-center py-1 px-1">7</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">7</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">12</td>
-                  <td className="text-center py-1 px-1 text-green-400">2</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">10</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
-                    {(stats.reds / spins.length * 100).toFixed(1)}
-                  </td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className={stats.reds / spins.length > 0.486 ? 'text-green-400' : 'text-red-400'}>
-                      {((stats.reds / spins.length * 100) - 48.6).toFixed(1)}
-                    </span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-orange-900/50 text-orange-400">
-                      HOT
-                    </span>
-                  </td>
-                </tr>
-
-                {/* Black */}
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-gray-300 border-r border-gray-600">Black</td>
-                  <td className="text-center py-1 px-1">5</td>
-                  <td className="text-center py-1 px-1">8</td>
-                  <td className="text-center py-1 px-1">9</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">10</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">2</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">8</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">7</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">2</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
-                    {(stats.blacks / spins.length * 100).toFixed(1)}
-                  </td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className={stats.blacks / spins.length > 0.486 ? 'text-green-400' : 'text-red-400'}>
-                      {((stats.blacks / spins.length * 100) - 48.6).toFixed(1)}
-                    </span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/50 text-blue-400">
-                      COLD
-                    </span>
-                  </td>
-                </tr>
-
-                {/* Green */}
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-green-400 border-r border-gray-600">Green</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1">1</td>
-                  <td className="text-center py-1 px-1">1</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">1</td>
-                  <td className="text-center py-1 px-1 text-orange-400">18</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">42</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">1</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">18</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
-                    {(stats.greens / spins.length * 100).toFixed(1)}
-                  </td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">2.7</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className={stats.greens / spins.length > 0.027 ? 'text-green-400' : 'text-red-400'}>
-                      {((stats.greens / spins.length * 100) - 2.7).toFixed(1)}
-                    </span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
-                      NORM
-                    </span>
-                  </td>
-                </tr>
-
-                {/* Even/Odd */}
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-purple-400 border-r border-gray-600">Even</td>
-                  <td className="text-center py-1 px-1">4</td>
-                  <td className="text-center py-1 px-1">8</td>
-                  <td className="text-center py-1 px-1">11</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">14</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">1</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">4</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">1</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
-                    {(stats.evens / spins.length * 100).toFixed(1)}
-                  </td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className={stats.evens / spins.length > 0.486 ? 'text-green-400' : 'text-red-400'}>
-                      {((stats.evens / spins.length * 100) - 48.6).toFixed(1)}
-                    </span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/50 text-blue-400">
-                      COLD
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-cyan-400 border-r border-gray-600">Odd</td>
-                  <td className="text-center py-1 px-1">5</td>
-                  <td className="text-center py-1 px-1">9</td>
-                  <td className="text-center py-1 px-1">13</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">15</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
-                  <td className="text-center py-1 px-1 text-green-400">1</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
-                    {(stats.odds / spins.length * 100).toFixed(1)}
-                  </td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className={stats.odds / spins.length > 0.486 ? 'text-green-400' : 'text-red-400'}>
-                      {((stats.odds / spins.length * 100) - 48.6).toFixed(1)}
-                    </span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
-                      NORM
-                    </span>
-                  </td>
-                </tr>
-
-                {/* High/Low */}
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-amber-400 border-r border-gray-600">1-18</td>
-                  <td className="text-center py-1 px-1">3</td>
-                  <td className="text-center py-1 px-1">7</td>
-                  <td className="text-center py-1 px-1">10</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">12</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">3</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">7</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">3</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">3</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
-                    {(stats.lows / spins.length * 100).toFixed(1)}
-                  </td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className={stats.lows / spins.length > 0.486 ? 'text-green-400' : 'text-red-400'}>
-                      {((stats.lows / spins.length * 100) - 48.6).toFixed(1)}
-                    </span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/50 text-blue-400">
-                      COLD
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-gray-300 border-r border-gray-600">19-36</td>
-                  <td className="text-center py-1 px-1">6</td>
-                  <td className="text-center py-1 px-1">10</td>
-                  <td className="text-center py-1 px-1">13</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">15</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
-                  <td className="text-center py-1 px-1 text-green-400">3</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
-                    {(stats.highs / spins.length * 100).toFixed(1)}
-                  </td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className={stats.highs / spins.length > 0.486 ? 'text-green-400' : 'text-red-400'}>
-                      {((stats.highs / spins.length * 100) - 48.6).toFixed(1)}
-                    </span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-orange-900/50 text-orange-400">
-                      HOT
-                    </span>
-                  </td>
-                </tr>
-
-                {/* Dozens */}
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-red-500 border-r border-gray-600">1st Doz</td>
-                  <td className="text-center py-1 px-1">3</td>
-                  <td className="text-center py-1 px-1">5</td>
-                  <td className="text-center py-1 px-1">7</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">8</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">2</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">15</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">2</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">2</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
-                    {(stats.firstDozen / spins.length * 100).toFixed(1)}
-                  </td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">32.4</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className={stats.firstDozen / spins.length > 0.324 ? 'text-green-400' : 'text-red-400'}>
-                      {((stats.firstDozen / spins.length * 100) - 32.4).toFixed(1)}
-                    </span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
-                      NORM
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-cyan-500 border-r border-gray-600">2nd Doz</td>
-                  <td className="text-center py-1 px-1">4</td>
-                  <td className="text-center py-1 px-1">6</td>
-                  <td className="text-center py-1 px-1">9</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">11</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">10</td>
-                  <td className="text-center py-1 px-1 text-green-400">1</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">3</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
-                    {(stats.secondDozen / spins.length * 100).toFixed(1)}
-                  </td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">32.4</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className={stats.secondDozen / spins.length > 0.324 ? 'text-green-400' : 'text-red-400'}>
-                      {((stats.secondDozen / spins.length * 100) - 32.4).toFixed(1)}
-                    </span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-orange-900/50 text-orange-400">
-                      HOT
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-green-500 border-r border-gray-600">3rd Doz</td>
-                  <td className="text-center py-1 px-1">2</td>
-                  <td className="text-center py-1 px-1">4</td>
-                  <td className="text-center py-1 px-1">5</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
-                  <td className="text-center py-1 px-1 text-red-400 font-bold">12</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">18</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">1</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">12</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
-                    {(stats.thirdDozen / spins.length * 100).toFixed(1)}
-                  </td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">32.4</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className="text-red-400">
-                      {((stats.thirdDozen / spins.length * 100) - 32.4).toFixed(1)}
-                    </span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-red-900/50 text-red-400">
-                      ALERT
-                    </span>
-                  </td>
-                </tr>
-
-                {/* Columns */}
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-orange-400 border-r border-gray-600">1st Col</td>
-                  <td className="text-center py-1 px-1">3</td>
-                  <td className="text-center py-1 px-1">5</td>
-                  <td className="text-center py-1 px-1">8</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">9</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">1</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">9</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">2</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">1</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
-                    {(stats.col1 / spins.length * 100).toFixed(1)}
-                  </td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">32.4</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className={stats.col1 / spins.length > 0.324 ? 'text-green-400' : 'text-red-400'}>
-                      {((stats.col1 / spins.length * 100) - 32.4).toFixed(1)}
-                    </span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
-                      NORM
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-teal-400 border-r border-gray-600">2nd Col</td>
-                  <td className="text-center py-1 px-1">3</td>
-                  <td className="text-center py-1 px-1">6</td>
-                  <td className="text-center py-1 px-1">8</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">10</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">7</td>
-                  <td className="text-center py-1 px-1 text-green-400">1</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">3</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
-                    {(stats.col2 / spins.length * 100).toFixed(1)}
-                  </td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">32.4</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className={stats.col2 / spins.length > 0.324 ? 'text-green-400' : 'text-red-400'}>
-                      {((stats.col2 / spins.length * 100) - 32.4).toFixed(1)}
-                    </span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
-                      NORM
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-lime-400 border-r border-gray-600">3rd Col</td>
-                  <td className="text-center py-1 px-1">2</td>
-                  <td className="text-center py-1 px-1">4</td>
-                  <td className="text-center py-1 px-1">5</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">4</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">11</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">1</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">4</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
-                    {(stats.col3 / spins.length * 100).toFixed(1)}
-                  </td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">32.4</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className={stats.col3 / spins.length > 0.324 ? 'text-green-400' : 'text-red-400'}>
-                      {((stats.col3 / spins.length * 100) - 32.4).toFixed(1)}
-                    </span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/50 text-blue-400">
-                      COLD
-                    </span>
-                  </td>
-                </tr>
-
-                {/* Alternative Groups */}
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-indigo-400 border-r border-gray-600">Alt1 A</td>
-                  <td className="text-center py-1 px-1">5</td>
-                  <td className="text-center py-1 px-1">8</td>
-                  <td className="text-center py-1 px-1">11</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">14</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">1</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">3</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">1</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">48.2</td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className="text-red-400">-0.4</span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
-                      NORM
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-pink-400 border-r border-gray-600">Alt1 B</td>
-                  <td className="text-center py-1 px-1">4</td>
-                  <td className="text-center py-1 px-1">9</td>
-                  <td className="text-center py-1 px-1">12</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">13</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">7</td>
-                  <td className="text-center py-1 px-1 text-green-400">1</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">4</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">49.1</td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className="text-green-400">+0.5</span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
-                      NORM
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-lime-500 border-r border-gray-600">Alt2 AA</td>
-                  <td className="text-center py-1 px-1">4</td>
-                  <td className="text-center py-1 px-1">7</td>
-                  <td className="text-center py-1 px-1">10</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">12</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">2</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">8</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">2</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">2</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">47.8</td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className="text-red-400">-0.8</span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
-                      NORM
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-purple-500 border-r border-gray-600">Alt2 BB</td>
-                  <td className="text-center py-1 px-1">5</td>
-                  <td className="text-center py-1 px-1">10</td>
-                  <td className="text-center py-1 px-1">13</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">15</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
-                  <td className="text-center py-1 px-1 text-green-400">2</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">50.2</td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className="text-green-400">+1.6</span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-orange-900/50 text-orange-400">
-                      HOT
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-blue-400 border-r border-gray-600">Alt3 AAA</td>
-                  <td className="text-center py-1 px-1">6</td>
-                  <td className="text-center py-1 px-1">9</td>
-                  <td className="text-center py-1 px-1">11</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">13</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
-                  <td className="text-center py-1 px-1 text-green-400">1</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">3</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">49.5</td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className="text-green-400">+0.9</span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
-                      NORM
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-yellow-500 border-r border-gray-600">Alt3 BBB</td>
-                  <td className="text-center py-1 px-1">3</td>
-                  <td className="text-center py-1 px-1">8</td>
-                  <td className="text-center py-1 px-1">12</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">14</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">1</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">4</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">1</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">48.1</td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className="text-red-400">-0.5</span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
-                      NORM
-                    </span>
-                  </td>
-                </tr>
-
-                {/* Edge/Center */}
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-purple-400 border-r border-gray-600">Edge</td>
-                  <td className="text-center py-1 px-1">4</td>
-                  <td className="text-center py-1 px-1">8</td>
-                  <td className="text-center py-1 px-1">11</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">13</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">7</td>
-                  <td className="text-center py-1 px-1 text-green-400">2</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">4</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">48.9</td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className="text-green-400">+0.3</span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
-                      NORM
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-orange-500 border-r border-gray-600">Center</td>
-                  <td className="text-center py-1 px-1">5</td>
-                  <td className="text-center py-1 px-1">9</td>
-                  <td className="text-center py-1 px-1">12</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">14</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">1</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">3</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">1</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">48.3</td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className="text-red-400">-0.3</span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
-                      NORM
-                    </span>
-                  </td>
-                </tr>
-
-                {/* Six Groups */}
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-red-400 border-r border-gray-600">1st Six</td>
-                  <td className="text-center py-1 px-1">2</td>
-                  <td className="text-center py-1 px-1">3</td>
-                  <td className="text-center py-1 px-1">4</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">3</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">15</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">1</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">3</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">15.2</td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">16.2</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className="text-red-400">-1.0</span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
-                      NORM
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-blue-500 border-r border-gray-600">2nd Six</td>
-                  <td className="text-center py-1 px-1">1</td>
-                  <td className="text-center py-1 px-1">2</td>
-                  <td className="text-center py-1 px-1">3</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">4</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">2</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">12</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">1</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">2</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">14.8</td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">16.2</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className="text-red-400">-1.4</span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/50 text-blue-400">
-                      COLD
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-green-500 border-r border-gray-600">3rd Six</td>
-                  <td className="text-center py-1 px-1">2</td>
-                  <td className="text-center py-1 px-1">3</td>
-                  <td className="text-center py-1 px-1">5</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">10</td>
-                  <td className="text-center py-1 px-1 text-green-400">1</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">2</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">17.5</td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">16.2</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className="text-green-400">+1.3</span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
-                      NORM
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-green-500 border-r border-gray-600">4th Six</td>
-                  <td className="text-center py-1 px-1">2</td>
-                  <td className="text-center py-1 px-1">4</td>
-                  <td className="text-center py-1 px-1">5</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">1</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">11</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">2</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">1</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">16.8</td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">16.2</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className="text-green-400">+0.6</span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
-                      NORM
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-blue-500 border-r border-gray-600">5th Six</td>
-                  <td className="text-center py-1 px-1">1</td>
-                  <td className="text-center py-1 px-1">3</td>
-                  <td className="text-center py-1 px-1">4</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">4</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">14</td>
-                  <td className="text-center py-1 px-1">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">1</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">4</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">15.1</td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">16.2</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className="text-red-400">-1.1</span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/50 text-blue-400">
-                      COLD
-                    </span>
-                  </td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-1 px-2 font-medium text-red-400 border-r border-gray-600">6th Six</td>
-                  <td className="text-center py-1 px-1">2</td>
-                  <td className="text-center py-1 px-1">3</td>
-                  <td className="text-center py-1 px-1">4</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
-                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">9</td>
-                  <td className="text-center py-1 px-1 text-green-400">2</td>
-                  <td className="text-center py-1 px-1 border-r border-gray-600">3</td>
-                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
-                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">17.2</td>
-                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">16.2</td>
-                  <td className="text-center py-1 px-2 border-r border-gray-600">
-                    <span className="text-green-400">+1.0</span>
-                  </td>
-                  <td className="text-center py-1 px-2">
-                    <span className="px-1.5 py-0.5 rounded text-xs bg-orange-900/50 text-orange-400">
-                      HOT
-                    </span>
-                  </td>
-                </tr>
+  {groupStats && groupStats.map((group, index) => (
+    <tr key={group.id} className="hover:bg-gray-600/50 transition-colors">
+      <td className={`py-1 px-2 font-medium ${group.color} border-r border-gray-600`}>
+        {group.name}
+      </td>
+      <td className="text-center py-1 px-1">{group.l9}</td>
+      <td className="text-center py-1 px-1">{group.l18}</td>
+      <td className="text-center py-1 px-1">{group.l27}</td>
+      <td className="text-center py-1 px-1 border-r border-gray-600">{group.l36}</td>
+      <td className={`text-center py-1 px-1 ${group.absenceNow > 10 ? 'text-orange-400' : group.absenceNow > 5 ? 'text-yellow-400' : 'text-gray-300'}`}>
+        {group.absenceNow}
+      </td>
+      <td className="text-center py-1 px-1 border-r border-gray-600">{group.absenceMax}</td>
+      <td className={`text-center py-1 px-1 ${group.consecutiveNow > 0 ? 'text-green-400' : 'text-gray-400'}`}>
+        {group.consecutiveNow}
+      </td>
+      <td className="text-center py-1 px-1 border-r border-gray-600">{group.consecutiveMax}</td>
+      <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">
+        {group.lastSpin}
+      </td>
+      <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
+        {group.percentage.toFixed(1)}
+      </td>
+      <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">
+        {group.expected.toFixed(1)}
+      </td>
+      <td className="text-center py-1 px-2 border-r border-gray-600">
+        <span className={group.deviation > 0 ? 'text-green-400' : 'text-red-400'}>
+          {group.deviation > 0 ? '+' : ''}{group.deviation.toFixed(1)}
+        </span>
+      </td>
+      <td className="text-center py-1 px-2">
+        {group.status === 'HOT' ? (
+          <span className="px-1.5 py-0.5 rounded text-xs bg-orange-900/50 text-orange-400">
+            HOT
+          </span>
+        ) : group.status === 'COLD' ? (
+          <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/50 text-blue-400">
+            COLD
+          </span>
+        ) : group.status === 'ALERT' ? (
+          <span className="px-1.5 py-0.5 rounded text-xs bg-red-900/50 text-red-400">
+            ALERT
+          </span>
+        ) : (
+          <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+            NORM
+          </span>
+        )}
+      </td>
+    </tr>
+  ))}
               </tbody>
             </table>
           </div>
@@ -1323,8 +781,7 @@ export default function RouletteSystem() {
         </div>
       </>
     )}
-  </div>
-)}
+          </div>
 
           {activeTab === 'anomalies' && (
             <div className="space-y-6">
@@ -1378,7 +835,7 @@ export default function RouletteSystem() {
               )}
             </div>
           )}
-        </div>
+       </div>  {/* Line 838-840 closing divs */}
       </div>
     </div>
   )
