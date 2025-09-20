@@ -1,7 +1,7 @@
 'use client'
 /* eslint-disable react-hooks/exhaustive-deps */
 
-
+import { BettingGroupHeaders } from './BettingGroupVisuals'
 import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getNumberProperties, detectAnomalies, NUMBERS } from '@/lib/roulette-logic'
@@ -323,19 +323,8 @@ export default function RouletteSystem() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b-2 border-gray-600">
-                          <th className="p-2 text-center font-bold bg-gray-700">NUM</th>
-                          <th className="p-2 text-center bg-gray-700">COLOR</th>
-                          <th className="p-2 text-center bg-gray-700">E/O</th>
-                          <th className="p-2 text-center bg-gray-700">L/H</th>
-                          <th className="p-2 text-center bg-gray-700">COL</th>
-                          <th className="p-2 text-center bg-gray-700">DOZ</th>
-                          <th className="p-2 text-center bg-gray-700">ALT 1</th>
-                          <th className="p-2 text-center bg-gray-700">ALT 2</th>
-                          <th className="p-2 text-center bg-gray-700">ALT 3</th>
-                          <th className="p-2 text-center bg-gray-700">E/C</th>
-                          <th className="p-2 text-center bg-gray-700">SIXES</th>
-                        </tr>
+                        <BettingGroupHeaders spins={spins} />
+                        
                         <tr className="text-xs text-gray-400 border-b border-gray-700">
                           <th className="p-1"></th>
                           <th className="p-1">Red/Black</th>
