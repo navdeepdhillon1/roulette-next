@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable react-hooks/exhaustive-deps */
 
 
 import React, { useState, useEffect } from 'react'
@@ -333,7 +334,7 @@ export default function RouletteSystem() {
                           <th className="p-2 text-center bg-gray-700">ALT 2</th>
                           <th className="p-2 text-center bg-gray-700">ALT 3</th>
                           <th className="p-2 text-center bg-gray-700">E/C</th>
-                          <th className="p-2 text-center bg-gray-700">SIX'S</th>
+                          <th className="p-2 text-center bg-gray-700">SIXES</th>
                         </tr>
                         <tr className="text-xs text-gray-400 border-b border-gray-700">
                           <th className="p-1"></th>
@@ -499,7 +500,7 @@ export default function RouletteSystem() {
                                 </span>
                               </td>
                               
-                              {/* Six's */}
+                              {/* Sixes */}
                               <td className="p-2 text-center">
                                 <span className={`
                                   px-2 py-1 rounded text-xs font-bold
