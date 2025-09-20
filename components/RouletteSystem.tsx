@@ -323,7 +323,7 @@ export default function RouletteSystem() {
                   {/* Comprehensive History Table */}
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                    <BettingGroupHeaders spins={spins} />
+                    <BettingGroupHeaders />
   
 
                       <tbody>
