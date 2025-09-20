@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getNumberProperties, detectAnomalies, NUMBERS } from '@/lib/roulette-logic'
 import type { Session, Spin, Anomaly } from '@/lib/types'
-import { BettingGroupHeaders } from './BettingGroupVisuals'
+import BettingGroupVisuals from './BettingGroupVisuals';
 
 export default function RouletteSystem() {
   const [session, setSession] = useState<Session | null>(null)
@@ -323,7 +323,7 @@ export default function RouletteSystem() {
                   {/* Comprehensive History Table */}
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                    <BettingGroupHeaders />
+                    <BettingGroupVisuals />
   
 
                       <tbody>
