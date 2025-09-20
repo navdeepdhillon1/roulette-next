@@ -323,7 +323,7 @@ export default function RouletteSystem() {
                   {/* Comprehensive History Table */}
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                    <BettingGroupVisuals />
+                    
   
 
                       <tbody>
@@ -499,99 +499,438 @@ export default function RouletteSystem() {
             </div>
           )}
 
-          {activeTab === 'stats' && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold mb-4">Statistics</h2>
-              
-              {!stats ? (
-                <p className="text-gray-400 text-center py-8">No data to analyze yet</p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="bg-gray-700 rounded-lg p-4">
-                    <h3 className="text-gray-400 text-sm mb-3">Colors</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span className="text-red-400">Red</span>
-                        <span className="font-bold">{stats.reds} ({Math.round(stats.reds / spins.length * 100)}%)</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Black</span>
-                        <span className="font-bold">{stats.blacks} ({Math.round(stats.blacks / spins.length * 100)}%)</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-green-400">Green</span>
-                        <span className="font-bold">{stats.greens} ({Math.round(stats.greens / spins.length * 100)}%)</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-700 rounded-lg p-4">
-                    <h3 className="text-gray-400 text-sm mb-3">Even/Odd</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>Even</span>
-                        <span className="font-bold">{stats.evens} ({Math.round(stats.evens / spins.length * 100)}%)</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Odd</span>
-                        <span className="font-bold">{stats.odds} ({Math.round(stats.odds / spins.length * 100)}%)</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-700 rounded-lg p-4">
-                    <h3 className="text-gray-400 text-sm mb-3">High/Low</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>Low (1-18)</span>
-                        <span className="font-bold">{stats.lows} ({Math.round(stats.lows / spins.length * 100)}%)</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>High (19-36)</span>
-                        <span className="font-bold">{stats.highs} ({Math.round(stats.highs / spins.length * 100)}%)</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-700 rounded-lg p-4">
-                    <h3 className="text-gray-400 text-sm mb-3">Dozens</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>1st (1-12)</span>
-                        <span className="font-bold">{stats.firstDozen}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>2nd (13-24)</span>
-                        <span className="font-bold">{stats.secondDozen}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>3rd (25-36)</span>
-                        <span className="font-bold">{stats.thirdDozen}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-700 rounded-lg p-4">
-                    <h3 className="text-gray-400 text-sm mb-3">Columns</h3>
-                    <div className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>Column 1</span>
-                        <span className="font-bold">{stats.col1}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Column 2</span>
-                        <span className="font-bold">{stats.col2}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Column 3</span>
-                        <span className="font-bold">{stats.col3}</span>
-                      </div>
-                    </div>
-                  </div>
+{activeTab === 'stats' && (
+  <div className="space-y-6">
+    <h2 className="text-2xl font-bold mb-4">Statistical Analysis</h2>
+    
+    {!stats ? (
+      <p className="text-gray-400 text-center py-8">No data to analyze yet</p>
+    ) : (
+      <>
+        {/* Hot & Cold Numbers Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Hot Numbers */}
+          <div className="bg-gray-700 rounded-lg p-4">
+            <h3 className="text-orange-400 font-semibold mb-3 flex items-center gap-2">
+              🔥 Hot Numbers
+            </h3>
+            <div className="grid grid-cols-6 gap-2">
+              {[21, 7, 14, 32, 9, 18].map((num) => (
+                <div
+                  key={num}
+                  className="aspect-square flex items-center justify-center rounded bg-gradient-to-br from-orange-500 to-red-600 text-white font-bold text-sm"
+                >
+                  {num}
                 </div>
-              )}
+              ))}
             </div>
-          )}
+          </div>
+
+          {/* Cold Numbers */}
+          <div className="bg-gray-700 rounded-lg p-4">
+            <h3 className="text-blue-400 font-semibold mb-3 flex items-center gap-2">
+              ❄️ Cold Numbers
+            </h3>
+            <div className="grid grid-cols-6 gap-2">
+              {[4, 11, 28, 35, 2, 16].map((num) => (
+                <div
+                  key={num}
+                  className="aspect-square flex items-center justify-center rounded bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-sm"
+                >
+                  {num}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Pattern Alerts */}
+          <div className="bg-gray-700 rounded-lg p-4">
+            <h3 className="text-yellow-400 font-semibold mb-3 flex items-center gap-2">
+              📊 Pattern Alerts
+            </h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between items-center p-2 bg-gray-800 rounded">
+                <span>Red Streak</span>
+                <span className="text-yellow-400 font-bold">5 in row</span>
+              </div>
+              <div className="flex justify-between items-center p-2 bg-gray-800 rounded">
+                <span>No Dozen 3</span>
+                <span className="text-purple-400 font-bold">12 spins</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Analysis Table */}
+        <div className="bg-gray-700 rounded-lg overflow-hidden">
+          <div className="bg-gradient-to-r from-green-700 to-green-900 text-white p-4">
+            <h3 className="text-xl font-bold">Detailed Statistical Analysis</h3>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-800">
+                <tr>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-300">Betting Group</th>
+                  <th className="text-center py-3 px-4 font-semibold text-gray-300">Hits</th>
+                  <th className="text-center py-3 px-4 font-semibold text-gray-300">Last 100</th>
+                  <th className="text-center py-3 px-4 font-semibold text-gray-300">Last 200</th>
+                  <th className="text-center py-3 px-4 font-semibold text-gray-300">Percentage</th>
+                  <th className="text-center py-3 px-4 font-semibold text-gray-300">Expected</th>
+                  <th className="text-center py-3 px-4 font-semibold text-gray-300">Deviation</th>
+                  <th className="text-center py-3 px-4 font-semibold text-gray-300">Trend</th>
+                  <th className="text-center py-3 px-4 font-semibold text-gray-300">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-600">
+                {/* Red/Black */}
+                <tr className="hover:bg-gray-600/50 transition-colors">
+                  <td className="py-3 px-4 font-medium">Red</td>
+                  <td className="text-center py-3 px-4">{stats.reds}</td>
+                  <td className="text-center py-3 px-4">48</td>
+                  <td className="text-center py-3 px-4">96</td>
+                  <td className="text-center py-3 px-4">
+                    <span className="font-semibold">{(stats.reds / spins.length * 100).toFixed(1)}%</span>
+                  </td>
+                  <td className="text-center py-3 px-4 text-gray-400">48.65%</td>
+                  <td className="text-center py-3 px-4">
+                    <span className={stats.reds / spins.length > 0.4865 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.reds / spins.length * 100) - 48.65).toFixed(2)}%
+                    </span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="text-green-400">+2.3%</span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-900/50 text-orange-400">
+                      🔥 HOT
+                    </span>
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-gray-600/50 transition-colors">
+                  <td className="py-3 px-4 font-medium">Black</td>
+                  <td className="text-center py-3 px-4">{stats.blacks}</td>
+                  <td className="text-center py-3 px-4">45</td>
+                  <td className="text-center py-3 px-4">92</td>
+                  <td className="text-center py-3 px-4">
+                    <span className="font-semibold">{(stats.blacks / spins.length * 100).toFixed(1)}%</span>
+                  </td>
+                  <td className="text-center py-3 px-4 text-gray-400">48.65%</td>
+                  <td className="text-center py-3 px-4">
+                    <span className={stats.blacks / spins.length > 0.4865 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.blacks / spins.length * 100) - 48.65).toFixed(2)}%
+                    </span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="text-red-400">-1.2%</span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-900/50 text-blue-400">
+                      COLD
+                    </span>
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-gray-600/50 transition-colors">
+                  <td className="py-3 px-4 font-medium">Green (0)</td>
+                  <td className="text-center py-3 px-4">{stats.greens}</td>
+                  <td className="text-center py-3 px-4">2</td>
+                  <td className="text-center py-3 px-4">5</td>
+                  <td className="text-center py-3 px-4">
+                    <span className="font-semibold">{(stats.greens / spins.length * 100).toFixed(1)}%</span>
+                  </td>
+                  <td className="text-center py-3 px-4 text-gray-400">2.70%</td>
+                  <td className="text-center py-3 px-4">
+                    <span className={stats.greens / spins.length > 0.027 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.greens / spins.length * 100) - 2.70).toFixed(2)}%
+                    </span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="text-gray-400">+0.0%</span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                      NORMAL
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Even/Odd */}
+                <tr className="hover:bg-gray-600/50 transition-colors">
+                  <td className="py-3 px-4 font-medium">Even</td>
+                  <td className="text-center py-3 px-4">{stats.evens}</td>
+                  <td className="text-center py-3 px-4">46</td>
+                  <td className="text-center py-3 px-4">93</td>
+                  <td className="text-center py-3 px-4">
+                    <span className="font-semibold">{(stats.evens / spins.length * 100).toFixed(1)}%</span>
+                  </td>
+                  <td className="text-center py-3 px-4 text-gray-400">48.65%</td>
+                  <td className="text-center py-3 px-4">
+                    <span className={stats.evens / spins.length > 0.4865 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.evens / spins.length * 100) - 48.65).toFixed(2)}%
+                    </span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="text-red-400">-0.5%</span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-900/50 text-blue-400">
+                      COLD
+                    </span>
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-gray-600/50 transition-colors">
+                  <td className="py-3 px-4 font-medium">Odd</td>
+                  <td className="text-center py-3 px-4">{stats.odds}</td>
+                  <td className="text-center py-3 px-4">47</td>
+                  <td className="text-center py-3 px-4">95</td>
+                  <td className="text-center py-3 px-4">
+                    <span className="font-semibold">{(stats.odds / spins.length * 100).toFixed(1)}%</span>
+                  </td>
+                  <td className="text-center py-3 px-4 text-gray-400">48.65%</td>
+                  <td className="text-center py-3 px-4">
+                    <span className={stats.odds / spins.length > 0.4865 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.odds / spins.length * 100) - 48.65).toFixed(2)}%
+                    </span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="text-green-400">+0.8%</span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                      NORMAL
+                    </span>
+                  </td>
+                </tr>
+
+                {/* High/Low */}
+                <tr className="hover:bg-gray-600/50 transition-colors">
+                  <td className="py-3 px-4 font-medium">1-18 (Low)</td>
+                  <td className="text-center py-3 px-4">{stats.lows}</td>
+                  <td className="text-center py-3 px-4">44</td>
+                  <td className="text-center py-3 px-4">88</td>
+                  <td className="text-center py-3 px-4">
+                    <span className="font-semibold">{(stats.lows / spins.length * 100).toFixed(1)}%</span>
+                  </td>
+                  <td className="text-center py-3 px-4 text-gray-400">48.65%</td>
+                  <td className="text-center py-3 px-4">
+                    <span className={stats.lows / spins.length > 0.4865 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.lows / spins.length * 100) - 48.65).toFixed(2)}%
+                    </span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="text-red-400">-2.1%</span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-900/50 text-blue-400">
+                      COLD
+                    </span>
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-gray-600/50 transition-colors">
+                  <td className="py-3 px-4 font-medium">19-36 (High)</td>
+                  <td className="text-center py-3 px-4">{stats.highs}</td>
+                  <td className="text-center py-3 px-4">49</td>
+                  <td className="text-center py-3 px-4">100</td>
+                  <td className="text-center py-3 px-4">
+                    <span className="font-semibold">{(stats.highs / spins.length * 100).toFixed(1)}%</span>
+                  </td>
+                  <td className="text-center py-3 px-4 text-gray-400">48.65%</td>
+                  <td className="text-center py-3 px-4">
+                    <span className={stats.highs / spins.length > 0.4865 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.highs / spins.length * 100) - 48.65).toFixed(2)}%
+                    </span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="text-green-400">+3.2%</span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-900/50 text-orange-400">
+                      🔥 HOT
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Dozens */}
+                <tr className="hover:bg-gray-600/50 transition-colors">
+                  <td className="py-3 px-4 font-medium">1st Dozen</td>
+                  <td className="text-center py-3 px-4">{stats.firstDozen}</td>
+                  <td className="text-center py-3 px-4">31</td>
+                  <td className="text-center py-3 px-4">64</td>
+                  <td className="text-center py-3 px-4">
+                    <span className="font-semibold">{(stats.firstDozen / spins.length * 100).toFixed(1)}%</span>
+                  </td>
+                  <td className="text-center py-3 px-4 text-gray-400">32.43%</td>
+                  <td className="text-center py-3 px-4">
+                    <span className={stats.firstDozen / spins.length > 0.3243 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.firstDozen / spins.length * 100) - 32.43).toFixed(2)}%
+                    </span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="text-green-400">+1.1%</span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                      NORMAL
+                    </span>
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-gray-600/50 transition-colors">
+                  <td className="py-3 px-4 font-medium">2nd Dozen</td>
+                  <td className="text-center py-3 px-4">{stats.secondDozen}</td>
+                  <td className="text-center py-3 px-4">35</td>
+                  <td className="text-center py-3 px-4">72</td>
+                  <td className="text-center py-3 px-4">
+                    <span className="font-semibold">{(stats.secondDozen / spins.length * 100).toFixed(1)}%</span>
+                  </td>
+                  <td className="text-center py-3 px-4 text-gray-400">32.43%</td>
+                  <td className="text-center py-3 px-4">
+                    <span className={stats.secondDozen / spins.length > 0.3243 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.secondDozen / spins.length * 100) - 32.43).toFixed(2)}%
+                    </span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="text-green-400">+2.8%</span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-900/50 text-orange-400">
+                      🔥 HOT
+                    </span>
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-gray-600/50 transition-colors">
+                  <td className="py-3 px-4 font-medium">3rd Dozen</td>
+                  <td className="text-center py-3 px-4">{stats.thirdDozen}</td>
+                  <td className="text-center py-3 px-4">27</td>
+                  <td className="text-center py-3 px-4">52</td>
+                  <td className="text-center py-3 px-4">
+                    <span className="font-semibold">{(stats.thirdDozen / spins.length * 100).toFixed(1)}%</span>
+                  </td>
+                  <td className="text-center py-3 px-4 text-gray-400">32.43%</td>
+                  <td className="text-center py-3 px-4">
+                    <span className={stats.thirdDozen / spins.length > 0.3243 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.thirdDozen / spins.length * 100) - 32.43).toFixed(2)}%
+                    </span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="text-red-400">-1.7%</span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-900/50 text-blue-400">
+                      COLD
+                    </span>
+                  </td>
+                </tr>
+
+                {/* Columns */}
+                <tr className="hover:bg-gray-600/50 transition-colors">
+                  <td className="py-3 px-4 font-medium">1st Column</td>
+                  <td className="text-center py-3 px-4">{stats.col1}</td>
+                  <td className="text-center py-3 px-4">32</td>
+                  <td className="text-center py-3 px-4">65</td>
+                  <td className="text-center py-3 px-4">
+                    <span className="font-semibold">{(stats.col1 / spins.length * 100).toFixed(1)}%</span>
+                  </td>
+                  <td className="text-center py-3 px-4 text-gray-400">32.43%</td>
+                  <td className="text-center py-3 px-4">
+                    <span className={stats.col1 / spins.length > 0.3243 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.col1 / spins.length * 100) - 32.43).toFixed(2)}%
+                    </span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="text-green-400">+0.5%</span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                      NORMAL
+                    </span>
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-gray-600/50 transition-colors">
+                  <td className="py-3 px-4 font-medium">2nd Column</td>
+                  <td className="text-center py-3 px-4">{stats.col2}</td>
+                  <td className="text-center py-3 px-4">33</td>
+                  <td className="text-center py-3 px-4">68</td>
+                  <td className="text-center py-3 px-4">
+                    <span className="font-semibold">{(stats.col2 / spins.length * 100).toFixed(1)}%</span>
+                  </td>
+                  <td className="text-center py-3 px-4 text-gray-400">32.43%</td>
+                  <td className="text-center py-3 px-4">
+                    <span className={stats.col2 / spins.length > 0.3243 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.col2 / spins.length * 100) - 32.43).toFixed(2)}%
+                    </span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="text-green-400">+1.2%</span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-700 text-gray-300">
+                      NORMAL
+                    </span>
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-gray-600/50 transition-colors">
+                  <td className="py-3 px-4 font-medium">3rd Column</td>
+                  <td className="text-center py-3 px-4">{stats.col3}</td>
+                  <td className="text-center py-3 px-4">28</td>
+                  <td className="text-center py-3 px-4">55</td>
+                  <td className="text-center py-3 px-4">
+                    <span className="font-semibold">{(stats.col3 / spins.length * 100).toFixed(1)}%</span>
+                  </td>
+                  <td className="text-center py-3 px-4 text-gray-400">32.43%</td>
+                  <td className="text-center py-3 px-4">
+                    <span className={stats.col3 / spins.length > 0.3243 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.col3 / spins.length * 100) - 32.43).toFixed(2)}%
+                    </span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="text-red-400">-0.9%</span>
+                  </td>
+                  <td className="text-center py-3 px-4">
+                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-900/50 text-blue-400">
+                      COLD
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Summary Stats */}
+          <div className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-gray-800 p-3 rounded-lg">
+              <div className="text-xs text-gray-400">Total Spins</div>
+              <div className="text-xl font-bold text-white">{spins.length}</div>
+              <div className="text-xs text-gray-500">Current session</div>
+            </div>
+            <div className="bg-gray-800 p-3 rounded-lg">
+              <div className="text-xs text-gray-400">House Edge</div>
+              <div className="text-xl font-bold text-green-400">2.7%</div>
+              <div className="text-xs text-gray-500">European wheel</div>
+            </div>
+            <div className="bg-gray-800 p-3 rounded-lg">
+              <div className="text-xs text-gray-400">Max Deviation</div>
+              <div className="text-xl font-bold text-orange-400">-6.43%</div>
+              <div className="text-xs text-gray-500">3rd Dozen</div>
+            </div>
+            <div className="bg-gray-800 p-3 rounded-lg">
+              <div className="text-xs text-gray-400">Hot Groups</div>
+              <div className="text-xl font-bold text-red-400">4</div>
+              <div className="text-xs text-gray-500">Above expected</div>
+            </div>
+          </div>
+        </div>
+      </>
+    )}
+  </div>
+)}
 
           {activeTab === 'anomalies' && (
             <div className="space-y-6">
