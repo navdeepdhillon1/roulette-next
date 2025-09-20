@@ -1,11 +1,12 @@
 'use client'
 /* eslint-disable react-hooks/exhaustive-deps */
 
-import { BettingGroupHeaders } from './BettingGroupVisuals'
+
 import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getNumberProperties, detectAnomalies, NUMBERS } from '@/lib/roulette-logic'
 import type { Session, Spin, Anomaly } from '@/lib/types'
+import { BettingGroupHeaders } from './BettingGroupVisuals'
 
 export default function RouletteSystem() {
   const [session, setSession] = useState<Session | null>(null)
@@ -322,23 +323,9 @@ export default function RouletteSystem() {
                   {/* Comprehensive History Table */}
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead>
-                        <BettingGroupHeaders spins={spins} />
-                        
-                        <tr className="text-xs text-gray-400 border-b border-gray-700">
-                          <th className="p-1"></th>
-                          <th className="p-1">Red/Black</th>
-                          <th className="p-1">Even/Odd</th>
-                          <th className="p-1">Low/High</th>
-                          <th className="p-1">Column</th>
-                          <th className="p-1">Dozen</th>
-                          <th className="p-1">Streets</th>
-                          <th className="p-1">Alt Streets</th>
-                          <th className="p-1">Alt Streets</th>
-                          <th className="p-1">Edge/Center</th>
-                          <th className="p-1">Six Lines</th>
-                        </tr>
-                      </thead>
+                    <BettingGroupHeaders spins={spins} />
+  
+
                       <tbody>
                         {spins.map((spin, index) => {
                           const num = spin.number
