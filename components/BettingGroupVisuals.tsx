@@ -15,20 +15,20 @@ interface VisualizationModalProps {
 }
 
 const VisualizationModal: React.FC<VisualizationModalProps> = ({ isOpen, onClose, title, children }) => {
-  if (!isOpen) return null
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75" onClick={onClose}>
-      <div className="bg-gray-800 rounded-lg p-6 max-w-4xl max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-2xl font-bold text-white">{title}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">×</button>
+    if (!isOpen) return null
+  
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4" onClick={onClose}>
+        <div className="bg-gray-800 rounded-lg p-6 w-full max-w-5xl max-h-[90vh] overflow-auto" onClick={e => e.stopPropagation()}>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-2xl font-bold text-white">{title}</h3>
+            <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">×</button>
+          </div>
+          {children}
         </div>
-        {children}
       </div>
-    </div>
-  )
-}
+    )
+  }
 
 export const BettingGroupHeaders = () => {
   const [activeModal, setActiveModal] = useState<string | null>(null)
@@ -46,7 +46,7 @@ export const BettingGroupHeaders = () => {
     }
     
     return (
-      <div className="bg-gray-900 p-4 rounded-lg">
+      <div className="bg-gray-900 p-4 rounded-lg min-w-[700px]">
         {/* Zero */}
         <div className="mb-2">
           <div className={`h-12 flex items-center justify-center font-bold text-white border-2 border-green-600 ${getColor(0)}`}>
