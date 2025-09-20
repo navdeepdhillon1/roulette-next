@@ -295,253 +295,233 @@ export default function RouletteSystem() {
             </div>
           )}
 
-// This replaces the history tab content in RouletteSystem.tsx
-// Add this to the activeTab === 'history' section
+          {activeTab === 'history' && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold mb-4">Winning Numbers History</h2>
+              
+              {spins.length === 0 ? (
+                <p className="text-gray-400 text-center py-8">No spins recorded yet</p>
+              ) : (
+                <>
+                  {/* Color Legend */}
+                  <div className="flex gap-4 mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-red-600 rounded"></div>
+                      <span className="text-sm">Red</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-gray-900 border border-gray-600 rounded"></div>
+                      <span className="text-sm">Black</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-green-600 rounded"></div>
+                      <span className="text-sm">Green (0)</span>
+                    </div>
+                  </div>
 
-{activeTab === 'history' && (
-  <div className="space-y-6">
-    <h2 className="text-2xl font-bold mb-4">Winning Numbers History</h2>
-    
-    {spins.length === 0 ? (
-      <p className="text-gray-400 text-center py-8">No spins recorded yet</p>
-    ) : (
-      <>
-        {/* Color Legend */}
-        <div className="flex gap-4 mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-red-600 rounded"></div>
-            <span className="text-sm">Red</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-gray-900 border border-gray-600 rounded"></div>
-            <span className="text-sm">Black</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-green-600 rounded"></div>
-            <span className="text-sm">Green (0)</span>
-          </div>
-        </div>
-
-        {/* Comprehensive History Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b-2 border-gray-600">
-                <th className="p-2 text-center font-bold bg-gray-700">NUM</th>
-                <th className="p-2 text-center bg-gray-700">COLOR</th>
-                <th className="p-2 text-center bg-gray-700">E/O</th>
-                <th className="p-2 text-center bg-gray-700">L/H</th>
-                <th className="p-2 text-center bg-gray-700">COL</th>
-                <th className="p-2 text-center bg-gray-700">DOZ</th>
-                <th className="p-2 text-center bg-gray-700">ALT 1</th>
-                <th className="p-2 text-center bg-gray-700">ALT 2</th>
-                <th className="p-2 text-center bg-gray-700">ALT 3</th>
-                <th className="p-2 text-center bg-gray-700">E/C</th>
-                <th className="p-2 text-center bg-gray-700">SIX'S</th>
-              </tr>
-              <tr className="text-xs text-gray-400 border-b border-gray-700">
-                <th className="p-1"></th>
-                <th className="p-1">Red/Black</th>
-                <th className="p-1">Even/Odd</th>
-                <th className="p-1">Low/High</th>
-                <th className="p-1">Column</th>
-                <th className="p-1">Dozen</th>
-                <th className="p-1">Streets</th>
-                <th className="p-1">Alt Streets</th>
-                <th className="p-1">Alt Streets</th>
-                <th className="p-1">Edge/Center</th>
-                <th className="p-1">Six Lines</th>
-              </tr>
-            </thead>
-            <tbody>
-              {spins.map((spin, index) => {
-                const num = spin.number
-                const isRed = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(num)
-                const isBlack = [2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35].includes(num)
-                
-                // Calculate all betting groups
-                const alt1 = num === 0 ? '-' : 
-                  [1,2,3,7,8,9,13,14,15,19,20,21,25,26,27,31,32,33].includes(num) ? 'A' : 'B'
-                
-                const alt2 = num === 0 ? '-' :
-                  [1,2,3,4,5,6,13,14,15,16,17,18,25,26,27,28,29,30].includes(num) ? 'AA' : 'BB'
-                
-                const alt3 = num === 0 ? '-' :
-                  [1,2,3,4,5,6,7,8,9,19,20,21,22,23,24,25,26,27].includes(num) ? 'AAA' : 'BBB'
-                
-                const edgeCenter = num === 0 ? '-' :
-                  [10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27].includes(num) ? 'C' : 'E'
-                
-                const sixGroup = num === 0 ? '-' :
-                  num <= 6 ? '1st' :
-                  num <= 12 ? '2nd' :
-                  num <= 18 ? '3rd' :
-                  num <= 24 ? '4th' :
-                  num <= 30 ? '5th' : '6th'
-                
-                return (
-                  <tr key={spin.id || index} className="border-b border-gray-700/50 hover:bg-gray-800/50">
-                    {/* Number with color background */}
-                    <td className="p-2 text-center">
-                      <div className={`
-                        inline-flex items-center justify-center w-10 h-10 rounded-full font-bold
-                        ${isRed ? 'bg-red-600' : isBlack ? 'bg-gray-900 border border-gray-600' : 'bg-green-600'}
-                      `}>
-                        {num}
-                      </div>
-                    </td>
-                    
-                    {/* Color */}
-                    <td className="p-2 text-center">
-                      <span className={`
-                        px-2 py-1 rounded text-xs font-bold
-                        ${isRed ? 'bg-red-600/30 text-red-400' :
-                          isBlack ? 'bg-gray-600/30 text-gray-300' :
-                          'bg-green-600/30 text-green-400'}
-                      `}>
-                        {isRed ? 'R' : isBlack ? 'B' : 'G'}
-                      </span>
-                    </td>
-                    
-                    {/* Even/Odd */}
-                    <td className="p-2 text-center">
-                      <span className={`
-                        px-2 py-1 rounded text-xs font-bold
-                        ${spin.even_odd === 'even' ? 'bg-purple-600/30 text-purple-400' :
-                          spin.even_odd === 'odd' ? 'bg-cyan-600/30 text-cyan-400' :
-                          'bg-gray-600/30 text-gray-400'}
-                      `}>
-                        {spin.even_odd === 'even' ? 'E' : spin.even_odd === 'odd' ? 'O' : '-'}
-                      </span>
-                    </td>
-                    
-                    {/* Low/High */}
-                    <td className="p-2 text-center">
-                      <span className={`
-                        px-2 py-1 rounded text-xs font-bold
-                        ${spin.low_high === 'low' ? 'bg-amber-700/30 text-amber-400' :
-                          spin.low_high === 'high' ? 'bg-gray-600/30 text-gray-300' :
-                          'bg-gray-600/30 text-gray-400'}
-                      `}>
-                        {spin.low_high === 'low' ? 'L' : spin.low_high === 'high' ? 'H' : '-'}
-                      </span>
-                    </td>
-                    
-                    {/* Column */}
-                    <td className="p-2 text-center">
-                      <span className={`
-                        px-3 py-1 rounded text-xs font-bold
-                        ${spin.column_num === 1 ? 'bg-orange-600/30 text-orange-400' :
-                          spin.column_num === 2 ? 'bg-teal-600/30 text-teal-400' :
-                          spin.column_num === 3 ? 'bg-lime-600/30 text-lime-400' :
-                          'bg-gray-600/30 text-gray-400'}
-                      `}>
-                        {spin.column_num > 0 ? `${spin.column_num}st` : '-'}
-                      </span>
-                    </td>
-                    
-                    {/* Dozen */}
-                    <td className="p-2 text-center">
-                      <span className={`
-                        px-2 py-1 rounded text-xs font-bold
-                        ${spin.dozen === 'first' ? 'bg-red-700/30 text-red-400' :
-                          spin.dozen === 'second' ? 'bg-cyan-700/30 text-cyan-400' :
-                          spin.dozen === 'third' ? 'bg-green-700/30 text-green-400' :
-                          'bg-gray-600/30 text-gray-400'}
-                      `}>
-                        {spin.dozen === 'first' ? '1st' : 
-                         spin.dozen === 'second' ? '2nd' : 
-                         spin.dozen === 'third' ? '3rd' : '-'}
-                      </span>
-                    </td>
-                    
-                    {/* Alt 1 (Streets A/B) */}
-                    <td className="p-2 text-center">
-                      <span className={`
-                        px-2 py-1 rounded text-xs font-bold
-                        ${alt1 === 'A' ? 'bg-emerald-600/30 text-emerald-400' :
-                          alt1 === 'B' ? 'bg-pink-600/30 text-pink-400' :
-                          'bg-gray-600/30 text-gray-400'}
-                      `}>
-                        {alt1}
-                      </span>
-                    </td>
-                    
-                    {/* Alt 2 (Streets AA/BB) */}
-                    <td className="p-2 text-center">
-                      <span className={`
-                        px-2 py-1 rounded text-xs font-bold
-                        ${alt2 === 'AA' ? 'bg-lime-700/30 text-lime-400' :
-                          alt2 === 'BB' ? 'bg-purple-700/30 text-purple-400' :
-                          'bg-gray-600/30 text-gray-400'}
-                      `}>
-                        {alt2}
-                      </span>
-                    </td>
-                    
-                    {/* Alt 3 (Streets AAA/BBB) */}
-                    <td className="p-2 text-center">
-                      <span className={`
-                        px-2 py-1 rounded text-xs font-bold
-                        ${alt3 === 'AAA' ? 'bg-blue-600/30 text-blue-400' :
-                          alt3 === 'BBB' ? 'bg-yellow-700/30 text-yellow-400' :
-                          'bg-gray-600/30 text-gray-400'}
-                      `}>
-                        {alt3}
-                      </span>
-                    </td>
-                    
-                    {/* Edge/Center */}
-                    <td className="p-2 text-center">
-                      <span className={`
-                        px-2 py-1 rounded text-xs font-bold
-                        ${edgeCenter === 'E' ? 'bg-purple-600/30 text-purple-400' :
-                          edgeCenter === 'C' ? 'bg-orange-600/30 text-orange-400' :
-                          'bg-gray-600/30 text-gray-400'}
-                      `}>
-                        {edgeCenter}
-                      </span>
-                    </td>
-                    
-                    {/* Six's */}
-                    <td className="p-2 text-center">
-                      <span className={`
-                        px-2 py-1 rounded text-xs font-bold
-                        ${sixGroup === '1st' || sixGroup === '6th' ? 'bg-red-700/30 text-red-400' :
-                          sixGroup === '2nd' || sixGroup === '5th' ? 'bg-blue-700/30 text-blue-400' :
-                          sixGroup === '3rd' || sixGroup === '4th' ? 'bg-green-700/30 text-green-400' :
-                          'bg-gray-600/30 text-gray-400'}
-                      `}>
-                        {sixGroup}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Visual Roulette Wheel Layout Reference */}
-        <div className="mt-6 p-4 bg-gray-800 rounded-lg">
-          <h3 className="text-sm font-bold text-gray-400 mb-3">Wheel Layout Reference</h3>
-          <div className="grid grid-cols-12 gap-1 text-xs">
-            <div className="col-span-12 bg-green-600 text-center py-2 rounded">0</div>
-            {[3,6,9,12,15,18,21,24,27,30,33,36].map(n => (
-              <div key={n} className="bg-red-600 text-center py-2 rounded">{n}</div>
-            ))}
-            {[2,5,8,11,14,17,20,23,26,29,32,35].map(n => (
-              <div key={n} className="bg-gray-900 text-center py-2 rounded border border-gray-600">{n}</div>
-            ))}
-            {[1,4,7,10,13,16,19,22,25,28,31,34].map(n => (
-              <div key={n} className="bg-red-600 text-center py-2 rounded">{n}</div>
-            ))}
-          </div>
-        </div>
-      </>
-    )}
-  </div>
-)}
+                  {/* Comprehensive History Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b-2 border-gray-600">
+                          <th className="p-2 text-center font-bold bg-gray-700">NUM</th>
+                          <th className="p-2 text-center bg-gray-700">COLOR</th>
+                          <th className="p-2 text-center bg-gray-700">E/O</th>
+                          <th className="p-2 text-center bg-gray-700">L/H</th>
+                          <th className="p-2 text-center bg-gray-700">COL</th>
+                          <th className="p-2 text-center bg-gray-700">DOZ</th>
+                          <th className="p-2 text-center bg-gray-700">ALT 1</th>
+                          <th className="p-2 text-center bg-gray-700">ALT 2</th>
+                          <th className="p-2 text-center bg-gray-700">ALT 3</th>
+                          <th className="p-2 text-center bg-gray-700">E/C</th>
+                          <th className="p-2 text-center bg-gray-700">SIX'S</th>
+                        </tr>
+                        <tr className="text-xs text-gray-400 border-b border-gray-700">
+                          <th className="p-1"></th>
+                          <th className="p-1">Red/Black</th>
+                          <th className="p-1">Even/Odd</th>
+                          <th className="p-1">Low/High</th>
+                          <th className="p-1">Column</th>
+                          <th className="p-1">Dozen</th>
+                          <th className="p-1">Streets</th>
+                          <th className="p-1">Alt Streets</th>
+                          <th className="p-1">Alt Streets</th>
+                          <th className="p-1">Edge/Center</th>
+                          <th className="p-1">Six Lines</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {spins.map((spin, index) => {
+                          const num = spin.number
+                          const isRed = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(num)
+                          const isBlack = [2,4,6,8,10,11,13,15,17,20,22,24,26,28,29,31,33,35].includes(num)
+                          
+                          // Calculate all betting groups
+                          const alt1 = num === 0 ? '-' : 
+                            [1,2,3,7,8,9,13,14,15,19,20,21,25,26,27,31,32,33].includes(num) ? 'A' : 'B'
+                          
+                          const alt2 = num === 0 ? '-' :
+                            [1,2,3,4,5,6,13,14,15,16,17,18,25,26,27,28,29,30].includes(num) ? 'AA' : 'BB'
+                          
+                          const alt3 = num === 0 ? '-' :
+                            [1,2,3,4,5,6,7,8,9,19,20,21,22,23,24,25,26,27].includes(num) ? 'AAA' : 'BBB'
+                          
+                          const edgeCenter = num === 0 ? '-' :
+                            [10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27].includes(num) ? 'C' : 'E'
+                          
+                          const sixGroup = num === 0 ? '-' :
+                            num <= 6 ? '1st' :
+                            num <= 12 ? '2nd' :
+                            num <= 18 ? '3rd' :
+                            num <= 24 ? '4th' :
+                            num <= 30 ? '5th' : '6th'
+                          
+                          return (
+                            <tr key={spin.id || index} className="border-b border-gray-700/50 hover:bg-gray-800/50">
+                              {/* Number with color background */}
+                              <td className="p-2 text-center">
+                                <div className={`
+                                  inline-flex items-center justify-center w-10 h-10 rounded-full font-bold
+                                  ${isRed ? 'bg-red-600' : isBlack ? 'bg-gray-900 border border-gray-600' : 'bg-green-600'}
+                                `}>
+                                  {num}
+                                </div>
+                              </td>
+                              
+                              {/* Color */}
+                              <td className="p-2 text-center">
+                                <span className={`
+                                  px-2 py-1 rounded text-xs font-bold
+                                  ${isRed ? 'bg-red-600/30 text-red-400' :
+                                    isBlack ? 'bg-gray-600/30 text-gray-300' :
+                                    'bg-green-600/30 text-green-400'}
+                                `}>
+                                  {isRed ? 'R' : isBlack ? 'B' : 'G'}
+                                </span>
+                              </td>
+                              
+                              {/* Even/Odd */}
+                              <td className="p-2 text-center">
+                                <span className={`
+                                  px-2 py-1 rounded text-xs font-bold
+                                  ${spin.even_odd === 'even' ? 'bg-purple-600/30 text-purple-400' :
+                                    spin.even_odd === 'odd' ? 'bg-cyan-600/30 text-cyan-400' :
+                                    'bg-gray-600/30 text-gray-400'}
+                                `}>
+                                  {spin.even_odd === 'even' ? 'E' : spin.even_odd === 'odd' ? 'O' : '-'}
+                                </span>
+                              </td>
+                              
+                              {/* Low/High */}
+                              <td className="p-2 text-center">
+                                <span className={`
+                                  px-2 py-1 rounded text-xs font-bold
+                                  ${spin.low_high === 'low' ? 'bg-amber-700/30 text-amber-400' :
+                                    spin.low_high === 'high' ? 'bg-gray-600/30 text-gray-300' :
+                                    'bg-gray-600/30 text-gray-400'}
+                                `}>
+                                  {spin.low_high === 'low' ? 'L' : spin.low_high === 'high' ? 'H' : '-'}
+                                </span>
+                              </td>
+                              
+                              {/* Column */}
+                              <td className="p-2 text-center">
+                                <span className={`
+                                  px-3 py-1 rounded text-xs font-bold
+                                  ${spin.column_num === 1 ? 'bg-orange-600/30 text-orange-400' :
+                                    spin.column_num === 2 ? 'bg-teal-600/30 text-teal-400' :
+                                    spin.column_num === 3 ? 'bg-lime-600/30 text-lime-400' :
+                                    'bg-gray-600/30 text-gray-400'}
+                                `}>
+                                  {spin.column_num > 0 ? `${spin.column_num}st` : '-'}
+                                </span>
+                              </td>
+                              
+                              {/* Dozen */}
+                              <td className="p-2 text-center">
+                                <span className={`
+                                  px-2 py-1 rounded text-xs font-bold
+                                  ${spin.dozen === 'first' ? 'bg-red-700/30 text-red-400' :
+                                    spin.dozen === 'second' ? 'bg-cyan-700/30 text-cyan-400' :
+                                    spin.dozen === 'third' ? 'bg-green-700/30 text-green-400' :
+                                    'bg-gray-600/30 text-gray-400'}
+                                `}>
+                                  {spin.dozen === 'first' ? '1st' : 
+                                   spin.dozen === 'second' ? '2nd' : 
+                                   spin.dozen === 'third' ? '3rd' : '-'}
+                                </span>
+                              </td>
+                              
+                              {/* Alt 1 (Streets A/B) */}
+                              <td className="p-2 text-center">
+                                <span className={`
+                                  px-2 py-1 rounded text-xs font-bold
+                                  ${alt1 === 'A' ? 'bg-emerald-600/30 text-emerald-400' :
+                                    alt1 === 'B' ? 'bg-pink-600/30 text-pink-400' :
+                                    'bg-gray-600/30 text-gray-400'}
+                                `}>
+                                  {alt1}
+                                </span>
+                              </td>
+                              
+                              {/* Alt 2 (Streets AA/BB) */}
+                              <td className="p-2 text-center">
+                                <span className={`
+                                  px-2 py-1 rounded text-xs font-bold
+                                  ${alt2 === 'AA' ? 'bg-lime-700/30 text-lime-400' :
+                                    alt2 === 'BB' ? 'bg-purple-700/30 text-purple-400' :
+                                    'bg-gray-600/30 text-gray-400'}
+                                `}>
+                                  {alt2}
+                                </span>
+                              </td>
+                              
+                              {/* Alt 3 (Streets AAA/BBB) */}
+                              <td className="p-2 text-center">
+                                <span className={`
+                                  px-2 py-1 rounded text-xs font-bold
+                                  ${alt3 === 'AAA' ? 'bg-blue-600/30 text-blue-400' :
+                                    alt3 === 'BBB' ? 'bg-yellow-700/30 text-yellow-400' :
+                                    'bg-gray-600/30 text-gray-400'}
+                                `}>
+                                  {alt3}
+                                </span>
+                              </td>
+                              
+                              {/* Edge/Center */}
+                              <td className="p-2 text-center">
+                                <span className={`
+                                  px-2 py-1 rounded text-xs font-bold
+                                  ${edgeCenter === 'E' ? 'bg-purple-600/30 text-purple-400' :
+                                    edgeCenter === 'C' ? 'bg-orange-600/30 text-orange-400' :
+                                    'bg-gray-600/30 text-gray-400'}
+                                `}>
+                                  {edgeCenter}
+                                </span>
+                              </td>
+                              
+                              {/* Six's */}
+                              <td className="p-2 text-center">
+                                <span className={`
+                                  px-2 py-1 rounded text-xs font-bold
+                                  ${sixGroup === '1st' || sixGroup === '6th' ? 'bg-red-700/30 text-red-400' :
+                                    sixGroup === '2nd' || sixGroup === '5th' ? 'bg-blue-700/30 text-blue-400' :
+                                    sixGroup === '3rd' || sixGroup === '4th' ? 'bg-green-700/30 text-green-400' :
+                                    'bg-gray-600/30 text-gray-400'}
+                                `}>
+                                  {sixGroup}
+                                </span>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           {activeTab === 'stats' && (
             <div className="space-y-6">
