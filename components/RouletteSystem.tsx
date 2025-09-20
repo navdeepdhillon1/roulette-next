@@ -561,430 +561,737 @@ export default function RouletteSystem() {
           </div>
         </div>
 
-        {/* Comprehensive Tracking Table */}
+        {/* Complete Statistical Tracking Table */}
         <div className="bg-gray-700 rounded-lg overflow-hidden">
           <div className="bg-gradient-to-r from-green-700 to-green-900 text-white p-4">
-            <h3 className="text-xl font-bold">Comprehensive Statistical Tracking</h3>
+            <h3 className="text-xl font-bold">Complete Statistical Analysis & Tracking</h3>
           </div>
           
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead className="bg-gray-800">
                 <tr>
-                  <th rowSpan={2} className="text-left py-2 px-3 font-semibold text-gray-300 border-r border-gray-600">
+                  <th rowSpan={2} className="text-left py-1 px-2 font-semibold text-gray-300 border-r border-gray-600">
                     Group
                   </th>
-                  <th colSpan={4} className="text-center py-2 px-2 font-semibold text-green-400 border-r border-gray-600">
+                  <th colSpan={4} className="text-center py-1 px-1 font-semibold text-green-400 border-r border-gray-600">
                     Hit Count
                   </th>
-                  <th colSpan={2} className="text-center py-2 px-2 font-semibold text-purple-400 border-r border-gray-600">
+                  <th colSpan={2} className="text-center py-1 px-1 font-semibold text-purple-400 border-r border-gray-600">
                     Absence
                   </th>
-                  <th colSpan={2} className="text-center py-2 px-2 font-semibold text-green-400 border-r border-gray-600">
-                    Consecutive
+                  <th colSpan={2} className="text-center py-1 px-1 font-semibold text-green-400 border-r border-gray-600">
+                    Consec
                   </th>
-                  <th rowSpan={2} className="text-center py-2 px-2 font-semibold text-blue-400">
-                    Spins<br/>Ago
+                  <th rowSpan={2} className="text-center py-1 px-1 font-semibold text-blue-400 border-r border-gray-600">
+                    Last<br/>Spin
+                  </th>
+                  <th rowSpan={2} className="text-center py-1 px-2 font-semibold text-yellow-400 border-r border-gray-600">
+                    %
+                  </th>
+                  <th rowSpan={2} className="text-center py-1 px-2 font-semibold text-gray-400 border-r border-gray-600">
+                    Exp%
+                  </th>
+                  <th rowSpan={2} className="text-center py-1 px-2 font-semibold text-cyan-400 border-r border-gray-600">
+                    Dev
+                  </th>
+                  <th rowSpan={2} className="text-center py-1 px-2 font-semibold text-gray-300">
+                    Status
                   </th>
                 </tr>
                 <tr className="border-t border-gray-600">
-                  <th className="text-center py-2 px-2 font-semibold text-gray-400">L9</th>
-                  <th className="text-center py-2 px-2 font-semibold text-gray-400">L18</th>
-                  <th className="text-center py-2 px-2 font-semibold text-gray-400">L27</th>
-                  <th className="text-center py-2 px-2 font-semibold text-gray-400 border-r border-gray-600">L36</th>
-                  <th className="text-center py-2 px-2 font-semibold text-gray-400">Now</th>
-                  <th className="text-center py-2 px-2 font-semibold text-gray-400 border-r border-gray-600">Max</th>
-                  <th className="text-center py-2 px-2 font-semibold text-gray-400">Now</th>
-                  <th className="text-center py-2 px-2 font-semibold text-gray-400 border-r border-gray-600">Max</th>
+                  <th className="text-center py-1 px-1 text-gray-400">L9</th>
+                  <th className="text-center py-1 px-1 text-gray-400">L18</th>
+                  <th className="text-center py-1 px-1 text-gray-400">L27</th>
+                  <th className="text-center py-1 px-1 text-gray-400 border-r border-gray-600">L36</th>
+                  <th className="text-center py-1 px-1 text-gray-400">Now</th>
+                  <th className="text-center py-1 px-1 text-gray-400 border-r border-gray-600">Max</th>
+                  <th className="text-center py-1 px-1 text-gray-400">Now</th>
+                  <th className="text-center py-1 px-1 text-gray-400 border-r border-gray-600">Max</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-600">
                 {/* Red */}
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-red-400 border-r border-gray-600">Red</td>
-                  <td className="text-center py-2 px-2 text-gray-300">4</td>
-                  <td className="text-center py-2 px-2 text-gray-300">7</td>
-                  <td className="text-center py-2 px-2 text-gray-300">7</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">7</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">12</td>
-                  <td className="text-center py-2 px-2 text-green-400">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">10</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">0</td>
+                  <td className="py-1 px-2 font-medium text-red-400 border-r border-gray-600">Red</td>
+                  <td className="text-center py-1 px-1">4</td>
+                  <td className="text-center py-1 px-1">7</td>
+                  <td className="text-center py-1 px-1">7</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">7</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">12</td>
+                  <td className="text-center py-1 px-1 text-green-400">2</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">10</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
+                    {(stats.reds / spins.length * 100).toFixed(1)}
+                  </td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className={stats.reds / spins.length > 0.486 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.reds / spins.length * 100) - 48.6).toFixed(1)}
+                    </span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-orange-900/50 text-orange-400">
+                      HOT
+                    </span>
+                  </td>
                 </tr>
 
                 {/* Black */}
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-gray-300 border-r border-gray-600">Black</td>
-                  <td className="text-center py-2 px-2 text-gray-300">5</td>
-                  <td className="text-center py-2 px-2 text-gray-300">8</td>
-                  <td className="text-center py-2 px-2 text-gray-300">9</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">10</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">8</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">7</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">2</td>
+                  <td className="py-1 px-2 font-medium text-gray-300 border-r border-gray-600">Black</td>
+                  <td className="text-center py-1 px-1">5</td>
+                  <td className="text-center py-1 px-1">8</td>
+                  <td className="text-center py-1 px-1">9</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">10</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">2</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">8</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">7</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">2</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
+                    {(stats.blacks / spins.length * 100).toFixed(1)}
+                  </td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className={stats.blacks / spins.length > 0.486 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.blacks / spins.length * 100) - 48.6).toFixed(1)}
+                    </span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/50 text-blue-400">
+                      COLD
+                    </span>
+                  </td>
                 </tr>
 
                 {/* Green */}
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-green-400 border-r border-gray-600">Green (0)</td>
-                  <td className="text-center py-2 px-2 text-gray-300">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300">1</td>
-                  <td className="text-center py-2 px-2 text-gray-300">1</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">1</td>
-                  <td className="text-center py-2 px-2 text-orange-400">18</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">42</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">1</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">18</td>
+                  <td className="py-1 px-2 font-medium text-green-400 border-r border-gray-600">Green</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1">1</td>
+                  <td className="text-center py-1 px-1">1</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">1</td>
+                  <td className="text-center py-1 px-1 text-orange-400">18</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">42</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">1</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">18</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
+                    {(stats.greens / spins.length * 100).toFixed(1)}
+                  </td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">2.7</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className={stats.greens / spins.length > 0.027 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.greens / spins.length * 100) - 2.7).toFixed(1)}
+                    </span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+                      NORM
+                    </span>
+                  </td>
                 </tr>
 
                 {/* Even/Odd */}
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-purple-400 border-r border-gray-600">Even</td>
-                  <td className="text-center py-2 px-2 text-gray-300">4</td>
-                  <td className="text-center py-2 px-2 text-gray-300">8</td>
-                  <td className="text-center py-2 px-2 text-gray-300">11</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">14</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">1</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">6</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">4</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">1</td>
+                  <td className="py-1 px-2 font-medium text-purple-400 border-r border-gray-600">Even</td>
+                  <td className="text-center py-1 px-1">4</td>
+                  <td className="text-center py-1 px-1">8</td>
+                  <td className="text-center py-1 px-1">11</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">14</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">1</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">4</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">1</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
+                    {(stats.evens / spins.length * 100).toFixed(1)}
+                  </td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className={stats.evens / spins.length > 0.486 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.evens / spins.length * 100) - 48.6).toFixed(1)}
+                    </span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/50 text-blue-400">
+                      COLD
+                    </span>
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-cyan-400 border-r border-gray-600">Odd</td>
-                  <td className="text-center py-2 px-2 text-gray-300">5</td>
-                  <td className="text-center py-2 px-2 text-gray-300">9</td>
-                  <td className="text-center py-2 px-2 text-gray-300">13</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">15</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">5</td>
-                  <td className="text-center py-2 px-2 text-green-400">1</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">5</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">0</td>
+                  <td className="py-1 px-2 font-medium text-cyan-400 border-r border-gray-600">Odd</td>
+                  <td className="text-center py-1 px-1">5</td>
+                  <td className="text-center py-1 px-1">9</td>
+                  <td className="text-center py-1 px-1">13</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">15</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
+                  <td className="text-center py-1 px-1 text-green-400">1</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
+                    {(stats.odds / spins.length * 100).toFixed(1)}
+                  </td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className={stats.odds / spins.length > 0.486 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.odds / spins.length * 100) - 48.6).toFixed(1)}
+                    </span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+                      NORM
+                    </span>
+                  </td>
                 </tr>
 
                 {/* High/Low */}
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-amber-400 border-r border-gray-600">1-18 (Low)</td>
-                  <td className="text-center py-2 px-2 text-gray-300">3</td>
-                  <td className="text-center py-2 px-2 text-gray-300">7</td>
-                  <td className="text-center py-2 px-2 text-gray-300">10</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">12</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">3</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">7</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">3</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">3</td>
+                  <td className="py-1 px-2 font-medium text-amber-400 border-r border-gray-600">1-18</td>
+                  <td className="text-center py-1 px-1">3</td>
+                  <td className="text-center py-1 px-1">7</td>
+                  <td className="text-center py-1 px-1">10</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">12</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">3</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">7</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">3</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">3</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
+                    {(stats.lows / spins.length * 100).toFixed(1)}
+                  </td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className={stats.lows / spins.length > 0.486 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.lows / spins.length * 100) - 48.6).toFixed(1)}
+                    </span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/50 text-blue-400">
+                      COLD
+                    </span>
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-gray-300 border-r border-gray-600">19-36 (High)</td>
-                  <td className="text-center py-2 px-2 text-gray-300">6</td>
-                  <td className="text-center py-2 px-2 text-gray-300">10</td>
-                  <td className="text-center py-2 px-2 text-gray-300">13</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">15</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">5</td>
-                  <td className="text-center py-2 px-2 text-green-400">3</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">6</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">0</td>
+                  <td className="py-1 px-2 font-medium text-gray-300 border-r border-gray-600">19-36</td>
+                  <td className="text-center py-1 px-1">6</td>
+                  <td className="text-center py-1 px-1">10</td>
+                  <td className="text-center py-1 px-1">13</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">15</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
+                  <td className="text-center py-1 px-1 text-green-400">3</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
+                    {(stats.highs / spins.length * 100).toFixed(1)}
+                  </td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className={stats.highs / spins.length > 0.486 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.highs / spins.length * 100) - 48.6).toFixed(1)}
+                    </span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-orange-900/50 text-orange-400">
+                      HOT
+                    </span>
+                  </td>
                 </tr>
 
                 {/* Dozens */}
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-red-500 border-r border-gray-600">1st Dozen</td>
-                  <td className="text-center py-2 px-2 text-gray-300">3</td>
-                  <td className="text-center py-2 px-2 text-gray-300">5</td>
-                  <td className="text-center py-2 px-2 text-gray-300">7</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">8</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">15</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">2</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">2</td>
+                  <td className="py-1 px-2 font-medium text-red-500 border-r border-gray-600">1st Doz</td>
+                  <td className="text-center py-1 px-1">3</td>
+                  <td className="text-center py-1 px-1">5</td>
+                  <td className="text-center py-1 px-1">7</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">8</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">2</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">15</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">2</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">2</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
+                    {(stats.firstDozen / spins.length * 100).toFixed(1)}
+                  </td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">32.4</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className={stats.firstDozen / spins.length > 0.324 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.firstDozen / spins.length * 100) - 32.4).toFixed(1)}
+                    </span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+                      NORM
+                    </span>
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-cyan-500 border-r border-gray-600">2nd Dozen</td>
-                  <td className="text-center py-2 px-2 text-gray-300">4</td>
-                  <td className="text-center py-2 px-2 text-gray-300">6</td>
-                  <td className="text-center py-2 px-2 text-gray-300">9</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">11</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">10</td>
-                  <td className="text-center py-2 px-2 text-green-400">1</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">3</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">0</td>
+                  <td className="py-1 px-2 font-medium text-cyan-500 border-r border-gray-600">2nd Doz</td>
+                  <td className="text-center py-1 px-1">4</td>
+                  <td className="text-center py-1 px-1">6</td>
+                  <td className="text-center py-1 px-1">9</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">11</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">10</td>
+                  <td className="text-center py-1 px-1 text-green-400">1</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">3</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
+                    {(stats.secondDozen / spins.length * 100).toFixed(1)}
+                  </td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">32.4</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className={stats.secondDozen / spins.length > 0.324 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.secondDozen / spins.length * 100) - 32.4).toFixed(1)}
+                    </span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-orange-900/50 text-orange-400">
+                      HOT
+                    </span>
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-green-500 border-r border-gray-600">3rd Dozen</td>
-                  <td className="text-center py-2 px-2 text-gray-300">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300">4</td>
-                  <td className="text-center py-2 px-2 text-gray-300">5</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">6</td>
-                  <td className="text-center py-2 px-2 text-red-400 font-bold">12</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">18</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">1</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">12</td>
+                  <td className="py-1 px-2 font-medium text-green-500 border-r border-gray-600">3rd Doz</td>
+                  <td className="text-center py-1 px-1">2</td>
+                  <td className="text-center py-1 px-1">4</td>
+                  <td className="text-center py-1 px-1">5</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
+                  <td className="text-center py-1 px-1 text-red-400 font-bold">12</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">18</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">1</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">12</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
+                    {(stats.thirdDozen / spins.length * 100).toFixed(1)}
+                  </td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">32.4</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className="text-red-400">
+                      {((stats.thirdDozen / spins.length * 100) - 32.4).toFixed(1)}
+                    </span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-red-900/50 text-red-400">
+                      ALERT
+                    </span>
+                  </td>
                 </tr>
 
                 {/* Columns */}
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-orange-400 border-r border-gray-600">1st Column</td>
-                  <td className="text-center py-2 px-2 text-gray-300">3</td>
-                  <td className="text-center py-2 px-2 text-gray-300">5</td>
-                  <td className="text-center py-2 px-2 text-gray-300">8</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">9</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">1</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">9</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">2</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">1</td>
+                  <td className="py-1 px-2 font-medium text-orange-400 border-r border-gray-600">1st Col</td>
+                  <td className="text-center py-1 px-1">3</td>
+                  <td className="text-center py-1 px-1">5</td>
+                  <td className="text-center py-1 px-1">8</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">9</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">1</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">9</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">2</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">1</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
+                    {(stats.col1 / spins.length * 100).toFixed(1)}
+                  </td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">32.4</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className={stats.col1 / spins.length > 0.324 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.col1 / spins.length * 100) - 32.4).toFixed(1)}
+                    </span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+                      NORM
+                    </span>
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-teal-400 border-r border-gray-600">2nd Column</td>
-                  <td className="text-center py-2 px-2 text-gray-300">3</td>
-                  <td className="text-center py-2 px-2 text-gray-300">6</td>
-                  <td className="text-center py-2 px-2 text-gray-300">8</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">10</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">7</td>
-                  <td className="text-center py-2 px-2 text-green-400">1</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">3</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">0</td>
+                  <td className="py-1 px-2 font-medium text-teal-400 border-r border-gray-600">2nd Col</td>
+                  <td className="text-center py-1 px-1">3</td>
+                  <td className="text-center py-1 px-1">6</td>
+                  <td className="text-center py-1 px-1">8</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">10</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">7</td>
+                  <td className="text-center py-1 px-1 text-green-400">1</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">3</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
+                    {(stats.col2 / spins.length * 100).toFixed(1)}
+                  </td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">32.4</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className={stats.col2 / spins.length > 0.324 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.col2 / spins.length * 100) - 32.4).toFixed(1)}
+                    </span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+                      NORM
+                    </span>
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-lime-400 border-r border-gray-600">3rd Column</td>
-                  <td className="text-center py-2 px-2 text-gray-300">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300">4</td>
-                  <td className="text-center py-2 px-2 text-gray-300">5</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">6</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">4</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">11</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">1</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">4</td>
+                  <td className="py-1 px-2 font-medium text-lime-400 border-r border-gray-600">3rd Col</td>
+                  <td className="text-center py-1 px-1">2</td>
+                  <td className="text-center py-1 px-1">4</td>
+                  <td className="text-center py-1 px-1">5</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">4</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">11</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">1</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">4</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">
+                    {(stats.col3 / spins.length * 100).toFixed(1)}
+                  </td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">32.4</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className={stats.col3 / spins.length > 0.324 ? 'text-green-400' : 'text-red-400'}>
+                      {((stats.col3 / spins.length * 100) - 32.4).toFixed(1)}
+                    </span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/50 text-blue-400">
+                      COLD
+                    </span>
+                  </td>
                 </tr>
 
-                {/* Additional Groups */}
+                {/* Alternative Groups */}
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-pink-400 border-r border-gray-600">Streets A</td>
-                  <td className="text-center py-2 px-2 text-gray-300">4</td>
-                  <td className="text-center py-2 px-2 text-gray-300">7</td>
-                  <td className="text-center py-2 px-2 text-gray-300">10</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">12</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">8</td>
-                  <td className="text-center py-2 px-2 text-green-400">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">4</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">0</td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-emerald-400 border-r border-gray-600">Streets B</td>
-                  <td className="text-center py-2 px-2 text-gray-300">5</td>
-                  <td className="text-center py-2 px-2 text-gray-300">9</td>
-                  <td className="text-center py-2 px-2 text-gray-300">11</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">13</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">7</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">3</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">2</td>
-                </tr>
-
-                {/* Alt Groups */}
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-indigo-400 border-r border-gray-600">Alt1 A</td>
-                  <td className="text-center py-2 px-2 text-gray-300">5</td>
-                  <td className="text-center py-2 px-2 text-gray-300">8</td>
-                  <td className="text-center py-2 px-2 text-gray-300">11</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">14</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">1</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">6</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">3</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">1</td>
+                  <td className="py-1 px-2 font-medium text-indigo-400 border-r border-gray-600">Alt1 A</td>
+                  <td className="text-center py-1 px-1">5</td>
+                  <td className="text-center py-1 px-1">8</td>
+                  <td className="text-center py-1 px-1">11</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">14</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">1</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">3</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">1</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">48.2</td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className="text-red-400">-0.4</span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+                      NORM
+                    </span>
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-pink-400 border-r border-gray-600">Alt1 B</td>
-                  <td className="text-center py-2 px-2 text-gray-300">4</td>
-                  <td className="text-center py-2 px-2 text-gray-300">9</td>
-                  <td className="text-center py-2 px-2 text-gray-300">12</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">13</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">7</td>
-                  <td className="text-center py-2 px-2 text-green-400">1</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">4</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">0</td>
+                  <td className="py-1 px-2 font-medium text-pink-400 border-r border-gray-600">Alt1 B</td>
+                  <td className="text-center py-1 px-1">4</td>
+                  <td className="text-center py-1 px-1">9</td>
+                  <td className="text-center py-1 px-1">12</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">13</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">7</td>
+                  <td className="text-center py-1 px-1 text-green-400">1</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">4</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">49.1</td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className="text-green-400">+0.5</span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+                      NORM
+                    </span>
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-lime-500 border-r border-gray-600">Alt2 AA</td>
-                  <td className="text-center py-2 px-2 text-gray-300">4</td>
-                  <td className="text-center py-2 px-2 text-gray-300">7</td>
-                  <td className="text-center py-2 px-2 text-gray-300">10</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">12</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">8</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">2</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">2</td>
+                  <td className="py-1 px-2 font-medium text-lime-500 border-r border-gray-600">Alt2 AA</td>
+                  <td className="text-center py-1 px-1">4</td>
+                  <td className="text-center py-1 px-1">7</td>
+                  <td className="text-center py-1 px-1">10</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">12</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">2</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">8</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">2</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">2</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">47.8</td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className="text-red-400">-0.8</span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+                      NORM
+                    </span>
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-purple-500 border-r border-gray-600">Alt2 BB</td>
-                  <td className="text-center py-2 px-2 text-gray-300">5</td>
-                  <td className="text-center py-2 px-2 text-gray-300">10</td>
-                  <td className="text-center py-2 px-2 text-gray-300">13</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">15</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">6</td>
-                  <td className="text-center py-2 px-2 text-green-400">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">5</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">0</td>
+                  <td className="py-1 px-2 font-medium text-purple-500 border-r border-gray-600">Alt2 BB</td>
+                  <td className="text-center py-1 px-1">5</td>
+                  <td className="text-center py-1 px-1">10</td>
+                  <td className="text-center py-1 px-1">13</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">15</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
+                  <td className="text-center py-1 px-1 text-green-400">2</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">50.2</td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className="text-green-400">+1.6</span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-orange-900/50 text-orange-400">
+                      HOT
+                    </span>
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-blue-400 border-r border-gray-600">Alt3 AAA</td>
-                  <td className="text-center py-2 px-2 text-gray-300">6</td>
-                  <td className="text-center py-2 px-2 text-gray-300">9</td>
-                  <td className="text-center py-2 px-2 text-gray-300">11</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">13</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">5</td>
-                  <td className="text-center py-2 px-2 text-green-400">1</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">3</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">0</td>
+                  <td className="py-1 px-2 font-medium text-blue-400 border-r border-gray-600">Alt3 AAA</td>
+                  <td className="text-center py-1 px-1">6</td>
+                  <td className="text-center py-1 px-1">9</td>
+                  <td className="text-center py-1 px-1">11</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">13</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
+                  <td className="text-center py-1 px-1 text-green-400">1</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">3</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">49.5</td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className="text-green-400">+0.9</span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+                      NORM
+                    </span>
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-yellow-500 border-r border-gray-600">Alt3 BBB</td>
-                  <td className="text-center py-2 px-2 text-gray-300">3</td>
-                  <td className="text-center py-2 px-2 text-gray-300">8</td>
-                  <td className="text-center py-2 px-2 text-gray-300">12</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">14</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">1</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">6</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">4</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">1</td>
+                  <td className="py-1 px-2 font-medium text-yellow-500 border-r border-gray-600">Alt3 BBB</td>
+                  <td className="text-center py-1 px-1">3</td>
+                  <td className="text-center py-1 px-1">8</td>
+                  <td className="text-center py-1 px-1">12</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">14</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">1</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">4</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">1</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">48.1</td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className="text-red-400">-0.5</span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+                      NORM
+                    </span>
+                  </td>
                 </tr>
 
                 {/* Edge/Center */}
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-purple-400 border-r border-gray-600">Edge (E)</td>
-                  <td className="text-center py-2 px-2 text-gray-300">4</td>
-                  <td className="text-center py-2 px-2 text-gray-300">8</td>
-                  <td className="text-center py-2 px-2 text-gray-300">11</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">13</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">7</td>
-                  <td className="text-center py-2 px-2 text-green-400">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">4</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">0</td>
+                  <td className="py-1 px-2 font-medium text-purple-400 border-r border-gray-600">Edge</td>
+                  <td className="text-center py-1 px-1">4</td>
+                  <td className="text-center py-1 px-1">8</td>
+                  <td className="text-center py-1 px-1">11</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">13</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">7</td>
+                  <td className="text-center py-1 px-1 text-green-400">2</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">4</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">48.9</td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className="text-green-400">+0.3</span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+                      NORM
+                    </span>
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-orange-500 border-r border-gray-600">Center (C)</td>
-                  <td className="text-center py-2 px-2 text-gray-300">5</td>
-                  <td className="text-center py-2 px-2 text-gray-300">9</td>
-                  <td className="text-center py-2 px-2 text-gray-300">12</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">14</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">1</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">5</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">3</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">1</td>
+                  <td className="py-1 px-2 font-medium text-orange-500 border-r border-gray-600">Center</td>
+                  <td className="text-center py-1 px-1">5</td>
+                  <td className="text-center py-1 px-1">9</td>
+                  <td className="text-center py-1 px-1">12</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">14</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">1</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">3</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">1</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">48.3</td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">48.6</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className="text-red-400">-0.3</span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+                      NORM
+                    </span>
+                  </td>
                 </tr>
 
-                {/* Sixes */}
+                {/* Six Groups */}
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-red-400 border-r border-gray-600">1st Six</td>
-                  <td className="text-center py-2 px-2 text-gray-300">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300">3</td>
-                  <td className="text-center py-2 px-2 text-gray-300">4</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">5</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">3</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">15</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">1</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">3</td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-blue-500 border-r border-gray-600">2nd Six</td>
-                  <td className="text-center py-2 px-2 text-gray-300">1</td>
-                  <td className="text-center py-2 px-2 text-gray-300">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300">3</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">4</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">12</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">1</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">2</td>
-                </tr>
-
-                <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-green-500 border-r border-gray-600">3rd Six</td>
-                  <td className="text-center py-2 px-2 text-gray-300">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300">3</td>
-                  <td className="text-center py-2 px-2 text-gray-300">5</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">6</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">10</td>
-                  <td className="text-center py-2 px-2 text-green-400">1</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">2</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">0</td>
+                  <td className="py-1 px-2 font-medium text-red-400 border-r border-gray-600">1st Six</td>
+                  <td className="text-center py-1 px-1">2</td>
+                  <td className="text-center py-1 px-1">3</td>
+                  <td className="text-center py-1 px-1">4</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">3</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">15</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">1</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">3</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">15.2</td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">16.2</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className="text-red-400">-1.0</span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+                      NORM
+                    </span>
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-green-500 border-r border-gray-600">4th Six</td>
-                  <td className="text-center py-2 px-2 text-gray-300">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300">4</td>
-                  <td className="text-center py-2 px-2 text-gray-300">5</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">6</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">1</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">11</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">2</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">1</td>
+                  <td className="py-1 px-2 font-medium text-blue-500 border-r border-gray-600">2nd Six</td>
+                  <td className="text-center py-1 px-1">1</td>
+                  <td className="text-center py-1 px-1">2</td>
+                  <td className="text-center py-1 px-1">3</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">4</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">2</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">12</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">1</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">2</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">14.8</td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">16.2</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className="text-red-400">-1.4</span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/50 text-blue-400">
+                      COLD
+                    </span>
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-blue-500 border-r border-gray-600">5th Six</td>
-                  <td className="text-center py-2 px-2 text-gray-300">1</td>
-                  <td className="text-center py-2 px-2 text-gray-300">3</td>
-                  <td className="text-center py-2 px-2 text-gray-300">4</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">5</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">4</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">14</td>
-                  <td className="text-center py-2 px-2 text-gray-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">1</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">4</td>
+                  <td className="py-1 px-2 font-medium text-green-500 border-r border-gray-600">3rd Six</td>
+                  <td className="text-center py-1 px-1">2</td>
+                  <td className="text-center py-1 px-1">3</td>
+                  <td className="text-center py-1 px-1">5</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">10</td>
+                  <td className="text-center py-1 px-1 text-green-400">1</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">2</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">17.5</td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">16.2</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className="text-green-400">+1.3</span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+                      NORM
+                    </span>
+                  </td>
                 </tr>
 
                 <tr className="hover:bg-gray-600/50 transition-colors">
-                  <td className="py-2 px-3 font-medium text-red-400 border-r border-gray-600">6th Six</td>
-                  <td className="text-center py-2 px-2 text-gray-300">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300">3</td>
-                  <td className="text-center py-2 px-2 text-gray-300">4</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">5</td>
-                  <td className="text-center py-2 px-2 text-yellow-400">0</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">9</td>
-                  <td className="text-center py-2 px-2 text-green-400">2</td>
-                  <td className="text-center py-2 px-2 text-gray-300 border-r border-gray-600">3</td>
-                  <td className="text-center py-2 px-2 text-blue-400 font-bold">0</td>
+                  <td className="py-1 px-2 font-medium text-green-500 border-r border-gray-600">4th Six</td>
+                  <td className="text-center py-1 px-1">2</td>
+                  <td className="text-center py-1 px-1">4</td>
+                  <td className="text-center py-1 px-1">5</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">6</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">1</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">11</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">2</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">1</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">16.8</td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">16.2</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className="text-green-400">+0.6</span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-gray-700 text-gray-300">
+                      NORM
+                    </span>
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-gray-600/50 transition-colors">
+                  <td className="py-1 px-2 font-medium text-blue-500 border-r border-gray-600">5th Six</td>
+                  <td className="text-center py-1 px-1">1</td>
+                  <td className="text-center py-1 px-1">3</td>
+                  <td className="text-center py-1 px-1">4</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">4</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">14</td>
+                  <td className="text-center py-1 px-1">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">1</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">4</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">15.1</td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">16.2</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className="text-red-400">-1.1</span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-blue-900/50 text-blue-400">
+                      COLD
+                    </span>
+                  </td>
+                </tr>
+
+                <tr className="hover:bg-gray-600/50 transition-colors">
+                  <td className="py-1 px-2 font-medium text-red-400 border-r border-gray-600">6th Six</td>
+                  <td className="text-center py-1 px-1">2</td>
+                  <td className="text-center py-1 px-1">3</td>
+                  <td className="text-center py-1 px-1">4</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">5</td>
+                  <td className="text-center py-1 px-1 text-yellow-400">0</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">9</td>
+                  <td className="text-center py-1 px-1 text-green-400">2</td>
+                  <td className="text-center py-1 px-1 border-r border-gray-600">3</td>
+                  <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">0</td>
+                  <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">17.2</td>
+                  <td className="text-center py-1 px-2 text-gray-400 border-r border-gray-600">16.2</td>
+                  <td className="text-center py-1 px-2 border-r border-gray-600">
+                    <span className="text-green-400">+1.0</span>
+                  </td>
+                  <td className="text-center py-1 px-2">
+                    <span className="px-1.5 py-0.5 rounded text-xs bg-orange-900/50 text-orange-400">
+                      HOT
+                    </span>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -1003,14 +1310,14 @@ export default function RouletteSystem() {
               <div className="text-xs text-gray-500">Green (0)</div>
             </div>
             <div className="bg-gray-800 p-3 rounded-lg">
-              <div className="text-xs text-gray-400">Max Consecutive</div>
-              <div className="text-xl font-bold text-green-400">10</div>
-              <div className="text-xs text-gray-500">Red numbers</div>
+              <div className="text-xs text-gray-400">Critical Alert</div>
+              <div className="text-xl font-bold text-orange-400">3rd Doz</div>
+              <div className="text-xs text-gray-500">12 spins missing</div>
             </div>
             <div className="bg-gray-800 p-3 rounded-lg">
-              <div className="text-xs text-gray-400">Anomalies</div>
-              <div className="text-xl font-bold text-orange-400">2</div>
-              <div className="text-xs text-gray-500">Detected</div>
+              <div className="text-xs text-gray-400">Hot Groups</div>
+              <div className="text-xl font-bold text-green-400">3</div>
+              <div className="text-xs text-gray-500">Above expected</div>
             </div>
           </div>
         </div>
