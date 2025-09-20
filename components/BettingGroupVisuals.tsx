@@ -1,4 +1,7 @@
-// Add this new component to your project as: components/BettingGroupVisuals.tsx
+//* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+
 
 'use client'
 
@@ -27,7 +30,7 @@ const VisualizationModal: React.FC<VisualizationModalProps> = ({ isOpen, onClose
   )
 }
 
-export const BettingGroupHeaders = ({ spins }: { spins: any[] }) => {
+export const BettingGroupHeaders = () => {
   const [activeModal, setActiveModal] = useState<string | null>(null)
 
   const TableLayout = ({ highlightNumbers, colorMap }: { highlightNumbers: number[], colorMap?: Record<string, number[]> }) => {
