@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { getNumberProperties, detectAnomalies, NUMBERS } from '@/lib/roulette-logic'
 import type { Session, Spin, Anomaly } from '@/lib/types'
 import BettingGroupVisuals from './BettingGroupVisuals';
+import GameAssistant from './GameAssistant';
 
 export default function RouletteSystem() {
   const [session, setSession] = useState<Session | null>(null)
@@ -14,7 +15,7 @@ export default function RouletteSystem() {
   const [anomalies, setAnomalies] = useState<Anomaly[]>([])
   const [inputNumber, setInputNumber] = useState('')
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'entry' | 'history' | 'anomalies' | 'stats'>('entry')
+  const [activeTab, setActiveTab] = useState<'entry' | 'history' | 'anomalies' | 'stats' | 'assistant'>('entry')
 
   useEffect(() => {
     initializeSession()
@@ -455,21 +456,21 @@ const groupStats = calculateGroupStats();
           </div>
         )}
 
-        <div className="flex gap-2 mb-6 overflow-x-auto">
-          {(['entry', 'history', 'stats', 'anomalies'] as const).map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-6 py-3 rounded-lg font-medium transition whitespace-nowrap ${
-                activeTab === tab
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                  : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
-              }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
+<div className="flex gap-2 mb-6 overflow-x-auto">
+{(['entry', 'history', 'stats', 'anomalies', 'assistant'] as const).map(tab => (
+    <button
+      key={tab}
+      onClick={() => setActiveTab(tab)}
+      className={`px-6 py-3 rounded-lg font-medium transition whitespace-nowrap ${
+        activeTab === tab
+          ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+          : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+      }`}
+    >
+      {tab === 'assistant' ? 'Game Assistant' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+    </button>
+  ))}
+</div>
 
         <div className="bg-gray-800 rounded-xl p-6">
           {activeTab === 'entry' && (
@@ -741,7 +742,7 @@ const groupStats = calculateGroupStats();
     )}
   </div>
 )}
-  <div className="space-y-6">
+  {activeTab === 'stats' && (<div className="space-y-6">
     <h2 className="text-2xl font-bold mb-4">Statistical Analysis</h2>
     
     {!stats ? (
@@ -930,11 +931,12 @@ const groupStats = calculateGroupStats();
               <div className="text-xl font-bold text-green-400">3</div>
               <div className="text-xs text-gray-500">Above expected</div>
             </div>
-          </div>
+        </div>
         </div>
       </>
     )}
           </div>
+          )}
 
           {activeTab === 'anomalies' && (
             <div className="space-y-6">
@@ -986,6 +988,11 @@ const groupStats = calculateGroupStats();
                   ))}
                 </div>
               )}
+            </div>
+          )}
+          {activeTab === 'assistant' && (
+            <div className="space-y-6">
+              <GameAssistant />
             </div>
           )}
        </div>  {/* Line 838-840 closing divs */}
