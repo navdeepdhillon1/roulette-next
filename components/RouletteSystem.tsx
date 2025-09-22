@@ -985,7 +985,7 @@ export default function RouletteSystem() {
                         <option value="martingale">Martingale</option>
                         <option value="reverse-martingale">Reverse Martingale</option>
                         <option value="fibonacci">Fibonacci</option>
-                        <option value="dalembert">D'Alembert</option>
+                        <option value="dalembert">DAlembert</option>
                         <option value="custom">Custom</option>
                       </select>
                     </div>
