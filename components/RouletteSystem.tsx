@@ -978,7 +978,7 @@ export default function RouletteSystem() {
                       <label className="block text-gray-300 mb-2">Progression Style</label>
                       <select
                         value={playerSetup.progressionStyle}
-                        onChange={(e) => setPlayerSetup({...playerSetup, progressionStyle: e.target.value as any})}
+                        onChange={(e) => setPlayerSetup({...playerSetup, progressionStyle: e.target.value as PlayerSetup['progressionStyle']})}
                         className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
                       >
                         <option value="flat">Flat Betting</option>
@@ -994,7 +994,7 @@ export default function RouletteSystem() {
                       <label className="block text-gray-300 mb-2">Player Level</label>
                       <select
                         value={playerSetup.playerLevel}
-                        onChange={(e) => setPlayerSetup({...playerSetup, playerLevel: e.target.value as any})}
+                        onChange={(e) => setPlayerSetup({...playerSetup, playerLevel: e.target.value as PlayerSetup['playerLevel']})}
                         className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
                       >
                         <option value="beginner">Beginner</option>
