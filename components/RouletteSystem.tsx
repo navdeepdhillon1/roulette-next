@@ -7,6 +7,25 @@ import { supabase } from '@/lib/supabase'
 import { getNumberProperties, detectAnomalies, NUMBERS } from '@/lib/roulette-logic'
 import type { Session, Spin, Anomaly } from '@/lib/types'
 import BettingGroupVisuals from './BettingGroupVisuals';
+// Add these type definitions after your imports
+type AssistantSubTab = 'setup' | 'action' | 'performance' | 'analysis';
+
+interface PlayerSetup {
+  bankroll: number;
+  targetProfit: number;
+  stopLoss: number;
+  timeAvailable: number; // in minutes
+  betUnit: number;
+  progressionStyle: 'flat' | 'martingale' | 'reverse-martingale' | 'fibonacci' | 'dalembert' | 'custom';
+  playerLevel: 'beginner' | 'intermediate' | 'professional';
+}
+
+interface CurrentBet {
+  group: string;
+  amount: number;
+  odds: string;
+  potentialWin: number;
+}
 
 export default function RouletteSystem() {
   const [session, setSession] = useState<Session | null>(null)
@@ -14,8 +33,19 @@ export default function RouletteSystem() {
   const [anomalies, setAnomalies] = useState<Anomaly[]>([])
   const [inputNumber, setInputNumber] = useState('')
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'entry' | 'history' | 'anomalies' | 'stats'>('entry')
-
+  const [activeTab, setActiveTab] = useState<'entry' | 'history' | 'anomalies' | 'stats' | 'assistant'>('entry')
+const [assistantSubTab, setAssistantSubTab] = useState<AssistantSubTab>('setup');
+const [playerSetup, setPlayerSetup] = useState<PlayerSetup>({
+  bankroll: 1000,
+  targetProfit: 200,
+  stopLoss: 300,
+  timeAvailable: 120,
+  betUnit: 10,
+  progressionStyle: 'flat',
+  playerLevel: 'intermediate'
+});
+const [currentBets, setCurrentBets] = useState<CurrentBet[]>([]);
+const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   useEffect(() => {
     initializeSession()
   }, [])
@@ -456,7 +486,7 @@ const groupStats = calculateGroupStats();
         )}
 
         <div className="flex gap-2 mb-6 overflow-x-auto">
-          {(['entry', 'history', 'stats', 'anomalies'] as const).map(tab => (
+        {(['entry', 'history', 'stats', 'anomalies', 'assistant'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -988,6 +1018,366 @@ const groupStats = calculateGroupStats();
               )}
             </div>
           )}
+
+          {activeTab === 'assistant' && (
+  <div className="space-y-6">
+    {/* Sub-tab Navigation */}
+    <div className="flex space-x-2 bg-gray-800 p-2 rounded-lg">
+      <button
+        onClick={() => setAssistantSubTab('setup')}
+        className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+          assistantSubTab === 'setup'
+            ? 'bg-purple-600 text-white'
+            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+        }`}
+      >
+        ⚙️ Setup
+      </button>
+      <button
+        onClick={() => setAssistantSubTab('action')}
+        className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+          assistantSubTab === 'action'
+            ? 'bg-purple-600 text-white'
+            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+        }`}
+      >
+        🎮 Game Action
+      </button>
+      <button
+        onClick={() => setAssistantSubTab('performance')}
+        className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+          assistantSubTab === 'performance'
+            ? 'bg-purple-600 text-white'
+            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+        }`}
+      >
+        💰 Performance
+      </button>
+      <button
+        onClick={() => setAssistantSubTab('analysis')}
+        className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+          assistantSubTab === 'analysis'
+            ? 'bg-purple-600 text-white'
+            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+        }`}
+      >
+        🧠 Analysis
+      </button>
+    </div>
+
+    {/* Sub-tab Content */}
+    {assistantSubTab === 'setup' && (
+      <div className="bg-gray-800 rounded-xl p-6">
+        <h2 className="text-2xl font-bold text-white mb-6">Session Configuration</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Bankroll */}
+          <div>
+            <label className="block text-gray-300 mb-2">💰 Bankroll ($)</label>
+            <input
+              type="number"
+              value={playerSetup.bankroll}
+              onChange={(e) => setPlayerSetup({...playerSetup, bankroll: Number(e.target.value)})}
+              className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Target Profit */}
+          <div>
+            <label className="block text-gray-300 mb-2">🎯 Target Profit ($)</label>
+            <input
+              type="number"
+              value={playerSetup.targetProfit}
+              onChange={(e) => setPlayerSetup({...playerSetup, targetProfit: Number(e.target.value)})}
+              className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
+            />
+            <span className="text-sm text-gray-400 mt-1">
+              ({((playerSetup.targetProfit / playerSetup.bankroll) * 100).toFixed(1)}% of bankroll)
+            </span>
+          </div>
+
+          {/* Stop Loss */}
+          <div>
+            <label className="block text-gray-300 mb-2">🛑 Stop Loss ($)</label>
+            <input
+              type="number"
+              value={playerSetup.stopLoss}
+              onChange={(e) => setPlayerSetup({...playerSetup, stopLoss: Number(e.target.value)})}
+              className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
+            />
+            <span className="text-sm text-gray-400 mt-1">
+              ({((playerSetup.stopLoss / playerSetup.bankroll) * 100).toFixed(1)}% of bankroll)
+            </span>
+          </div>
+
+          {/* Time Available */}
+          <div>
+            <label className="block text-gray-300 mb-2">⏱️ Time Available (minutes)</label>
+            <input
+              type="number"
+              value={playerSetup.timeAvailable}
+              onChange={(e) => setPlayerSetup({...playerSetup, timeAvailable: Number(e.target.value)})}
+              className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Bet Unit Size */}
+          <div>
+            <label className="block text-gray-300 mb-2">📊 Bet Unit Size ($)</label>
+            <input
+              type="number"
+              value={playerSetup.betUnit}
+              onChange={(e) => setPlayerSetup({...playerSetup, betUnit: Number(e.target.value)})}
+              className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Progression Style */}
+          <div>
+            <label className="block text-gray-300 mb-2">📈 Progression Style</label>
+            <select
+              value={playerSetup.progressionStyle}
+              onChange={(e) => setPlayerSetup({...playerSetup, progressionStyle: e.target.value as any})}
+              className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
+            >
+              <option value="flat">Flat Betting</option>
+              <option value="martingale">Martingale</option>
+              <option value="reverse-martingale">Reverse Martingale</option>
+              <option value="fibonacci">Fibonacci</option>
+              <option value="dalembert">D'Alembert</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+
+          {/* Player Level */}
+          <div>
+            <label className="block text-gray-300 mb-2">🎮 Player Level</label>
+            <select
+              value={playerSetup.playerLevel}
+              onChange={(e) => setPlayerSetup({...playerSetup, playerLevel: e.target.value as any})}
+              className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
+            >
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="professional">Professional</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex space-x-4 mt-8">
+          <button
+            onClick={() => {
+              setSessionStartTime(new Date());
+              setAssistantSubTab('action');
+            }}
+            className="px-6 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-all"
+          >
+            Start Session
+          </button>
+          <button
+            className="px-6 py-3 bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-700 transition-all"
+          >
+            Load Previous Settings
+          </button>
+        </div>
+      </div>
+    )}
+
+    {assistantSubTab === 'action' && (
+      <div className="bg-gray-800 rounded-xl p-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-white">Game Action</h2>
+          <div className="flex space-x-4 text-sm">
+            <span className="text-gray-300">Balance: <span className="text-green-400 font-bold">${playerSetup.bankroll}</span></span>
+            <span className="text-gray-300">Target: <span className="text-yellow-400 font-bold">${playerSetup.bankroll + playerSetup.targetProfit}</span></span>
+            <span className="text-gray-300">Current: <span className="text-white font-bold">+$0</span></span>
+            {sessionStartTime && (
+              <span className="text-gray-300">Time: <span className="text-blue-400 font-bold">
+                {Math.floor((new Date().getTime() - sessionStartTime.getTime()) / 60000)} min
+              </span></span>
+            )}
+          </div>
+        </div>
+
+        {/* Quick Bet Selection */}
+        <div className="space-y-4">
+          <div className="bg-gray-700 rounded-lg p-4">
+            <h3 className="text-lg font-bold text-white mb-3">18's (Even Money - 1:1)</h3>
+            <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+              {['RED', 'BLACK', 'EVEN', 'ODD', '1-18', '19-36', 'EDGE', 'CENTER'].map((bet) => (
+                <button
+                  key={bet}
+                  onClick={() => {
+                    const newBet: CurrentBet = {
+                      group: bet,
+                      amount: playerSetup.betUnit,
+                      odds: '1:1',
+                      potentialWin: playerSetup.betUnit * 2
+                    };
+                    setCurrentBets([...currentBets, newBet]);
+                  }}
+                  className="px-3 py-2 bg-purple-600 text-white font-semibold rounded hover:bg-purple-700 transition-all"
+                >
+                  {bet}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-gray-700 rounded-lg p-4">
+            <h3 className="text-lg font-bold text-white mb-3">12's (2:1 Pays)</h3>
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+              {['1st Dozen', '2nd Dozen', '3rd Dozen', 'Column 1', 'Column 2', 'Column 3'].map((bet) => (
+                <button
+                  key={bet}
+                  onClick={() => {
+                    const newBet: CurrentBet = {
+                      group: bet,
+                      amount: playerSetup.betUnit,
+                      odds: '2:1',
+                      potentialWin: playerSetup.betUnit * 3
+                    };
+                    setCurrentBets([...currentBets, newBet]);
+                  }}
+                  className="px-3 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition-all"
+                >
+                  {bet}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-gray-700 rounded-lg p-4">
+            <h3 className="text-lg font-bold text-white mb-3">6's (5:1 Pays)</h3>
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+              {['1-6', '7-12', '13-18', '19-24', '25-30', '31-36'].map((bet) => (
+                <button
+                  key={bet}
+                  onClick={() => {
+                    const newBet: CurrentBet = {
+                      group: bet,
+                      amount: playerSetup.betUnit,
+                      odds: '5:1',
+                      potentialWin: playerSetup.betUnit * 6
+                    };
+                    setCurrentBets([...currentBets, newBet]);
+                  }}
+                  className="px-3 py-2 bg-green-600 text-white font-semibold rounded hover:bg-green-700 transition-all"
+                >
+                  {bet}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Current Bets Table */}
+        {currentBets.length > 0 && (
+          <div className="mt-6 bg-gray-700 rounded-lg p-4">
+            <h3 className="text-lg font-bold text-white mb-3">Current Bets for Next Spin</h3>
+            <table className="w-full">
+              <thead>
+                <tr className="text-gray-300 text-sm">
+                  <th className="text-left p-2">Group</th>
+                  <th className="text-center p-2">Bet $</th>
+                  <th className="text-center p-2">Odds</th>
+                  <th className="text-center p-2">To Win</th>
+                  <th className="text-center p-2">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentBets.map((bet, index) => (
+                  <tr key={index} className="text-white border-t border-gray-600">
+                    <td className="p-2">{bet.group}</td>
+                    <td className="text-center p-2">${bet.amount}</td>
+                    <td className="text-center p-2">{bet.odds}</td>
+                    <td className="text-center p-2">${bet.potentialWin}</td>
+                    <td className="text-center p-2">
+                      <button
+                        onClick={() => {
+                          setCurrentBets(currentBets.filter((_, i) => i !== index));
+                        }}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                <tr className="border-t-2 border-gray-500 font-bold text-white">
+                  <td className="p-2">Total</td>
+                  <td className="text-center p-2">${currentBets.reduce((sum, bet) => sum + bet.amount, 0)}</td>
+                  <td></td>
+                  <td className="text-center p-2">${currentBets.reduce((sum, bet) => sum + bet.potentialWin, 0)}</td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+            <div className="flex space-x-4 mt-4">
+              <button className="px-4 py-2 bg-green-600 text-white font-bold rounded hover:bg-green-700">
+                Confirm Bets
+              </button>
+              <button 
+                onClick={() => setCurrentBets([])}
+                className="px-4 py-2 bg-red-600 text-white font-bold rounded hover:bg-red-700"
+              >
+                Clear All
+              </button>
+              <button className="px-4 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700">
+                Save as Template
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    )}
+
+    {assistantSubTab === 'performance' && (
+      <div className="bg-gray-800 rounded-xl p-6">
+        <h2 className="text-2xl font-bold text-white mb-6">Performance Matrix</h2>
+        <p className="text-gray-400">27-column betting matrix coming soon...</p>
+        {/* This is where the 27-column betting matrix will go */}
+      </div>
+    )}
+
+    {assistantSubTab === 'analysis' && (
+      <div className="bg-gray-800 rounded-xl p-6">
+        <h2 className="text-2xl font-bold text-white mb-6">AI Analysis</h2>
+        
+        {/* Personality Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg p-4">
+            <h3 className="text-lg font-bold text-white mb-2">🧮 Mathematician</h3>
+            <p className="text-white text-sm">Red: 78% ↑</p>
+            <p className="text-white text-sm">Odd: 67% ↑</p>
+            <p className="text-white text-sm">D3: Cold streak</p>
+          </div>
+          
+          <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg p-4">
+            <h3 className="text-lg font-bold text-white mb-2">🎯 Strategist</h3>
+            <p className="text-white text-sm">Bet: Red + 1st</p>
+            <p className="text-white text-sm">Units: 2 each</p>
+            <p className="text-white text-sm">Confidence: High</p>
+          </div>
+          
+          <div className="bg-gradient-to-br from-green-600 to-green-800 rounded-lg p-4">
+            <h3 className="text-lg font-bold text-white mb-2">🛡️ Guardian</h3>
+            <p className="text-white text-sm">Risk: Acceptable</p>
+            <p className="text-white text-sm">P/L: +15%</p>
+            <p className="text-white text-sm">Status: Healthy</p>
+          </div>
+          
+          <div className="bg-gradient-to-br from-pink-600 to-pink-800 rounded-lg p-4">
+            <h3 className="text-lg font-bold text-white mb-2">❤️ Friend</h3>
+            <p className="text-white text-sm">Great streak!</p>
+            <p className="text-white text-sm">Stay focused</p>
+            <p className="text-white text-sm">You got this!</p>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+)}
        </div>  {/* Line 838-840 closing divs */}
       </div>
     </div>
