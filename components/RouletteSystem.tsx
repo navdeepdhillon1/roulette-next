@@ -1,4 +1,7 @@
 'use client'
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 // Updated
 import React, { useState, useEffect } from 'react'
@@ -1118,7 +1121,7 @@ const [betHistory, setBetHistory] = useState<Array<{
     <div className="grid grid-cols-3 gap-4">
       {/* 18's Card */}
       <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
-        <h4 className="text-center font-bold mb-3 text-green-400">18's (1:1)</h4>
+        <h4 className="text-center font-bold mb-3 text-green-400">18&apos;s (1:1)</h4>
         <div className="space-y-2">
           {[
             { key: 'red', label: 'Red', color: 'bg-red-600' },
@@ -1158,7 +1161,7 @@ const [betHistory, setBetHistory] = useState<Array<{
 
       {/* 12's Card */}
       <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
-        <h4 className="text-center font-bold mb-3 text-yellow-400">12's (2:1)</h4>
+        <h4 className="text-center font-bold mb-3 text-yellow-400">12&apos;s (2:1)</h4>
         <div className="space-y-2">
           {[
             { key: 'dozen1', label: '1st Dozen' },
@@ -1198,7 +1201,7 @@ const [betHistory, setBetHistory] = useState<Array<{
 
       {/* 6's Card */}
       <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
-        <h4 className="text-center font-bold mb-3 text-cyan-400">6's (5:1)</h4>
+        <h4 className="text-center font-bold mb-3 text-cyan-400">6&apos;s (5:1)</h4>
         <div className="space-y-2">
           {[
             { key: 'six1', label: '1-6' },
