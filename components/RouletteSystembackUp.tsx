@@ -4,8 +4,8 @@
 
 import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { getNumberProperties, NUMBERS } from '@/lib/roulette-logic'
-import type { Session, Spin } from '@/lib/types'
+import { getNumberProperties, detectAnomalies, NUMBERS } from '@/lib/roulette-logic'
+import type { Session, Spin, Anomaly } from '@/lib/types'
 import BettingGroupVisuals from './BettingGroupVisuals';
 // Add these type definitions after your imports
 type AssistantSubTab = 'setup' | 'action' | 'performance' | 'analysis';
@@ -30,6 +30,7 @@ interface CurrentBet {
 export default function RouletteSystem() {
   const [session, setSession] = useState<Session | null>(null)
   const [spins, setSpins] = useState<Spin[]>([])
+  const [anomalies, setAnomalies] = useState<Anomaly[]>([])
   const [inputNumber, setInputNumber] = useState('')
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'entry' | 'history'  | 'stats' | 'assistant'>('entry')
@@ -52,6 +53,7 @@ const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   useEffect(() => {
     if (session) {
       loadSpins()
+      loadAnomalies()
     }
   }, [session])
 
@@ -90,6 +92,38 @@ const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
     
     if (data) {
       setSpins(data)
+      const detected = detectAnomalies(data)
+      if (detected.length > 0) {
+        saveAnomalies(detected)
+      }
+    }
+  }
+
+  const loadAnomalies = async () => {
+    if (!session) return
+    
+    const { data } = await supabase
+      .from('anomalies')
+      .select('*')
+      .eq('session_id', session.id)
+      .eq('resolved', false)
+      .order('detected_at', { ascending: false })
+    
+    if (data) setAnomalies(data)
+  }
+
+  const saveAnomalies = async (detectedAnomalies: Anomaly[]) => {
+    if (!session) return
+    
+    for (const anomaly of detectedAnomalies) {
+      await supabase
+        .from('anomalies')
+        .insert({
+          ...anomaly,
+          session_id: session.id
+        })
+      
+      setAnomalies(prev => [anomaly, ...prev])
     }
   }
 
@@ -117,6 +151,11 @@ const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
       const newSpins = [data, ...spins]
       setSpins(newSpins)
       
+      const detected = detectAnomalies(newSpins)
+      if (detected.length > 0) {
+        saveAnomalies(detected)
+      }
+      
       setSession(prev => prev ? {
         ...prev,
         total_spins: prev.total_spins + 1
@@ -138,6 +177,7 @@ const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
       await supabase.rpc('set_active_session', { session_uuid: newSession.id })
       setSession(newSession)
       setSpins([])
+      setAnomalies([])
     }
   }
 
@@ -401,7 +441,7 @@ const groupStats = calculateGroupStats();
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 bg-clip-text text-transparent">
             Advanced Roulette Analysis System
           </h1>
-          <p className="text-gray-400 mt-2">Pattern Analysis • Statistical Tracking</p>
+          <p className="text-gray-400 mt-2">Anomaly Detection • Pattern Analysis • Statistical Tracking</p>
         </div>
 
         {session && (
@@ -431,8 +471,22 @@ const groupStats = calculateGroupStats();
           </div>
         )}
 
+        {anomalies.filter(a => a.severity === 'critical').length > 0 && (
+          <div className="bg-red-900/50 border-2 border-red-500 rounded-xl p-4 mb-6 animate-pulse">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div>
+                <h3 className="text-red-400 font-bold">CRITICAL ANOMALY DETECTED!</h3>
+                <p className="text-red-200">
+                  {anomalies.filter(a => a.severity === 'critical')[0].description}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-2 mb-6 overflow-x-auto">
-        {(['entry', 'history', 'stats', 'assistant'] as const).map(tab => (
+        {(['entry', 'history', 'stats', 'anomalies', 'assistant'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -717,8 +771,6 @@ const groupStats = calculateGroupStats();
     )}
   </div>
 )}
-
-{activeTab === 'stats' && (
   <div className="space-y-6">
     <h2 className="text-2xl font-bold mb-4">Statistical Analysis</h2>
     
@@ -881,14 +933,7 @@ const groupStats = calculateGroupStats();
         )}
       </td>
     </tr>
-                  ))}
-                <tr className="border-t-2 border-gray-500 font-bold text-white">
-                  <td className="p-2">Total</td>
-                  <td className="text-center p-2">${currentBets.reduce((sum, bet) => sum + bet.amount, 0)}</td>
-                  <td></td>
-                  <td className="text-center p-2">${currentBets.reduce((sum, bet) => sum + bet.potentialWin, 0)}</td>
-                  <td></td>
-                </tr>
+  ))}
               </tbody>
             </table>
           </div>
@@ -919,8 +964,7 @@ const groupStats = calculateGroupStats();
         </div>
       </>
     )}
-  </div>
-)}
+          </div>
 
           
 
@@ -1209,16 +1253,82 @@ const groupStats = calculateGroupStats();
                     </td>
                   </tr>
                 ))}
+                <tr className="border-t-2 border-gray-500 font-bold text-white">
+                  <td className="p-2">Total</td>
+                  <td className="text-center p-2">${currentBets.reduce((sum, bet) => sum + bet.amount, 0)}</td>
+                  <td></td>
+                  <td className="text-center p-2">${currentBets.reduce((sum, bet) => sum + bet.potentialWin, 0)}</td>
+                  <td></td>
+                </tr>
               </tbody>
             </table>
+            <div className="flex space-x-4 mt-4">
+              <button className="px-4 py-2 bg-green-600 text-white font-bold rounded hover:bg-green-700">
+                Confirm Bets
+              </button>
+              <button 
+                onClick={() => setCurrentBets([])}
+                className="px-4 py-2 bg-red-600 text-white font-bold rounded hover:bg-red-700"
+              >
+                Clear All
+              </button>
+              <button className="px-4 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700">
+                Save as Template
+              </button>
+            </div>
           </div>
         )}
       </div>
     )}
-  </div>
-)}
+
+    {assistantSubTab === 'performance' && (
+      <div className="bg-gray-800 rounded-xl p-6">
+        <h2 className="text-2xl font-bold text-white mb-6">Performance Matrix</h2>
+        <p className="text-gray-400">27-column betting matrix coming soon...</p>
+        {/* This is where the 27-column betting matrix will go */}
+      </div>
+    )}
+
+    {assistantSubTab === 'analysis' && (
+      <div className="bg-gray-800 rounded-xl p-6">
+        <h2 className="text-2xl font-bold text-white mb-6">AI Analysis</h2>
+        
+        {/* Personality Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg p-4">
+            <h3 className="text-lg font-bold text-white mb-2">🧮 Mathematician</h3>
+            <p className="text-white text-sm">Red: 78% ↑</p>
+            <p className="text-white text-sm">Odd: 67% ↑</p>
+            <p className="text-white text-sm">D3: Cold streak</p>
+          </div>
+          
+          <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg p-4">
+            <h3 className="text-lg font-bold text-white mb-2">🎯 Strategist</h3>
+            <p className="text-white text-sm">Bet: Red + 1st</p>
+            <p className="text-white text-sm">Units: 2 each</p>
+            <p className="text-white text-sm">Confidence: High</p>
+          </div>
+          
+          <div className="bg-gradient-to-br from-green-600 to-green-800 rounded-lg p-4">
+            <h3 className="text-lg font-bold text-white mb-2">🛡️ Guardian</h3>
+            <p className="text-white text-sm">Risk: Acceptable</p>
+            <p className="text-white text-sm">P/L: +15%</p>
+            <p className="text-white text-sm">Status: Healthy</p>
+          </div>
+          
+          <div className="bg-gradient-to-br from-pink-600 to-pink-800 rounded-lg p-4">
+            <h3 className="text-lg font-bold text-white mb-2">❤️ Friend</h3>
+            <p className="text-white text-sm">Great streak!</p>
+            <p className="text-white text-sm">Stay focused</p>
+            <p className="text-white text-sm">You got this!</p>
           </div>
         </div>
       </div>
+    )}
+  </div>
+)}
+       </div>  {/* Line 838-840 closing divs */}
+      </div>
+    </div>
   )
 }
