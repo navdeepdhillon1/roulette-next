@@ -1,6 +1,6 @@
 'use client'
 /* eslint-disable react-hooks/exhaustive-deps */
-
+// Updated
 import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getNumberProperties, NUMBERS } from '@/lib/roulette-logic'
@@ -1318,73 +1318,24 @@ const [betHistory, setBetHistory] = useState<Array<{
     </div>
   </div>
 )}
-              
-                    <div className="bg-gray-700 rounded-lg p-4">
-                      <h3 className="text-lg font-bold text-white mb-3">18s (Even Money - 1:1)</h3>
-                      <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
-                        {['RED', 'BLACK', 'EVEN', 'ODD', '1-18', '19-36', 'EDGE', 'CENTER'].map((bet) => (
-                          <button
-                            key={bet}
-                            onClick={() => {
-                              const newBet: CurrentBet = {
-                                group: bet,
-                                amount: playerSetup.betUnit,
-                                odds: '1:1',
-                                potentialWin: playerSetup.betUnit * 2
-                              }
-                              setCurrentBets([...currentBets, newBet])
-                            }}
-                            className="px-3 py-2 bg-purple-600 text-white font-semibold rounded hover:bg-purple-700 transition-all"
-                          >
-                            {bet}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+ 
+{assistantSubTab === 'performance' && (
+<div className="bg-gray-800 rounded-xl p-6">
+<h2 className="text-2xl font-bold text-white mb-6">Performance Matrix</h2>
+<p className="text-gray-400">27-column betting matrix coming soon...</p>
+</div>
+ )}
 
-                    <div className="bg-gray-700 rounded-lg p-4">
-                      <h3 className="text-lg font-bold text-white mb-3">12s (2:1 Pays)</h3>
-                      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-                        {['1st Dozen', '2nd Dozen', '3rd Dozen', 'Column 1', 'Column 2', 'Column 3'].map((bet) => (
-                          <button
-                            key={bet}
-                            onClick={() => {
-                              const newBet: CurrentBet = {
-                                group: bet,
-                                amount: playerSetup.betUnit,
-                                odds: '2:1',
-                                potentialWin: playerSetup.betUnit * 3
-                              }
-                              setCurrentBets([...currentBets, newBet])
-                            }}
-                            className="px-3 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition-all"
-                          >
-                            {bet}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="bg-gray-700 rounded-lg p-4">
-                      <h3 className="text-lg font-bold text-white mb-3">6s (5:1 Pays)</h3>
-                      <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-                        {['1-6', '7-12', '13-18', '19-24', '25-30', '31-36'].map((bet) => (
-                          <button
-                            key={bet}
-                            onClick={() => {
-                              const newBet: CurrentBet = {
-                                group: bet,
-                                amount: playerSetup.betUnit,
-                                odds: '5:1',
-                                potentialWin: playerSetup.betUnit * 6
-                              }
-                              setCurrentBets([...currentBets, newBet])
-                            }}
-                            className="px-3 py-2 bg-green-600 text-white font-semibold rounded hover:bg-green-700 transition-all"
-                          >
-                            {bet}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+{assistantSubTab === 'analysis' && (
+<div className="bg-gray-800 rounded-xl p-6">
+<h2 className="text-2xl font-bold text-white mb-6">AI Analysis</h2>
+{/* Analysis content */}
+</div>
+)}
+</div>
+)}
+</div>
+</div>
+</div>
+)
+}
