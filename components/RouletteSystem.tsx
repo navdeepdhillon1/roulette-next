@@ -48,7 +48,43 @@ export default function RouletteSystem() {
   useEffect(() => {
     initializeSession()
   }, [])
+// Add these state variables (around line 50-60 after your existing states)
+const [playerContext, setPlayerContext] = useState({
+  bankroll: 1000,
+  target: 1500,
+  timeAvailable: 60,
+  progression: 'flat',
+  unitSize: 10
+})
 
+const [sessionPnL, setSessionPnL] = useState(0)
+
+const [manualBets, setManualBets] = useState({
+  // 18-number groups
+  red: '', black: '',
+  even: '', odd: '',
+  low: '', high: '',
+  alt1_1: '', alt1_2: '',
+  alt2_1: '', alt2_2: '',
+  alt3_1: '', alt3_2: '',
+  edge: '', center: '',
+  
+  // 12-number groups
+  dozen1: '', dozen2: '', dozen3: '',
+  col1: '', col2: '', col3: '',
+  
+  // 6-number groups
+  six1: '', six2: '', six3: '',
+  six4: '', six5: '', six6: ''
+})
+
+const [betHistory, setBetHistory] = useState<Array<{
+  spin: number
+  bets: any
+  results: { [key: string]: number }
+  totalPnL: number
+  timestamp: Date
+}>>([])
   useEffect(() => {
     if (session) {
       loadSpins()
@@ -1023,23 +1059,266 @@ export default function RouletteSystem() {
                 </div>
               )}
 
-              {assistantSubTab === 'action' && (
-                <div className="bg-gray-800 rounded-xl p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-white">Game Action</h2>
-                    <div className="flex space-x-4 text-sm">
-                      <span className="text-gray-300">Balance: <span className="text-green-400 font-bold">${playerSetup.bankroll}</span></span>
-                      <span className="text-gray-300">Target: <span className="text-yellow-400 font-bold">${playerSetup.bankroll + playerSetup.targetProfit}</span></span>
-                      <span className="text-gray-300">Current: <span className="text-white font-bold">+$0</span></span>
-                      {sessionStartTime && (
-                        <span className="text-gray-300">Time: <span className="text-blue-400 font-bold">
-                          {Math.floor((new Date().getTime() - sessionStartTime.getTime()) / 60000)} min
-                        </span></span>
-                      )}
-                    </div>
-                  </div>
+{assistantSubTab === 'action' && (
+  <div className="space-y-6">
+    {/* Quick Action Bar with Confidence */}
+    <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 p-4 rounded-lg border border-purple-500/30">
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="text-lg font-bold text-purple-300">Quick Actions</h3>
+        <button 
+          onClick={() => setManualBets({
+            red: '', black: '', even: '', odd: '', low: '', high: '',
+            alt1_1: '', alt1_2: '', alt2_1: '', alt2_2: '', alt3_1: '', alt3_2: '',
+            edge: '', center: '', dozen1: '', dozen2: '', dozen3: '',
+            col1: '', col2: '', col3: '', six1: '', six2: '', six3: '',
+            six4: '', six5: '', six6: ''
+          })}
+          className="px-3 py-1 bg-red-600/20 border border-red-500/30 rounded hover:bg-red-600/30"
+        >
+          Clear All Bets
+        </button>
+      </div>
+      
+      {/* Confidence Bar */}
+      <div className="mb-4 p-3 bg-black/30 rounded">
+        <div className="text-xs text-gray-400 mb-1">AI Confidence (Next Spin)</div>
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <div className="flex justify-between text-xs mb-1">
+              <span>Red</span>
+              <span>78%</span>
+            </div>
+            <div className="h-2 bg-gray-700 rounded">
+              <div className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded" style={{width: '78%'}}></div>
+            </div>
+          </div>
+          <div className="flex-1">
+            <div className="flex justify-between text-xs mb-1">
+              <span>Even</span>
+              <span>62%</span>
+            </div>
+            <div className="h-2 bg-gray-700 rounded">
+              <div className="h-full bg-gradient-to-r from-yellow-500 to-yellow-400 rounded" style={{width: '62%'}}></div>
+            </div>
+          </div>
+          <div className="flex-1">
+            <div className="flex justify-between text-xs mb-1">
+              <span>1st Dozen</span>
+              <span>41%</span>
+            </div>
+            <div className="h-2 bg-gray-700 rounded">
+              <div className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded" style={{width: '41%'}}></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-                  <div className="space-y-4">
+    {/* Manual Betting Cards */}
+    <div className="grid grid-cols-3 gap-4">
+      {/* 18's Card */}
+      <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+        <h4 className="text-center font-bold mb-3 text-green-400">18's (1:1)</h4>
+        <div className="space-y-2">
+          {[
+            { key: 'red', label: 'Red', color: 'bg-red-600' },
+            { key: 'black', label: 'Black', color: 'bg-gray-900' },
+            { key: 'even', label: 'Even', color: 'bg-blue-600' },
+            { key: 'odd', label: 'Odd', color: 'bg-orange-600' },
+            { key: 'low', label: 'Low (1-18)', color: 'bg-purple-600' },
+            { key: 'high', label: 'High (19-36)', color: 'bg-pink-600' }
+          ].map(group => (
+            <div key={group.key} className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const amount = manualBets[group.key as keyof typeof manualBets] || playerContext.unitSize.toString()
+                  setManualBets(prev => ({
+                    ...prev,
+                    [group.key]: amount
+                  }))
+                }}
+                className={`flex-1 px-2 py-1 rounded text-xs ${group.color} hover:opacity-80`}
+              >
+                {group.label}
+              </button>
+              <input
+                type="number"
+                value={manualBets[group.key as keyof typeof manualBets]}
+                onChange={(e) => setManualBets(prev => ({
+                  ...prev,
+                  [group.key]: e.target.value
+                }))}
+                placeholder={playerContext.unitSize.toString()}
+                className="w-16 px-1 py-1 bg-black/50 border border-gray-600 rounded text-xs text-center"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 12's Card */}
+      <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+        <h4 className="text-center font-bold mb-3 text-yellow-400">12's (2:1)</h4>
+        <div className="space-y-2">
+          {[
+            { key: 'dozen1', label: '1st Dozen' },
+            { key: 'dozen2', label: '2nd Dozen' },
+            { key: 'dozen3', label: '3rd Dozen' },
+            { key: 'col1', label: 'Column 1' },
+            { key: 'col2', label: 'Column 2' },
+            { key: 'col3', label: 'Column 3' }
+          ].map(group => (
+            <div key={group.key} className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const amount = manualBets[group.key as keyof typeof manualBets] || playerContext.unitSize.toString()
+                  setManualBets(prev => ({
+                    ...prev,
+                    [group.key]: amount
+                  }))
+                }}
+                className="flex-1 px-2 py-1 bg-yellow-600/20 border border-yellow-500/30 rounded text-xs hover:bg-yellow-600/30"
+              >
+                {group.label}
+              </button>
+              <input
+                type="number"
+                value={manualBets[group.key as keyof typeof manualBets]}
+                onChange={(e) => setManualBets(prev => ({
+                  ...prev,
+                  [group.key]: e.target.value
+                }))}
+                placeholder={playerContext.unitSize.toString()}
+                className="w-16 px-1 py-1 bg-black/50 border border-gray-600 rounded text-xs text-center"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 6's Card */}
+      <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+        <h4 className="text-center font-bold mb-3 text-cyan-400">6's (5:1)</h4>
+        <div className="space-y-2">
+          {[
+            { key: 'six1', label: '1-6' },
+            { key: 'six2', label: '7-12' },
+            { key: 'six3', label: '13-18' },
+            { key: 'six4', label: '19-24' },
+            { key: 'six5', label: '25-30' },
+            { key: 'six6', label: '31-36' }
+          ].map(group => (
+            <div key={group.key} className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  const amount = manualBets[group.key as keyof typeof manualBets] || playerContext.unitSize.toString()
+                  setManualBets(prev => ({
+                    ...prev,
+                    [group.key]: amount
+                  }))
+                }}
+                className="flex-1 px-2 py-1 bg-cyan-600/20 border border-cyan-500/30 rounded text-xs hover:bg-cyan-600/30"
+              >
+                {group.label}
+              </button>
+              <input
+                type="number"
+                value={manualBets[group.key as keyof typeof manualBets]}
+                onChange={(e) => setManualBets(prev => ({
+                  ...prev,
+                  [group.key]: e.target.value
+                }))}
+                placeholder={playerContext.unitSize.toString()}
+                className="w-16 px-1 py-1 bg-black/50 border border-gray-600 rounded text-xs text-center"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    {/* 27-Column Betting Matrix */}
+    <div className="bg-gray-900 rounded-lg border border-gray-700 p-4">
+      <h3 className="text-lg font-bold mb-3 text-blue-300">Betting Performance Matrix (27 Columns)</h3>
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-xs">
+          <thead>
+            <tr className="bg-gray-800">
+              {['Num', 'R', 'B', 'E', 'O', 'L', 'H', 'D1', 'D2', 'D3', 'C1', 'C2', 'C3',
+                '1-6', '7-12', '13-18', '19-24', '25-30', '31-36', 'A', 'B', 'AA', 'BB',
+                'AAA', 'BBB', 'E', 'C'].map(col => (
+                <th key={col} className="px-2 py-2 text-center border border-gray-700">
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {/* Sample rows for demonstration */}
+            {[1, 2, 3, 4, 5].map(row => (
+              <tr key={row} className="hover:bg-gray-800/50">
+                {['Num', 'R', 'B', 'E', 'O', 'L', 'H', 'D1', 'D2', 'D3', 'C1', 'C2', 'C3',
+                  '1-6', '7-12', '13-18', '19-24', '25-30', '31-36', 'A', 'B', 'AA', 'BB',
+                  'AAA', 'BBB', 'E', 'C'].map(col => (
+                  <td key={col} className="px-2 py-1 text-center border border-gray-700">
+                    {col === 'Num' ? row : ''}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        
+        {/* Running totals */}
+        <div className="mt-2 p-2 bg-gray-800 rounded">
+          <div className="flex justify-between text-sm">
+            <span>Session P/L: <span className={sessionPnL >= 0 ? 'text-green-400' : 'text-red-400'}>
+              ${Math.abs(sessionPnL)}
+            </span></span>
+            <span>Total Bets: {betHistory.length}</span>
+            <span>Win Rate: {betHistory.length > 0 ? 
+              Math.round((betHistory.filter(b => b.totalPnL > 0).length / betHistory.length) * 100) : 0}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Active Bets Summary */}
+    <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+      <h4 className="font-bold mb-2">Active Bets</h4>
+      <div className="grid grid-cols-4 gap-2">
+        {Object.entries(manualBets).filter(([_, value]) => value).map(([key, value]) => (
+          <div key={key} className="flex justify-between text-xs p-2 bg-black/30 rounded">
+            <span className="text-gray-400">{key}:</span>
+            <span className="text-green-400">${value}</span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 pt-3 border-t border-gray-700">
+        <div className="flex justify-between">
+          <span>Total Stake:</span>
+          <span className="text-yellow-400 font-bold">
+            ${Object.values(manualBets).reduce((sum, val) => sum + (parseFloat(val) || 0), 0)}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    {/* Action Buttons */}
+    <div className="flex gap-3">
+      <button className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-bold">
+        Spin & Calculate
+      </button>
+      <button className="px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg">
+        Save Strategy
+      </button>
+      <button className="px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg">
+        Auto-Bet
+      </button>
+    </div>
+  </div>
+)}
+              
                     <div className="bg-gray-700 rounded-lg p-4">
                       <h3 className="text-lg font-bold text-white mb-3">18s (Even Money - 1:1)</h3>
                       <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
@@ -1109,114 +1388,3 @@ export default function RouletteSystem() {
                       </div>
                     </div>
                   </div>
-
-                  {currentBets.length > 0 && (
-                    <div className="mt-6 bg-gray-700 rounded-lg p-4">
-                      <h3 className="text-lg font-bold text-white mb-3">Current Bets for Next Spin</h3>
-                      <table className="w-full">
-                        <thead>
-                          <tr className="text-gray-300 text-sm">
-                            <th className="text-left p-2">Group</th>
-                            <th className="text-center p-2">Bet $</th>
-                            <th className="text-center p-2">Odds</th>
-                            <th className="text-center p-2">To Win</th>
-                            <th className="text-center p-2">Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {currentBets.map((bet, index) => (
-                            <tr key={index} className="text-white border-t border-gray-600">
-                              <td className="p-2">{bet.group}</td>
-                              <td className="text-center p-2">${bet.amount}</td>
-                              <td className="text-center p-2">{bet.odds}</td>
-                              <td className="text-center p-2">${bet.potentialWin}</td>
-                              <td className="text-center p-2">
-                                <button
-                                  onClick={() => {
-                                    setCurrentBets(currentBets.filter((_, i) => i !== index))
-                                  }}
-                                  className="text-red-400 hover:text-red-300"
-                                >
-                                  Remove
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                          <tr className="border-t-2 border-gray-500 font-bold text-white">
-                            <td className="p-2">Total</td>
-                            <td className="text-center p-2">${currentBets.reduce((sum, bet) => sum + bet.amount, 0)}</td>
-                            <td></td>
-                            <td className="text-center p-2">${currentBets.reduce((sum, bet) => sum + bet.potentialWin, 0)}</td>
-                            <td></td>
-                          </tr>
-                        </tbody>
-                      </table>
-                      <div className="flex space-x-4 mt-4">
-                        <button className="px-4 py-2 bg-green-600 text-white font-bold rounded hover:bg-green-700">
-                          Confirm Bets
-                        </button>
-                        <button 
-                          onClick={() => setCurrentBets([])}
-                          className="px-4 py-2 bg-red-600 text-white font-bold rounded hover:bg-red-700"
-                        >
-                          Clear All
-                        </button>
-                        <button className="px-4 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700">
-                          Save as Template
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {assistantSubTab === 'performance' && (
-                <div className="bg-gray-800 rounded-xl p-6">
-                  <h2 className="text-2xl font-bold text-white mb-6">Performance Matrix</h2>
-                  <p className="text-gray-400">27-column betting matrix coming soon...</p>
-                </div>
-              )}
-
-              {assistantSubTab === 'analysis' && (
-                <div className="bg-gray-800 rounded-xl p-6">
-                  <h2 className="text-2xl font-bold text-white mb-6">AI Analysis</h2>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg p-4">
-                      <h3 className="text-lg font-bold text-white mb-2">Mathematician</h3>
-                      <p className="text-white text-sm">Red: 78%</p>
-                      <p className="text-white text-sm">Odd: 67%</p>
-                      <p className="text-white text-sm">D3: Cold streak</p>
-                    </div>
-                    
-                    <div className="bg-gradient-to-br from-purple-600 to-purple-800 rounded-lg p-4">
-                      <h3 className="text-lg font-bold text-white mb-2">Strategist</h3>
-                      <p className="text-white text-sm">Bet: Red + 1st</p>
-                      <p className="text-white text-sm">Units: 2 each</p>
-                      <p className="text-white text-sm">Confidence: High</p>
-                    </div>
-                    
-                    <div className="bg-gradient-to-br from-green-600 to-green-800 rounded-lg p-4">
-                      <h3 className="text-lg font-bold text-white mb-2">Guardian</h3>
-                      <p className="text-white text-sm">Risk: Acceptable</p>
-                      <p className="text-white text-sm">P/L: +15%</p>
-                      <p className="text-white text-sm">Status: Healthy</p>
-                    </div>
-                    
-                    <div className="bg-gradient-to-br from-pink-600 to-pink-800 rounded-lg p-4">
-                      <h3 className="text-lg font-bold text-white mb-2">Friend</h3>
-                      <p className="text-white text-sm">Great streak!</p>
-                      <p className="text-white text-sm">Stay focused</p>
-                      <p className="text-white text-sm">You got this!</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-                            <td></td>
