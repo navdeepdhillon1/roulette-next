@@ -8,7 +8,7 @@ import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getNumberProperties, NUMBERS } from '@/lib/roulette-logic'
 import type { Session, Spin } from '@/lib/types'
-
+import WheelView from '@/components/WheelView'
 // Type definitions
 type AssistantSubTab = 'setup' | 'action' | 'performance' | 'analysis';
 
@@ -33,6 +33,8 @@ export default function RouletteSystem() {
   const [session, setSession] = useState<Session | null>(null)
   const [spins, setSpins] = useState<Spin[]>([])
   const [inputNumber, setInputNumber] = useState('')
+  const [actionView, setActionView] = useState('table')
+  const [showHeatMap, setShowHeatMap] = useState(false)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<'entry' | 'history' | 'stats' | 'assistant'>('entry')
   const [assistantSubTab, setAssistantSubTab] = useState<AssistantSubTab>('setup')
@@ -41,7 +43,7 @@ export default function RouletteSystem() {
     targetProfit: 200,
     stopLoss: 300,
     timeAvailable: 120,
-    betUnit: 10,
+    betUnit: 10,  
     progressionStyle: 'flat',
     playerLevel: 'intermediate'
   })
@@ -80,9 +82,8 @@ const [manualBets, setManualBets] = useState({
   six1: '', six2: '', six3: '',
   six4: '', six5: '', six6: ''
 })
-
 const [betHistory, setBetHistory] = useState<Array<{
-  spin: number
+  spin: number | null  // Changed to allow null for pending rows
   bets: any
   results: { [key: string]: number }
   totalPnL: number
@@ -131,7 +132,60 @@ const [betHistory, setBetHistory] = useState<Array<{
       setSpins(data)
     }
   }
-
+  const checkIfGroupWon = (num: number, group: string): boolean => {
+    const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]
+    
+    switch(group) {
+      case 'red': return redNumbers.includes(num)
+      case 'black': return !redNumbers.includes(num) && num !== 0
+      case 'even': return num !== 0 && num % 2 === 0
+      case 'odd': return num % 2 === 1
+      case 'low': return num >= 1 && num <= 18
+      case 'high': return num >= 19 && num <= 36
+      case 'dozen1': return num >= 1 && num <= 12
+      case 'dozen2': return num >= 13 && num <= 24
+      case 'dozen3': return num >= 25 && num <= 36
+      case 'col1': return num % 3 === 1
+      case 'col2': return num % 3 === 2
+      case 'col3': return num % 3 === 0 && num !== 0
+      case 'six1': return num >= 1 && num <= 6
+      case 'six2': return num >= 7 && num <= 12
+      case 'six3': return num >= 13 && num <= 18
+      case 'six4': return num >= 19 && num <= 24
+      case 'six5': return num >= 25 && num <= 30
+      case 'six6': return num >= 31 && num <= 36
+      // Add alt groups and edge/center logic here
+      // Alt groups
+    case 'alt1_1': // A
+    return num > 0 && [1,2,3,7,8,9,13,14,15,19,20,21,25,26,27,31,32,33].includes(num)
+  case 'alt1_2': // B
+    return num > 0 && [4,5,6,10,11,12,16,17,18,22,23,24,28,29,30,34,35,36].includes(num)
+  case 'alt2_1': // AA
+    return num > 0 && [1,2,3,4,5,6,13,14,15,16,17,18,25,26,27,28,29,30].includes(num)
+  case 'alt2_2': // BB
+    return num > 0 && [7,8,9,10,11,12,19,20,21,22,23,24,31,32,33,34,35,36].includes(num)
+  case 'alt3_1': // AAA
+    return num > 0 && [1,2,3,4,5,6,7,8,9,19,20,21,22,23,24,25,26,27].includes(num)
+  case 'alt3_2': // BBB
+    return num > 0 && [10,11,12,13,14,15,16,17,18,28,29,30,31,32,33,34,35,36].includes(num)
+  case 'edge':
+    return num > 0 && [1,2,3,4,5,6,7,8,9,28,29,30,31,32,33,34,35,36].includes(num)
+  case 'center':
+    return num > 0 && [10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27].includes(num)
+      default: return false
+    }
+  }
+  
+  const getGroupPayout = (group: string): number => {
+    if (['red','black','even','odd','low','high','alt1_1','alt1_2','alt2_1','alt2_2','alt3_1','alt3_2','edge','center'].includes(group)) {
+      return 1 // 1:1 payout
+    } else if (['dozen1','dozen2','dozen3','col1','col2','col3'].includes(group)) {
+      return 2 // 2:1 payout
+    } else if (['six1','six2','six3','six4','six5','six6'].includes(group)) {
+      return 5 // 5:1 payout
+    }
+    return 0
+  }
   const addNumber = async () => {
     const num = parseInt(inputNumber)
     if (isNaN(num) || num < 0 || num > 36 || !session) return
@@ -156,12 +210,56 @@ const [betHistory, setBetHistory] = useState<Array<{
       const newSpins = [data, ...spins]
       setSpins(newSpins)
       
+
+if (betHistory.length > 0 && betHistory[0].spin === null) {
+  const updatedHistory = [...betHistory]
+  updatedHistory[0].spin = num
+  
+  // Calculate results based on which groups won
+  const results: { [key: string]: number } = {}
+  let totalPnL = 0
+  
+  // Check each bet and calculate win/loss
+Object.entries(updatedHistory[0].bets).forEach(([key, value]) => {
+  if (value) {
+    const betAmount = parseFloat(value as string)  // Add 'as string' here
+    const won = checkIfGroupWon(num, key as string)
+    if (won) {
+      const payout = getGroupPayout(key as string)
+      results[key] = betAmount * payout
+      totalPnL += betAmount * payout
+    } else {
+      results[key] = -betAmount
+      totalPnL -= betAmount
+    }
+  }
+})
+  
+  updatedHistory[0].results = results
+  updatedHistory[0].totalPnL = totalPnL
+  setBetHistory(updatedHistory)
+  setSessionPnL(prev => prev + totalPnL)
+  
+  // Clear manual bets for next round
+  setManualBets({
+    red: '', black: '', even: '', odd: '', low: '', high: '',
+    alt1_1: '', alt1_2: '', alt2_1: '', alt2_2: '', alt3_1: '', alt3_2: '',
+    edge: '', center: '', dozen1: '', dozen2: '', dozen3: '',
+    col1: '', col2: '', col3: '', six1: '', six2: '', six3: '',
+    six4: '', six5: '', six6: ''
+  })
+}
+
+// Line 158: setSession(prev => prev ? { ...
+
       setSession(prev => prev ? {
         ...prev,
         total_spins: prev.total_spins + 1
       } : null)
     }
-    
+    const handleAddNumberFromAction = () => {
+      addNumber()
+    }
     setInputNumber('')
     setLoading(false)
   }
@@ -1062,283 +1160,621 @@ const [betHistory, setBetHistory] = useState<Array<{
                 </div>
               )}
 
+
+
 {assistantSubTab === 'action' && (
   <div className="space-y-6">
-    {/* Quick Action Bar with Confidence */}
-    <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 p-4 rounded-lg border border-purple-500/30">
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="text-lg font-bold text-purple-300">Quick Actions</h3>
-        <button 
-          onClick={() => setManualBets({
-            red: '', black: '', even: '', odd: '', low: '', high: '',
-            alt1_1: '', alt1_2: '', alt2_1: '', alt2_2: '', alt3_1: '', alt3_2: '',
-            edge: '', center: '', dozen1: '', dozen2: '', dozen3: '',
-            col1: '', col2: '', col3: '', six1: '', six2: '', six3: '',
-            six4: '', six5: '', six6: ''
-          })}
-          className="px-3 py-1 bg-red-600/20 border border-red-500/30 rounded hover:bg-red-600/30"
-        >
-          Clear All Bets
-        </button>
-      </div>
-      
-      {/* Confidence Bar */}
-      <div className="mb-4 p-3 bg-black/30 rounded">
-        <div className="text-xs text-gray-400 mb-1">AI Confidence (Next Spin)</div>
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <div className="flex justify-between text-xs mb-1">
-              <span>Red</span>
-              <span>78%</span>
-            </div>
-            <div className="h-2 bg-gray-700 rounded">
-              <div className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded" style={{width: '78%'}}></div>
-            </div>
-          </div>
-          <div className="flex-1">
-            <div className="flex justify-between text-xs mb-1">
-              <span>Even</span>
-              <span>62%</span>
-            </div>
-            <div className="h-2 bg-gray-700 rounded">
-              <div className="h-full bg-gradient-to-r from-yellow-500 to-yellow-400 rounded" style={{width: '62%'}}></div>
-            </div>
-          </div>
-          <div className="flex-1">
-            <div className="flex justify-between text-xs mb-1">
-              <span>1st Dozen</span>
-              <span>41%</span>
-            </div>
-            <div className="h-2 bg-gray-700 rounded">
-              <div className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded" style={{width: '41%'}}></div>
-            </div>
-          </div>
-        </div>
-      </div>
+    {/* Sub-tab Navigation */}
+    <div className="flex gap-2 mb-4">
+      <button
+        onClick={() => setActionView('table')}
+        className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+          actionView === 'table' 
+            ? 'bg-green-600 text-white' 
+            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+        }`}
+      >
+        📊 Table View
+      </button>
+      <button
+        onClick={() => setActionView('wheel')}
+        className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+          actionView === 'wheel' 
+            ? 'bg-green-600 text-white' 
+            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+        }`}
+      >
+        🎯 Wheel View
+      </button>
     </div>
 
-    {/* Manual Betting Cards */}
-    <div className="grid grid-cols-3 gap-4">
-      {/* 18's Card */}
-      <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
-        <h4 className="text-center font-bold mb-3 text-green-400">18&apos;s (1:1)</h4>
-        <div className="space-y-2">
-          {[
-            { key: 'red', label: 'Red', color: 'bg-red-600' },
-            { key: 'black', label: 'Black', color: 'bg-gray-900' },
-            { key: 'even', label: 'Even', color: 'bg-blue-600' },
-            { key: 'odd', label: 'Odd', color: 'bg-orange-600' },
-            { key: 'low', label: 'Low (1-18)', color: 'bg-purple-600' },
-            { key: 'high', label: 'High (19-36)', color: 'bg-pink-600' }
-          ].map(group => (
-            <div key={group.key} className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  const amount = manualBets[group.key as keyof typeof manualBets] || playerContext.unitSize.toString()
-                  setManualBets(prev => ({
-                    ...prev,
-                    [group.key]: amount
-                  }))
-                }}
-                className={`flex-1 px-2 py-1 rounded text-xs ${group.color} hover:opacity-80`}
-              >
-                {group.label}
-              </button>
-              <input
-                type="number"
-                value={manualBets[group.key as keyof typeof manualBets]}
-                onChange={(e) => setManualBets(prev => ({
-                  ...prev,
-                  [group.key]: e.target.value
-                }))}
-                placeholder={playerContext.unitSize.toString()}
-                className="w-16 px-1 py-1 bg-black/50 border border-gray-600 rounded text-xs text-center"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
+    {/* TABLE VIEW */}
+    {actionView === 'table' && (
+      <>
+       
 
-      {/* 12's Card */}
-      <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
-        <h4 className="text-center font-bold mb-3 text-yellow-400">12&apos;s (2:1)</h4>
-        <div className="space-y-2">
-          {[
-            { key: 'dozen1', label: '1st Dozen' },
-            { key: 'dozen2', label: '2nd Dozen' },
-            { key: 'dozen3', label: '3rd Dozen' },
-            { key: 'col1', label: 'Column 1' },
-            { key: 'col2', label: 'Column 2' },
-            { key: 'col3', label: 'Column 3' }
-          ].map(group => (
-            <div key={group.key} className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  const amount = manualBets[group.key as keyof typeof manualBets] || playerContext.unitSize.toString()
-                  setManualBets(prev => ({
-                    ...prev,
-                    [group.key]: amount
-                  }))
-                }}
-                className="flex-1 px-2 py-1 bg-yellow-600/20 border border-yellow-500/30 rounded text-xs hover:bg-yellow-600/30"
-              >
-                {group.label}
-              </button>
-              <input
-                type="number"
-                value={manualBets[group.key as keyof typeof manualBets]}
-                onChange={(e) => setManualBets(prev => ({
-                  ...prev,
-                  [group.key]: e.target.value
-                }))}
-                placeholder={playerContext.unitSize.toString()}
-                className="w-16 px-1 py-1 bg-black/50 border border-gray-600 rounded text-xs text-center"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 6's Card */}
-      <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
-        <h4 className="text-center font-bold mb-3 text-cyan-400">6&apos;s (5:1)</h4>
-        <div className="space-y-2">
-          {[
-            { key: 'six1', label: '1-6' },
-            { key: 'six2', label: '7-12' },
-            { key: 'six3', label: '13-18' },
-            { key: 'six4', label: '19-24' },
-            { key: 'six5', label: '25-30' },
-            { key: 'six6', label: '31-36' }
-          ].map(group => (
-            <div key={group.key} className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  const amount = manualBets[group.key as keyof typeof manualBets] || playerContext.unitSize.toString()
-                  setManualBets(prev => ({
-                    ...prev,
-                    [group.key]: amount
-                  }))
-                }}
-                className="flex-1 px-2 py-1 bg-cyan-600/20 border border-cyan-500/30 rounded text-xs hover:bg-cyan-600/30"
-              >
-                {group.label}
-              </button>
-              <input
-                type="number"
-                value={manualBets[group.key as keyof typeof manualBets]}
-                onChange={(e) => setManualBets(prev => ({
-                  ...prev,
-                  [group.key]: e.target.value
-                }))}
-                placeholder={playerContext.unitSize.toString()}
-                className="w-16 px-1 py-1 bg-black/50 border border-gray-600 rounded text-xs text-center"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-
-    {/* 27-Column Betting Matrix */}
-    <div className="bg-gray-900 rounded-lg border border-gray-700 p-4">
-      <h3 className="text-lg font-bold mb-3 text-blue-300">Betting Performance Matrix (27 Columns)</h3>
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-xs">
-          <thead>
-            <tr className="bg-gray-800">
-              {['Num', 'R', 'B', 'E', 'O', 'L', 'H', 'D1', 'D2', 'D3', 'C1', 'C2', 'C3',
-                '1-6', '7-12', '13-18', '19-24', '25-30', '31-36', 'A', 'B', 'AA', 'BB',
-                'AAA', 'BBB', 'E', 'C'].map(col => (
-                <th key={col} className="px-2 py-2 text-center border border-gray-700">
-                  {col}
-                </th>
+        {/* Manual Betting Cards */}
+        <div className="grid grid-cols-3 gap-4">
+          {/* 18's Card with 2-column layout */}
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+            <h4 className="text-center font-bold mb-3 text-green-400">18's (1:1)</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { key: 'red', label: 'Red', color: 'bg-red-600' },
+                { key: 'black', label: 'Black', color: 'bg-gray-900' },
+                { key: 'even', label: 'Even', color: 'bg-blue-600' },
+                { key: 'odd', label: 'Odd', color: 'bg-orange-600' },
+                { key: 'low', label: 'Low (1-18)', color: 'bg-purple-600' },
+                { key: 'high', label: 'High (19-36)', color: 'bg-pink-600' },
+                { key: 'alt1_1', label: 'A', color: 'bg-indigo-600' },
+                { key: 'alt1_2', label: 'B', color: 'bg-teal-600' },
+                { key: 'alt2_1', label: 'AA', color: 'bg-green-600' },
+                { key: 'alt2_2', label: 'BB', color: 'bg-yellow-600' },
+                { key: 'alt3_1', label: 'AAA', color: 'bg-cyan-600' },
+                { key: 'alt3_2', label: 'BBB', color: 'bg-rose-600' },
+                { key: 'edge', label: 'Edge', color: 'bg-violet-600' },
+                { key: 'center', label: 'Center', color: 'bg-amber-600' }
+              ].map(group => (
+                <div key={group.key} className="flex items-center gap-1">
+                  <button
+                    onClick={() => {
+                      const currentValue = manualBets[group.key as keyof typeof manualBets]
+                      const newValue = currentValue ? '' : playerContext.unitSize.toString()
+                      const updatedBets = {
+                        ...manualBets,
+                        [group.key]: newValue
+                      }
+                      setManualBets(updatedBets)
+                      
+                      if (betHistory.length === 0 || betHistory[0].spin !== null) {
+                        setBetHistory([{
+                          spin: null,
+                          bets: updatedBets,
+                          results: {},
+                          totalPnL: 0,
+                          timestamp: new Date()
+                        }, ...betHistory])
+                      } else {
+                        const updatedHistory = [...betHistory]
+                        updatedHistory[0].bets = updatedBets
+                        setBetHistory(updatedHistory)
+                      }
+                    }}
+                    className={`flex-1 px-1 py-1 rounded text-xs ${group.color} hover:opacity-80 transition-all ${
+                      manualBets[group.key as keyof typeof manualBets] ? 'ring-2 ring-white' : ''
+                    }`}
+                  >
+                    {group.label}
+                  </button>
+                  <input
+                    type="number"
+                    value={manualBets[group.key as keyof typeof manualBets]}
+                    onChange={(e) => {
+                      const updatedBets = {
+                        ...manualBets,
+                        [group.key]: e.target.value
+                      }
+                      setManualBets(updatedBets)
+                      
+                      if (betHistory.length > 0 && betHistory[0].spin === null) {
+                        const updatedHistory = [...betHistory]
+                        updatedHistory[0].bets = updatedBets
+                        setBetHistory(updatedHistory)
+                      } else if (e.target.value) {
+                        setBetHistory([{
+                          spin: null,
+                          bets: updatedBets,
+                          results: {},
+                          totalPnL: 0,
+                          timestamp: new Date()
+                        }, ...betHistory])
+                      }
+                    }}
+                    placeholder="10"
+                    className="w-12 px-1 py-1 bg-black/50 border border-gray-600 rounded text-xs text-center"
+                  />
+                </div>
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {/* Sample rows for demonstration */}
-            {[1, 2, 3, 4, 5].map(row => (
-              <tr key={row} className="hover:bg-gray-800/50">
-                {['Num', 'R', 'B', 'E', 'O', 'L', 'H', 'D1', 'D2', 'D3', 'C1', 'C2', 'C3',
-                  '1-6', '7-12', '13-18', '19-24', '25-30', '31-36', 'A', 'B', 'AA', 'BB',
-                  'AAA', 'BBB', 'E', 'C'].map(col => (
-                  <td key={col} className="px-2 py-1 text-center border border-gray-700">
-                    {col === 'Num' ? row : ''}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        
-        {/* Running totals */}
-        <div className="mt-2 p-2 bg-gray-800 rounded">
-          <div className="flex justify-between text-sm">
-            <span>Session P/L: <span className={sessionPnL >= 0 ? 'text-green-400' : 'text-red-400'}>
-              ${Math.abs(sessionPnL)}
-            </span></span>
-            <span>Total Bets: {betHistory.length}</span>
-            <span>Win Rate: {betHistory.length > 0 ? 
-              Math.round((betHistory.filter(b => b.totalPnL > 0).length / betHistory.length) * 100) : 0}%</span>
+            </div>
           </div>
-        </div>
+
+          {/* 12's Card */}
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+            <h4 className="text-center font-bold mb-3 text-yellow-400">12's (2:1)</h4>
+            <div className="space-y-2">
+              {[
+                { key: 'dozen1', label: '1st Dozen' },
+                { key: 'dozen2', label: '2nd Dozen' },
+                { key: 'dozen3', label: '3rd Dozen' },
+                { key: 'col1', label: 'Column 1' },
+                { key: 'col2', label: 'Column 2' },
+                { key: 'col3', label: 'Column 3' }
+              ].map(group => (
+                <div key={group.key} className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const currentValue = manualBets[group.key as keyof typeof manualBets]
+                      const newValue = currentValue ? '' : playerContext.unitSize.toString()
+                      const updatedBets = {
+                        ...manualBets,
+                        [group.key]: newValue
+                      }
+                      setManualBets(updatedBets)
+                      
+                      if (betHistory.length === 0 || betHistory[0].spin !== null) {
+                        setBetHistory([{
+                          spin: null,
+                          bets: updatedBets,
+                          results: {},
+                          totalPnL: 0,
+                          timestamp: new Date()
+                        }, ...betHistory])
+                      } else {
+                        const updatedHistory = [...betHistory]
+                        updatedHistory[0].bets = updatedBets
+                        setBetHistory(updatedHistory)
+                      }
+                    }}
+                    className={`flex-1 px-2 py-1 bg-yellow-600/20 border border-yellow-500/30 rounded text-xs hover:bg-yellow-600/30 transition-all ${
+                      manualBets[group.key as keyof typeof manualBets] ? 'ring-2 ring-yellow-400' : ''
+                    }`}
+                  >
+                    {group.label}
+                  </button>
+                  <input
+                    type="number"
+                    value={manualBets[group.key as keyof typeof manualBets]}
+                    onChange={(e) => {
+                      const updatedBets = {
+                        ...manualBets,
+                        [group.key]: e.target.value
+                      }
+                      setManualBets(updatedBets)
+                      
+                      if (betHistory.length > 0 && betHistory[0].spin === null) {
+                        const updatedHistory = [...betHistory]
+                        updatedHistory[0].bets = updatedBets
+                        setBetHistory(updatedHistory)
+                      } else if (e.target.value) {
+                        setBetHistory([{
+                          spin: null,
+                          bets: updatedBets,
+                          results: {},
+                          totalPnL: 0,
+                          timestamp: new Date()
+                        }, ...betHistory])
+                      }
+                    }}
+                    placeholder="10"
+                    className="w-16 px-1 py-1 bg-black/50 border border-gray-600 rounded text-xs text-center"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 6's Card */}
+          <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+            <h4 className="text-center font-bold mb-3 text-cyan-400">6's (5:1)</h4>
+            <div className="space-y-2">
+              {[
+                { key: 'six1', label: '1st 6' },
+                { key: 'six2', label: '2nd 6' },
+                { key: 'six3', label: '3rd 6' },
+                { key: 'six4', label: '4th 6' },
+                { key: 'six5', label: '5th 6' },
+                { key: 'six6', label: '6th 6' }
+              ].map(group => (
+                <div key={group.key} className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      const currentValue = manualBets[group.key as keyof typeof manualBets]
+                      const newValue = currentValue ? '' : playerContext.unitSize.toString()
+                      const updatedBets = {
+                        ...manualBets,
+                        [group.key]: newValue
+                      }
+                      setManualBets(updatedBets)
+                      
+                      if (betHistory.length === 0 || betHistory[0].spin !== null) {
+                        setBetHistory([{
+                          spin: null,
+                          bets: updatedBets,
+                          results: {},
+                          totalPnL: 0,
+                          timestamp: new Date()
+                        }, ...betHistory])
+                      } else {
+                        const updatedHistory = [...betHistory]
+                        updatedHistory[0].bets = updatedBets
+                        setBetHistory(updatedHistory)
+                      }
+                    }}
+                    className={`flex-1 px-2 py-1 bg-cyan-600/20 border border-cyan-500/30 rounded text-xs hover:bg-cyan-600/30 transition-all ${
+                      manualBets[group.key as keyof typeof manualBets] ? 'ring-2 ring-cyan-400' : ''
+                    }`}
+                  >
+                    {group.label}
+                  </button>
+                  <input
+                    type="number"
+                    value={manualBets[group.key as keyof typeof manualBets]}
+                    onChange={(e) => {
+                      const updatedBets = {
+                        ...manualBets,
+                        [group.key]: e.target.value
+                      }
+                      setManualBets(updatedBets)
+                      
+                      if (betHistory.length > 0 && betHistory[0].spin === null) {
+                        const updatedHistory = [...betHistory]
+                        updatedHistory[0].bets = updatedBets
+                        setBetHistory(updatedHistory)
+                      } else if (e.target.value) {
+                        setBetHistory([{
+                          spin: null,
+                          bets: updatedBets,
+                          results: {},
+                          totalPnL: 0,
+                          timestamp: new Date()
+                        }, ...betHistory])
+                      }
+                    }}
+                    placeholder="10"
+                    className="w-16 px-1 py-1 bg-black/50 border border-gray-600 rounded text-xs text-center"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>{/* Keep your existing betting cards below - they're already in your code */}
+        {/* Your existing Manual Betting Cards code stays here */}
+        
+        {/* Your existing betting matrix code stays here */}
+        {/* Keep your existing betting cards - they should be right after Current Bets */}
+{/* The betting cards code you already have in lines 1009-1157 stays here */}
+
+{/* After the betting cards, before the closing of TABLE VIEW */}
+{/* Current Bets & Stake - Improved with bet display */}
+<div className="bg-gray-800 rounded-lg border border-gray-700 p-3">
+  <div className="flex justify-between items-center">
+    <h3 className="text-lg font-bold">Current Bets & Stake</h3>
+    <div className="flex gap-6 items-center">
+      <div className="text-sm">
+        <span className="text-gray-400">Active: </span>
+        <span className="text-white font-bold">{Object.values(manualBets).filter(v => v).length}</span>
+      </div>
+      <div className="text-sm">
+        <span className="text-gray-400">Total: </span>
+        <span className="text-yellow-400 font-bold text-lg">
+          ${Object.values(manualBets).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toFixed(2)}
+        </span>
       </div>
     </div>
-
-    {/* Active Bets Summary */}
-    <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
-      <h4 className="font-bold mb-2">Active Bets</h4>
-      <div className="grid grid-cols-4 gap-2">
+  </div>
+  
+  {/* Display active bets if any */}
+  {Object.values(manualBets).some(v => v) && (
+    <div className="mt-2 pt-2 border-t border-gray-700">
+      <div className="flex flex-wrap gap-2">
         {Object.entries(manualBets).filter(([_, value]) => value).map(([key, value]) => (
-          <div key={key} className="flex justify-between text-xs p-2 bg-black/30 rounded">
-            <span className="text-gray-400">{key}:</span>
-            <span className="text-green-400">${value}</span>
+          <div key={key} className="px-2 py-1 bg-black/40 rounded text-xs">
+            <span className="text-gray-400">{
+              key === 'alt1_1' ? 'A' :
+              key === 'alt1_2' ? 'B' :
+              key === 'alt2_1' ? 'AA' :
+              key === 'alt2_2' ? 'BB' :
+              key === 'alt3_1' ? 'AAA' :
+              key === 'alt3_2' ? 'BBB' :
+              key === 'six1' ? '1st 6' :
+              key === 'six2' ? '2nd 6' :
+              key === 'six3' ? '3rd 6' :
+              key === 'six4' ? '4th 6' :
+              key === 'six5' ? '5th 6' :
+              key === 'six6' ? '6th 6' :
+              key === 'dozen1' ? '1st Doz' :
+              key === 'dozen2' ? '2nd Doz' :
+              key === 'dozen3' ? '3rd Doz' :
+              key === 'col1' ? 'Col 1' :
+              key === 'col2' ? 'Col 2' :
+              key === 'col3' ? 'Col 3' :
+              key.charAt(0).toUpperCase() + key.slice(1).replace('_', ' ')
+            }:</span>
+            <span className="text-green-400 font-bold ml-1">${value}</span>
           </div>
         ))}
       </div>
-      <div className="mt-3 pt-3 border-t border-gray-700">
-        <div className="flex justify-between">
-          <span>Total Stake:</span>
-          <span className="text-yellow-400 font-bold">
-            ${Object.values(manualBets).reduce((sum, val) => sum + (parseFloat(val) || 0), 0)}
+    </div>
+  )}
+</div>
+{/* Hot/Cold Visual Reference - Enhanced with click and count */}
+<div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+  <div className="flex justify-between items-center mb-3">
+    <h4 className="font-bold text-green-400">🔥 Hot/Cold Analysis - Last 36 Spins</h4>
+    <button 
+      onClick={() => setShowHeatMap(!showHeatMap)}
+      className="text-xs text-gray-400 hover:text-white"
+    >
+      {showHeatMap ? 'Hide' : 'Show'}
+    </button>
+  </div>
+  
+  {showHeatMap && (
+    <div className="p-3 bg-black/30 rounded">
+      <div className="grid grid-cols-12 gap-1 mb-1">
+        <div 
+          onClick={() => setInputNumber('0')}
+          className="col-span-12 bg-green-600 text-white text-center py-2 rounded text-lg font-bold cursor-pointer hover:opacity-80 relative"
+        >
+          0
+          <span className="absolute top-0 right-1 text-xs bg-black/50 px-1 rounded">
+            {spins.slice(0, 36).filter(s => s.number === 0).length}
           </span>
         </div>
       </div>
+      <div className="grid grid-cols-12 gap-1">
+        {/* First row - 3rd column numbers */}
+        {[3,6,9,12,15,18,21,24,27,30,33,36].map(n => {
+          const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]
+          const hitCount = spins.slice(0, 36).filter(s => s.number === n).length
+          const heatColor = hitCount === 0 ? 'opacity-50' : hitCount >= 3 ? 'ring-2 ring-yellow-400' : ''
+          return (
+            <div 
+              key={n} 
+              onClick={() => setInputNumber(n.toString())}
+              className={`${redNumbers.includes(n) ? 'bg-red-600' : 'bg-black'} text-white text-center py-2 rounded text-sm font-bold cursor-pointer hover:opacity-80 relative ${heatColor}`}
+            >
+              {n}
+              {hitCount > 0 && (
+                <span className="absolute -top-1 -right-1 text-xs bg-yellow-500 text-black px-1 rounded-full font-bold">
+                  {hitCount}
+                </span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <div className="grid grid-cols-12 gap-1 mt-1">
+        {/* Second row - 2nd column numbers */}
+        {[2,5,8,11,14,17,20,23,26,29,32,35].map(n => {
+          const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]
+          const hitCount = spins.slice(0, 36).filter(s => s.number === n).length
+          const heatColor = hitCount === 0 ? 'opacity-50' : hitCount >= 3 ? 'ring-2 ring-yellow-400' : ''
+          return (
+            <div 
+              key={n}
+              onClick={() => setInputNumber(n.toString())}
+              className={`${redNumbers.includes(n) ? 'bg-red-600' : 'bg-black'} text-white text-center py-2 rounded text-sm font-bold cursor-pointer hover:opacity-80 relative ${heatColor}`}
+            >
+              {n}
+              {hitCount > 0 && (
+                <span className="absolute -top-1 -right-1 text-xs bg-yellow-500 text-black px-1 rounded-full font-bold">
+                  {hitCount}
+                </span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      <div className="grid grid-cols-12 gap-1 mt-1">
+        {/* Third row - 1st column numbers */}
+        {[1,4,7,10,13,16,19,22,25,28,31,34].map(n => {
+          const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]
+          const hitCount = spins.slice(0, 36).filter(s => s.number === n).length
+          const heatColor = hitCount === 0 ? 'opacity-50' : hitCount >= 3 ? 'ring-2 ring-yellow-400' : ''
+          return (
+            <div 
+              key={n}
+              onClick={() => setInputNumber(n.toString())}
+              className={`${redNumbers.includes(n) ? 'bg-red-600' : 'bg-black'} text-white text-center py-2 rounded text-sm font-bold cursor-pointer hover:opacity-80 relative ${heatColor}`}
+            >
+              {n}
+              {hitCount > 0 && (
+                <span className="absolute -top-1 -right-1 text-xs bg-yellow-500 text-black px-1 rounded-full font-bold">
+                  {hitCount}
+                </span>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      
+      {/* Heat Map Legend */}
+      <div className="mt-3 pt-2 border-t border-gray-600 text-xs flex gap-4">
+        <span className="text-gray-400">Cold (0 hits): Faded</span>
+        <span className="text-yellow-400">Hot (3+ hits): Yellow ring</span>
+        <span className="text-white">Hit count shown in corner</span>
+      </div>
     </div>
+  )}
+</div>
 
-    {/* Action Buttons */}
-    <div className="flex gap-3">
-      <button className="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-bold">
-        Spin & Calculate
+{/* Combined Recent Numbers and Add Number - Single Row */}
+<div className="bg-gray-800 rounded-lg border border-gray-700 p-3">
+  <div className="flex items-center gap-4">
+    {/* Recent Numbers - Left Side */}
+    <div className="flex items-center gap-2">
+      <span className="text-sm font-bold text-blue-400 whitespace-nowrap">Recent:</span>
+      <div className="flex gap-1">
+        {spins.slice(0, 8).map((spin, idx) => {
+          const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]
+          return (
+            <div 
+              key={idx} 
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white
+                ${spin.number === 0 ? 'bg-green-600' : 
+                  redNumbers.includes(spin.number) ? 'bg-red-600' : 'bg-black border border-gray-600'}`}
+            >
+              {spin.number}
+            </div>
+          )
+        })}
+        {spins.length === 0 && (
+          <span className="text-gray-500 text-xs">No numbers yet</span>
+        )}
+      </div>
+    </div>
+    
+    {/* Divider */}
+    <div className="h-8 w-px bg-gray-600"></div>
+    
+    {/* Add Number - Right Side */}
+    <div className="flex items-center gap-2 flex-1">
+      <span className="text-sm font-bold text-green-400 whitespace-nowrap">Add:</span>
+      <input
+        type="number"
+        min="0"
+        max="36"
+        value={inputNumber}
+        onChange={(e) => setInputNumber(e.target.value)}
+        onKeyPress={(e) => {
+          if (e.key === 'Enter') {
+            addNumber()
+          }
+        }}
+        placeholder="0-36"
+        className="w-20 px-2 py-1.5 bg-black/50 border border-gray-600 rounded text-center text-sm font-bold focus:border-green-500 focus:outline-none"
+      />
+      <button
+        onClick={() => addNumber()}
+        className="px-4 py-1.5 bg-green-600 hover:bg-green-700 rounded text-sm font-bold transition-colors"
+      >
+        ADD
       </button>
-      <button className="px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg">
-        Save Strategy
-      </button>
-      <button className="px-4 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg">
-        Auto-Bet
+      <button
+        onClick={() => setInputNumber('')}
+        className="px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded text-sm font-bold transition-colors"
+      >
+        CLR
       </button>
     </div>
   </div>
-)}
- 
-{assistantSubTab === 'performance' && (
-<div className="bg-gray-800 rounded-xl p-6">
-<h2 className="text-2xl font-bold text-white mb-6">Performance Matrix</h2>
-<p className="text-gray-400">27-column betting matrix coming soon...</p>
 </div>
- )}
+{/* Betting Performance Matrix */}
+<div className="bg-gray-900 rounded-lg border border-gray-700 p-4 mt-4">
+  <h3 className="text-lg font-bold mb-3 text-blue-300">Betting Performance Matrix</h3>
+  <div className="overflow-x-auto">
+    <div className="max-h-96 overflow-y-auto">
+      <table className="min-w-full text-sm">
+        <thead className="sticky top-0 bg-gray-800 z-10">
+          <tr>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">Num</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">R</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">B</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">Ev</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">Od</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">L</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">H</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">D1</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">D2</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">D3</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">C1</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">C2</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">C3</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">1-6</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">7-12</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">13-18</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">19-24</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">25-30</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">31-36</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">A</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">B</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">AA</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">BB</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">AAA</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">BBB</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">Ed</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">Ce</th>
+          </tr>
+        </thead>
+        <tbody>
+          {betHistory.map((row, index) => (
+            <tr key={index} className={row.spin === null ? 'bg-amber-900/20' : 'hover:bg-gray-800/50'}>
+              <td className="px-2 py-1 text-center border border-gray-700 text-xs font-bold">
+                {row.spin === null ? '...' : row.spin}
+              </td>
+              {['red', 'black', 'even', 'odd', 'low', 'high', 'dozen1', 'dozen2', 'dozen3',
+                'col1', 'col2', 'col3', 'six1', 'six2', 'six3', 'six4', 'six5', 'six6',
+                'alt1_1', 'alt1_2', 'alt2_1', 'alt2_2', 'alt3_1', 'alt3_2', 'edge', 'center'].map(betKey => (
+                <td key={betKey} className="px-2 py-1 text-center border border-gray-700 text-xs">
+                  {row.spin === null && row.bets[betKey] ? 
+                    <span className="text-yellow-400">${row.bets[betKey]}</span> : 
+                    row.results?.[betKey] ? 
+                    <span className={row.results[betKey] > 0 ? 'text-green-400' : 'text-red-400'}>
+                      {row.results[betKey] > 0 ? '+' : ''}{row.results[betKey]}
+                    </span> : ''}
+                </td>
+              ))}
+            </tr>
+          ))}
+          {/* Fill empty rows */}
+          {Array.from({ length: Math.max(0, 10 - betHistory.length) }, (_, index) => (
+            <tr key={`empty-${index}`} className="hover:bg-gray-800/50">
+              <td className="px-2 py-1 text-center border border-gray-700 text-xs font-bold"></td>
+              {Array.from({ length: 26 }, (_, colIndex) => (
+                <td key={colIndex} className="px-2 py-1 text-center border border-gray-700 text-xs"></td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+    
+    {/* Session totals */}
+    <div className="mt-2 p-2 bg-gray-800 rounded">
+      <div className="flex justify-between text-sm">
+        <span>Session P/L: <span className={sessionPnL >= 0 ? 'text-green-400' : 'text-red-400'}>
+          ${Math.abs(sessionPnL).toFixed(2)}
+        </span></span>
+        <span>Total Spins: {betHistory.filter(b => b.spin !== null).length}</span>
+        <span>Win Rate: {betHistory.filter(b => b.spin !== null).length > 0 ? 
+          Math.round((betHistory.filter(b => b.totalPnL > 0).length / betHistory.filter(b => b.spin !== null).length) * 100) : 0}%</span>
+      </div>
+    </div>
+  </div>
+</div>
+{/* Keep your existing betting performance matrix - it should already be in your code */}
+{/* The matrix code you have in lines 1158-1194 stays here */}
+      </>
+    )}
+    {/* WHEEL VIEW */}
+    {actionView === 'wheel' && (
+      <WheelView
+        manualBets={manualBets}
+        setManualBets={setManualBets}
+        betHistory={betHistory}
+        setBetHistory={setBetHistory}
+        spins={spins.map(s => s.number)}
+        inputNumber={inputNumber}
+        setInputNumber={setInputNumber}
+        addNumber={addNumber}
+        playerContext={playerContext}
+        sessionPnL={sessionPnL}
+        showHeatMap={showHeatMap}
+        setShowHeatMap={setShowHeatMap}
+      />
+    )}
+    </div>
+  )}
+              </div>
+            )}
+
+            {assistantSubTab === 'performance' && (
+  <div className="bg-gray-800 rounded-xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-6">Performance Matrix</h2>
+    <p className="text-gray-400">27-column betting matrix coming soon...</p>
+  </div>
+)}
 
 {assistantSubTab === 'analysis' && (
-<div className="bg-gray-800 rounded-xl p-6">
-<h2 className="text-2xl font-bold text-white mb-6">AI Analysis</h2>
-{/* Analysis content */}
-</div>
+  <div className="bg-gray-800 rounded-xl p-6">
+    <h2 className="text-2xl font-bold text-white mb-6">AI Analysis</h2>
+    {/* Analysis content */}
+  </div>
 )}
-</div>
-)}
-</div>
-</div>
-</div>
-)
+          </div>
+        
+      </div>
+    </div>
+  )
 }
