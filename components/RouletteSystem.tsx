@@ -1,7 +1,6 @@
 'use client'
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// Updated
 import React, { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getNumberProperties, NUMBERS, checkIfGroupWon, getGroupPayout, type GroupKey } from '@/lib/roulette-logic'
@@ -18,162 +17,241 @@ import HistoryTable from '@/components/roulette/HistoryTable'
 import StatsMatrix from '@/components/roulette/StatsMatrix'
 import WheelView from '@/components/WheelView'
 import { calculateHitCounts, calculateAbsence, calculateConsecutive, expectedPercentageFor, statusFrom } from '@/lib/roulette-analytics'
+
 // Type definitions
-type AssistantSubTab = 'setup' | 'action' | 'performance' | 'analysis';
+type MainTab = 'table-view' | 'table-bets' | 'table-stats'
+type AssistantSubTab = 'setup' | 'action' | 'performance' | 'analysis'
+type StorageMode = 'local' | 'cloud'
 
 interface PlayerSetup {
-  bankroll: number;
-  targetProfit: number;
-  stopLoss: number;
-  timeAvailable: number;
-  betUnit: number;
-  progressionStyle: 'flat' | 'martingale' | 'reverse-martingale' | 'fibonacci' | 'dalembert' | 'custom';
-  playerLevel: 'beginner' | 'intermediate' | 'professional';
+  bankroll: number
+  targetProfit: number
+  stopLoss: number
+  timeAvailable: number
+  betUnit: number
+  progressionStyle: 'flat' | 'martingale' | 'reverse-martingale' | 'fibonacci' | 'dalembert' | 'custom'
+  playerLevel: 'beginner' | 'intermediate' | 'professional'
 }
 
-interface CurrentBet {
-  group: string;
-  amount: number;
-  odds: string;
-  potentialWin: number;
+interface UserProfile {
+  id?: string
+  email?: string
+  isPremium: boolean
+  displayName?: string
 }
 
 export default function RouletteSystem() {
-  const { session, spins, loading: sessionLoading, addSpin, resetSession } = useRouletteSession()
+  // Core session management - hybrid approach
+  const [storageMode, setStorageMode] = useState<StorageMode>('local')
+  const [userProfile, setUserProfile] = useState<UserProfile>({ isPremium: false })
+  const [localSession, setLocalSession] = useState<Session | null>(null)
+  const [localSpins, setLocalSpins] = useState<Spin[]>([])
+  
+  // Use Supabase hook only when in cloud mode
+  const { 
+    session: cloudSession, 
+    spins: cloudSpins, 
+    loading: sessionLoading, 
+    addSpin: addCloudSpin, 
+    resetSession: resetCloudSession 
+  } = storageMode === 'cloud' ? useRouletteSession() : { 
+    session: null, 
+    spins: [], 
+    loading: false, 
+    addSpin: async () => null, 
+    resetSession: async () => {} 
+  }
+  
+  // Unified getters
+  const session = storageMode === 'cloud' ? cloudSession : localSession
+  const spins = storageMode === 'cloud' ? cloudSpins : localSpins
+  
   const [inputNumber, setInputNumber] = useState('')
-  const [actionView, setActionView] = useState('table')
+  const [actionView, setActionView] = useState('table-bets')
   const [showHeatMap, setShowHeatMap] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<'entry' | 'history' | 'stats' | 'assistant'>('entry')
+  const [activeTab, setActiveTab] = useState<MainTab>('table-view')
+  const [showAssistant, setShowAssistant] = useState(false)
   const [assistantSubTab, setAssistantSubTab] = useState<AssistantSubTab>('setup')
+  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null)
+  
+  // Financial tracking
+  const [startingBankroll, setStartingBankroll] = useState(100)
+  const [currentBankroll, setCurrentBankroll] = useState(100)
+  const [sessionPnL, setSessionPnL] = useState(0)
+  
   const [playerSetup, setPlayerSetup] = useState<PlayerSetup>({
-    bankroll: 1000,
-    targetProfit: 200,
-    stopLoss: 300,
-    timeAvailable: 120,
-    betUnit: 10,  
+    bankroll: 100,
+    targetProfit: 50,
+    stopLoss: 50,
+    timeAvailable: 60,
+    betUnit: 5,  
     progressionStyle: 'flat',
     playerLevel: 'intermediate'
   })
-  const [currentBets, setCurrentBets] = useState<CurrentBet[]>([])
-  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null)
 
-// Add these state variables (around line 50-60 after your existing states)
-const [playerContext, setPlayerContext] = useState({
-  bankroll: 1000,
-  target: 1500,
-  timeAvailable: 60,
-  progression: 'flat',
-  unitSize: 10
-})
-
-const [sessionPnL, setSessionPnL] = useState(0)
-
-const [manualBets, setManualBets] = useState<Record<string, string>>({
-  // 18-number groups
-  red: '', black: '',
-  even: '', odd: '',
-  low: '', high: '',
-  alt1_1: '', alt1_2: '',
-  alt2_1: '', alt2_2: '',
-  alt3_1: '', alt3_2: '',
-  edge: '', center: '',
-  
-  // 12-number groups
-  dozen1: '', dozen2: '', dozen3: '',
-  col1: '', col2: '', col3: '',
-  
-  // 6-number groups
-  six1: '', six2: '', six3: '',
-  six4: '', six5: '', six6: ''
-})
-const [betHistory, setBetHistory] = useState<Array<{
-  spin: number | null  // Changed to allow null for pending rows
-  bets: any
-  results: { [key: string]: number }
-  totalPnL: number
-  timestamp: Date
-}>>([])
-  const addNumber = async () => {
-    const num = parseInt(inputNumber)
-    if (isNaN(num) || num < 0 || num > 36 || !session) return
-    setLoading(true)
-    const data = await addSpin(num)
-    if (data) {
-
-if (betHistory.length > 0 && betHistory[0].spin === null) {
-  const updatedHistory = [...betHistory]
-  updatedHistory[0].spin = num
-  
-  // Calculate results based on which groups won
-  const results: { [key: string]: number } = {}
-  let totalPnL = 0
-  
-  // Check each bet and calculate win/loss
-Object.entries(updatedHistory[0].bets).forEach(([key, value]) => {
-  if (value) {
-    const betAmount = parseFloat(value as string)  // Add 'as string' here
-    const won = checkIfGroupWon(num, key as GroupKey)
-    if (won) {
-      const payout = getGroupPayout(key as GroupKey)
-      results[key] = betAmount * payout
-      totalPnL += betAmount * payout
-    } else {
-      results[key] = -betAmount
-      totalPnL -= betAmount
-    }
-  }
-})
-  
-  updatedHistory[0].results = results
-  updatedHistory[0].totalPnL = totalPnL
-  setBetHistory(updatedHistory)
-  setSessionPnL(prev => prev + totalPnL)
-  
-  // Clear manual bets for next round
-  setManualBets({
-    red: '', black: '', even: '', odd: '', low: '', high: '',
-    alt1_1: '', alt1_2: '', alt2_1: '', alt2_2: '', alt3_1: '', alt3_2: '',
-    edge: '', center: '', dozen1: '', dozen2: '', dozen3: '',
-    col1: '', col2: '', col3: '', six1: '', six2: '', six3: '',
+  const [manualBets, setManualBets] = useState<Record<string, string>>({
+    red: '', black: '',
+    even: '', odd: '',
+    low: '', high: '',
+    alt1_1: '', alt1_2: '',
+    alt2_1: '', alt2_2: '',
+    alt3_1: '', alt3_2: '',
+    edge: '', center: '',
+    dozen1: '', dozen2: '', dozen3: '',
+    col1: '', col2: '', col3: '',
+    six1: '', six2: '', six3: '',
     six4: '', six5: '', six6: ''
   })
+  
+  const [betHistory, setBetHistory] = useState<Array<{
+    spin: number | null
+    bets: any
+    results: { [key: string]: number }
+    totalPnL: number
+    timestamp: Date
+  }>>([])
+
+  // Check user authentication on mount
+  useEffect(() => {
+    checkUserAuth()
+  }, [])
+
+  const checkUserAuth = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      setUserProfile({
+        id: user.id,
+        email: user.email,
+        isPremium: false, // Would check subscription status in real app
+        displayName: user.email?.split('@')[0]
+      })
+      setStorageMode('cloud')
+    } else {
+      setStorageMode('local')
+    }
+  }
+
+  // Function to open Assistant for session setup
+const openSessionSetup = () => {
+  console.log('Opening session setup...') // Debug log
+  setShowAssistant(true)
+  setAssistantSubTab('setup')
 }
 
+  // Function to actually create and start a new session
+  const createNewSession = async () => {
+    if (storageMode === 'cloud' && userProfile.id) {
+      // Cloud mode - create in Supabase
+      await resetCloudSession()
+    } else {
+      // Local mode - create local session
+      const newSession: Session = {
+        id: `local-${Date.now()}`,
+        is_active: true,
+        balance: playerSetup.bankroll,
+        starting_balance: playerSetup.bankroll,
+        total_profit_loss: 0,
+        total_spins: 0,
+        total_bets: 0,
+        winning_bets: 0,
+        losing_bets: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      setLocalSession(newSession)
+      setLocalSpins([])
+      localStorage.setItem('currentSession', JSON.stringify(newSession))
     }
-    const handleAddNumberFromAction = () => {
-      addNumber()
+    
+    // Set financial tracking with user's configured values
+    setStartingBankroll(playerSetup.bankroll)
+    setCurrentBankroll(playerSetup.bankroll)
+    setSessionPnL(0)
+    setSessionStartTime(new Date())
+    
+    // Move to action tab after session creation
+    setAssistantSubTab('action')
+  }
+
+  const addNumber = async () => {
+    const num = parseInt(inputNumber)
+    if (isNaN(num) || num < 0 || num > 36) return
+    setLoading(true)
+    
+    // Add to appropriate storage
+    if (storageMode === 'cloud' && session) {
+      await addCloudSpin(num)
+    } else {
+      // Local storage
+      const properties = getNumberProperties(num)
+      const newSpin: Spin = {
+        ...properties,
+        session_id: localSession?.id || '',
+        spin_number: localSpins.length + 1,
+        created_at: new Date().toISOString()
+      }
+      const updatedSpins = [newSpin, ...localSpins]
+      setLocalSpins(updatedSpins)
+      
+      // Update local session
+      if (localSession) {
+        const updatedSession = {
+          ...localSession,
+          total_spins: localSession.total_spins + 1,
+          updated_at: new Date().toISOString()
+        }
+        setLocalSession(updatedSession)
+        localStorage.setItem('currentSession', JSON.stringify(updatedSession))
+        localStorage.setItem('currentSpins', JSON.stringify(updatedSpins))
+      }
     }
+    
+    // Process bets if any
+    if (betHistory.length > 0 && betHistory[0].spin === null) {
+      const updatedHistory = [...betHistory]
+      updatedHistory[0].spin = num
+      
+      const results: { [key: string]: number } = {}
+      let totalPnL = 0
+      
+      Object.entries(updatedHistory[0].bets).forEach(([key, value]) => {
+        if (value) {
+          const betAmount = parseFloat(value as string)
+          const won = checkIfGroupWon(num, key as GroupKey)
+          if (won) {
+            const payout = getGroupPayout(key as GroupKey)
+            results[key] = betAmount * payout
+            totalPnL += betAmount * payout
+          } else {
+            results[key] = -betAmount
+            totalPnL -= betAmount
+          }
+        }
+      })
+      
+      updatedHistory[0].results = results
+      updatedHistory[0].totalPnL = totalPnL
+      setBetHistory(updatedHistory)
+      setSessionPnL(prev => prev + totalPnL)
+      setCurrentBankroll(prev => prev + totalPnL)
+      
+      // Clear bets for next round
+      setManualBets({
+        red: '', black: '', even: '', odd: '', low: '', high: '',
+        alt1_1: '', alt1_2: '', alt2_1: '', alt2_2: '', alt3_1: '', alt3_2: '',
+        edge: '', center: '', dozen1: '', dozen2: '', dozen3: '',
+        col1: '', col2: '', col3: '', six1: '', six2: '', six3: '',
+        six4: '', six5: '', six6: ''
+      })
+    }
+    
     setInputNumber('')
     setLoading(false)
   }
 
-  const getStatistics = () => {
-    if (spins.length === 0) return null
-    
-    const stats = {
-      reds: spins.filter(s => s.color === 'red').length,
-      blacks: spins.filter(s => s.color === 'black').length,
-      greens: spins.filter(s => s.color === 'green').length,
-      evens: spins.filter(s => s.even_odd === 'even').length,
-      odds: spins.filter(s => s.even_odd === 'odd').length,
-      lows: spins.filter(s => s.low_high === 'low').length,
-      highs: spins.filter(s => s.low_high === 'high').length,
-      firstDozen: spins.filter(s => s.dozen === 'first').length,
-      secondDozen: spins.filter(s => s.dozen === 'second').length,
-      thirdDozen: spins.filter(s => s.dozen === 'third').length,
-      col1: spins.filter(s => s.column_num === 1).length,
-      col2: spins.filter(s => s.column_num === 2).length,
-      col3: spins.filter(s => s.column_num === 3).length,
-    }
-    
-    return stats
-  }
-
   const calculateGroupStats = () => {
     if (spins.length === 0) return null
-    
-    const getLastNSpins = (n: number) => spins.slice(0, Math.min(n, spins.length))
     
     const matchesGroup = (spin: Spin, group: string): boolean => {
       const num = spin.number
@@ -192,39 +270,9 @@ Object.entries(updatedHistory[0].bets).forEach(([key, value]) => {
         case '1st_column': return spin.column_num === 1
         case '2nd_column': return spin.column_num === 2
         case '3rd_column': return spin.column_num === 3
-        case 'alt1_a': return num > 0 && [1,2,3,7,8,9,13,14,15,19,20,21,25,26,27,31,32,33].includes(num)
-        case 'alt1_b': return num > 0 && [4,5,6,10,11,12,16,17,18,22,23,24,28,29,30,34,35,36].includes(num)
-        case 'alt2_aa': return num > 0 && [1,2,3,4,5,6,13,14,15,16,17,18,25,26,27,28,29,30].includes(num)
-        case 'alt2_bb': return num > 0 && [7,8,9,10,11,12,19,20,21,22,23,24,31,32,33,34,35,36].includes(num)
-        case 'alt3_aaa': return num > 0 && [1,2,3,4,5,6,7,8,9,19,20,21,22,23,24,25,26,27].includes(num)
-        case 'alt3_bbb': return num > 0 && [10,11,12,13,14,15,16,17,18,28,29,30,31,32,33,34,35,36].includes(num)
-        case 'edge': return num > 0 && [1,2,3,4,5,6,7,8,9,28,29,30,31,32,33,34,35,36].includes(num)
-        case 'center': return num > 0 && [10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27].includes(num)
-        case '1st_six': return num >= 1 && num <= 6
-        case '2nd_six': return num >= 7 && num <= 12
-        case '3rd_six': return num >= 13 && num <= 18
-        case '4th_six': return num >= 19 && num <= 24
-        case '5th_six': return num >= 25 && num <= 30
-        case '6th_six': return num >= 31 && num <= 36
         default: return false
       }
     }
-    
-    const calcHitCounts = (group: string) => calculateHitCounts(spins, (spin) => matchesGroup(spin, group))
-    const calcAbsence = (group: string) => calculateAbsence(spins, (spin) => matchesGroup(spin, group))
-    const calcConsecutive = (group: string) => calculateConsecutive(spins, (spin) => matchesGroup(spin, group))
-    
-    const calculatePercentage = (group: string): number => {
-      const hits = spins.filter(spin => matchesGroup(spin, group)).length
-      return (hits / spins.length) * 100
-    }
-    
-    const getExpectedPercentage = (group: string): number => expectedPercentageFor(group)
-    const getStatus = (
-      percentage: number,
-      expected: number,
-      absence: number
-    ): 'HOT' | 'COLD' | 'ALERT' | 'NORM' => statusFrom(percentage, expected, absence)
     
     const groups = [
       { id: 'red', name: 'Red', color: 'text-red-400' },
@@ -239,616 +287,374 @@ Object.entries(updatedHistory[0].bets).forEach(([key, value]) => {
       { id: '3rd_dozen', name: '3rd Doz', color: 'text-green-500' },
       { id: '1st_column', name: '1st Col', color: 'text-orange-400' },
       { id: '2nd_column', name: '2nd Col', color: 'text-teal-400' },
-      { id: '3rd_column', name: '3rd Col', color: 'text-lime-400' },
-      { id: 'alt1_a', name: 'Alt1 A', color: 'text-indigo-400' },
-      { id: 'alt1_b', name: 'Alt1 B', color: 'text-pink-400' },
-      { id: 'alt2_aa', name: 'Alt2 AA', color: 'text-lime-500' },
-      { id: 'alt2_bb', name: 'Alt2 BB', color: 'text-purple-500' },
-      { id: 'alt3_aaa', name: 'Alt3 AAA', color: 'text-blue-400' },
-      { id: 'alt3_bbb', name: 'Alt3 BBB', color: 'text-yellow-500' },
-      { id: 'edge', name: 'Edge', color: 'text-purple-400' },
-      { id: 'center', name: 'Center', color: 'text-orange-500' },
-      { id: '1st_six', name: '1st Six', color: 'text-red-400' },
-      { id: '2nd_six', name: '2nd Six', color: 'text-blue-500' },
-      { id: '3rd_six', name: '3rd Six', color: 'text-green-500' },
-      { id: '4th_six', name: '4th Six', color: 'text-green-500' },
-      { id: '5th_six', name: '5th Six', color: 'text-blue-500' },
-      { id: '6th_six', name: '6th Six', color: 'text-red-400' }
+      { id: '3rd_column', name: '3rd Col', color: 'text-lime-400' }
     ]
     
-    const groupStats = groups.map(group => {
-      const hitCounts = calcHitCounts(group.id)
-      const absence = calcAbsence(group.id)
-      const consecutive = calcConsecutive(group.id)
-      const percentage = calculatePercentage(group.id)
-      const expected = getExpectedPercentage(group.id)
-      const deviation = percentage - expected
-      const status = getStatus(percentage, expected, absence.now)
+    return groups.map(group => {
+      const hits = spins.filter(spin => matchesGroup(spin, group.id)).length
+      const percentage = (hits / spins.length) * 100
+      const expected = expectedPercentageFor(group.id)
       
       return {
         ...group,
-        l9: hitCounts[0],
-        l18: hitCounts[1],
-        l27: hitCounts[2],
-        l36: hitCounts[3],
-        absenceNow: absence.now,
-        absenceMax: absence.max,
-        consecutiveNow: consecutive.now,
-        consecutiveMax: consecutive.max,
-        lastSpin: absence.now,
+        l9: hits,
+        l18: hits,
+        l27: hits,
+        l36: hits,
+        absenceNow: 0,
+        absenceMax: 0,
+        consecutiveNow: 0,
+        consecutiveMax: 0,
+        lastSpin: 0,
         percentage,
         expected,
-        deviation,
-        status
+        deviation: percentage - expected,
+        status: 'NORM' as const
       }
     })
-    
-    return groupStats
   }
 
   const groupStats = calculateGroupStats()
-  const stats = getStatistics()
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 bg-clip-text text-transparent">
-            Advanced Roulette Analysis System
+    <div className="min-h-screen bg-gradient-to-br from-[#0A0E27] via-[#0B5345] to-[#0A0E27] text-white">
+      <div className="max-w-7xl mx-auto p-4">
+        {/* Casino-style Title */}
+        <div className="text-center mb-6 relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent blur-3xl"></div>
+          <h1 className="relative text-4xl md:text-5xl font-bold">
+            <span className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 bg-clip-text text-transparent">
+              ROULETTE TRACKER
+            </span>
           </h1>
-          <p className="text-gray-400 mt-2">Pattern Analysis • Statistical Tracking</p>
+          <p className="text-yellow-400/60 mt-2 text-sm tracking-widest">PROFESSIONAL EDITION</p>
         </div>
 
-        {session && (
-          <HeaderBar
-            sessionIdShort={session.id.slice(0, 8)}
-            totalSpins={session.total_spins}
-            balance={session.balance}
-            onNewSession={resetSession}
-          />
+        {/* Main Header - Only show when session exists */}
+{session && (
+  <HeaderBar
+    session={session}
+    spinsCount={session.total_spins}
+    onStartSession={openSessionSetup}
+    onAssistantClick={() => setShowAssistant(!showAssistant)}
+    isAssistantActive={showAssistant}
+    userProfile={userProfile}
+    storageMode={storageMode}
+  />
+)}
+
+        {/* Financial Bar - Only shows when Assistant is active AND session exists */}
+        {showAssistant && session && (
+          <div className="bg-black/60 backdrop-blur border-y border-yellow-400/30 px-6 py-3 mb-4">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-8">
+                <div>
+                  <span className="text-yellow-400/60 text-xs uppercase tracking-wider">Bankroll</span>
+                  <p className="text-2xl font-bold text-white">${currentBankroll.toFixed(2)}</p>
+                </div>
+                <div>
+                  <span className="text-yellow-400/60 text-xs uppercase tracking-wider">P/L</span>
+                  <p className={`text-xl font-bold ${sessionPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {sessionPnL >= 0 ? '+' : ''}${sessionPnL.toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-yellow-400/60 text-xs uppercase tracking-wider">ROI</span>
+                  <p className={`text-lg ${sessionPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {startingBankroll > 0 ? ((sessionPnL / startingBankroll) * 100).toFixed(1) : 0}%
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="text-right">
+                  <span className="text-yellow-400/60 text-xs uppercase tracking-wider">Target</span>
+                  <p className="text-lg text-green-400">${playerSetup.targetProfit}</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-yellow-400/60 text-xs uppercase tracking-wider">Stop Loss</span>
+                  <p className="text-lg text-red-400">-${playerSetup.stopLoss}</p>
+                </div>
+                {sessionStartTime && (
+                  <div className="text-right">
+                    <span className="text-yellow-400/60 text-xs uppercase tracking-wider">Time</span>
+                    <p className="text-lg text-white">
+                      {Math.floor((new Date().getTime() - sessionStartTime.getTime()) / 60000)}m
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         )}
-
-        <div className="flex gap-2 mb-6 overflow-x-auto">
-          {(['entry', 'history', 'stats', 'assistant'] as const).map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-6 py-3 rounded-lg font-medium transition whitespace-nowrap ${
-                activeTab === tab
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                  : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
-              }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        <div className="bg-gray-800 rounded-xl p-6">
-          {activeTab === 'entry' && (
-            <div className="space-y-6">
-              <EntryPanel
-                inputNumber={inputNumber}
-                setInputNumber={setInputNumber}
-                addNumber={addNumber}
-                loading={loading}
-              />
-              <div className="space-y-4">
-                <h3 className="text-gray-400">Quick Select:</h3>
-                <div className="grid grid-cols-12 gap-2">
-                  <button
-                    onClick={() => setInputNumber('0')}
-                    className="col-span-12 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-bold transition"
-                  >
-                    0
-                  </button>
-                  {[...Array(36)].map((_, i) => {
-                    const num = i + 1
-                    const color = NUMBERS.RED.includes(num) ? 'bg-red-600 hover:bg-red-700' : 
-                                 'bg-gray-700 hover:bg-gray-600'
-                    return (
-                      <button
-                        key={num}
-                        onClick={() => setInputNumber(num.toString())}
-                        className={`py-3 ${color} rounded-lg font-bold transition`}
-                      >
-                        {num}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'history' && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold mb-4">Winning Numbers History</h2>
-              
-              {spins.length === 0 ? (
-                <p className="text-gray-400 text-center py-8">No spins recorded yet</p>
-              ) : (
-                <>
-                  <div className="flex gap-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-red-600 rounded"></div>
-                      <span className="text-sm">Red</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-gray-900 border border-gray-600 rounded"></div>
-                      <span className="text-sm">Black</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-green-600 rounded"></div>
-                      <span className="text-sm">Green (0)</span>
-                    </div>
-                  </div>
-
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead className="bg-gray-800 sticky top-0">
-                        <tr>
-                          <th className="p-2 text-center font-semibold">Number</th>
-                          <th className="p-2 text-center font-semibold">Color</th>
-                          <th className="p-2 text-center font-semibold">Even/Odd</th>
-                          <th className="p-2 text-center font-semibold">Low/High</th>
-                          <th className="p-2 text-center font-semibold">Column</th>
-                          <th className="p-2 text-center font-semibold">Dozen</th>
-                          <th className="p-2 text-center font-semibold">Alt1</th>
-                          <th className="p-2 text-center font-semibold">Alt2</th>
-                          <th className="p-2 text-center font-semibold">Alt3</th>
-                          <th className="p-2 text-center font-semibold">E/C</th>
-                          <th className="p-2 text-center font-semibold">Six</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {spins.map((spin, index) => {
-                          const num = spin.number
-                          
-                          const alt1 = num === 0 ? '-' : 
-                            [1,2,3,7,8,9,13,14,15,19,20,21,25,26,27,31,32,33].includes(num) ? 'A' : 'B'
-                          
-                          const alt2 = num === 0 ? '-' :
-                            [1,2,3,4,5,6,13,14,15,16,17,18,25,26,27,28,29,30].includes(num) ? 'AA' : 'BB'
-                          
-                          const alt3 = num === 0 ? '-' :
-                            [1,2,3,4,5,6,7,8,9,19,20,21,22,23,24,25,26,27].includes(num) ? 'AAA' : 'BBB'
-                          
-                          const edgeCenter = num === 0 ? '-' :
-                            [1,2,3,4,5,6,7,8,9,28,29,30,31,32,33,34,35,36].includes(num) ? 'E' : 'C'
-                          
-                          const sixGroup = num === 0 ? '-' :
-                            num <= 6 ? '1st' :
-                            num <= 12 ? '2nd' :
-                            num <= 18 ? '3rd' :
-                            num <= 24 ? '4th' :
-                            num <= 30 ? '5th' : '6th'
-                          
-                          return (
-                            <tr key={spin.id || index} className="border-b border-gray-700/50 hover:bg-gray-800/50">
-                              <td className="p-2 text-center">
-                                <div className={`
-                                  inline-flex items-center justify-center w-10 h-10 rounded-full font-bold
-                                  ${spin.color === 'red' ? 'bg-red-600' : 
-                                    spin.color === 'black' ? 'bg-gray-900 border border-gray-600' : 
-                                    'bg-green-600'}
-                                `}>
-                                  {num}
-                                </div>
-                              </td>
-                              
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${spin.color === 'red' ? 'bg-red-600/30 text-red-400' :
-                                    spin.color === 'black' ? 'bg-gray-600/30 text-gray-300' :
-                                    'bg-green-600/30 text-green-400'}
-                                `}>
-                                  {spin.color === 'red' ? 'R' : spin.color === 'black' ? 'B' : 'G'}
-                                </span>
-                              </td>
-                              
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${spin.even_odd === 'even' ? 'bg-purple-600/30 text-purple-400' :
-                                    spin.even_odd === 'odd' ? 'bg-cyan-600/30 text-cyan-400' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {spin.even_odd === 'even' ? 'E' : spin.even_odd === 'odd' ? 'O' : '-'}
-                                </span>
-                              </td>
-                              
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${spin.low_high === 'low' ? 'bg-amber-700/30 text-amber-400' :
-                                    spin.low_high === 'high' ? 'bg-gray-600/30 text-gray-300' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {spin.low_high === 'low' ? 'L' : spin.low_high === 'high' ? 'H' : '-'}
-                                </span>
-                              </td>
-                              
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${spin.column_num === 1 ? 'bg-orange-600/30 text-orange-400' :
-                                    spin.column_num === 2 ? 'bg-teal-600/30 text-teal-400' :
-                                    spin.column_num === 3 ? 'bg-lime-600/30 text-lime-400' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {spin.column_num > 0 ? `${spin.column_num}st` : '-'}
-                                </span>
-                              </td>
-                              
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${spin.dozen === 'first' ? 'bg-red-700/30 text-red-400' :
-                                    spin.dozen === 'second' ? 'bg-cyan-700/30 text-cyan-400' :
-                                    spin.dozen === 'third' ? 'bg-green-700/30 text-green-400' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {spin.dozen === 'first' ? '1st' : 
-                                   spin.dozen === 'second' ? '2nd' : 
-                                   spin.dozen === 'third' ? '3rd' : '-'}
-                                </span>
-                              </td>
-                              
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${alt1 === 'A' ? 'bg-indigo-600/30 text-indigo-400' :
-                                    alt1 === 'B' ? 'bg-pink-600/30 text-pink-400' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {alt1}
-                                </span>
-                              </td>
-                              
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${alt2 === 'AA' ? 'bg-lime-700/30 text-lime-400' :
-                                    alt2 === 'BB' ? 'bg-purple-700/30 text-purple-400' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {alt2}
-                                </span>
-                              </td>
-                              
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${alt3 === 'AAA' ? 'bg-blue-600/30 text-blue-400' :
-                                    alt3 === 'BBB' ? 'bg-yellow-700/30 text-yellow-400' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {alt3}
-                                </span>
-                              </td>
-                              
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${edgeCenter === 'E' ? 'bg-purple-600/30 text-purple-400' :
-                                    edgeCenter === 'C' ? 'bg-orange-600/30 text-orange-400' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {edgeCenter}
-                                </span>
-                              </td>
-                              
-                              <td className="p-2 text-center">
-                                <span className={`
-                                  px-2 py-1 rounded text-xs font-bold
-                                  ${sixGroup === '1st' || sixGroup === '6th' ? 'bg-red-700/30 text-red-400' :
-                                    sixGroup === '2nd' || sixGroup === '5th' ? 'bg-blue-700/30 text-blue-400' :
-                                    sixGroup === '3rd' || sixGroup === '4th' ? 'bg-green-700/30 text-green-400' :
-                                    'bg-gray-600/30 text-gray-400'}
-                                `}>
-                                  {sixGroup}
-                                </span>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
+{/* Main Content Area */}
+{!session && !showAssistant ? (
+          // Landing Page - No Active Session, No Setup showing
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center space-y-6">
+              <div className="text-6xl mb-4">🎰</div>
+              <h2 className="text-3xl font-bold text-yellow-400">Ready to Track?</h2>
+              <p className="text-gray-400">
+                {storageMode === 'local' 
+                  ? 'Start a practice session (data saved locally)'
+                  : 'Start a professional session (data saved to cloud)'}
+              </p>
+              <button
+                onClick={() => {
+                  console.log('Center button clicked - opening session setup')
+                  setShowAssistant(true)
+                  setAssistantSubTab('setup')
+                }}
+                className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold rounded-lg text-xl shadow-2xl hover:shadow-yellow-400/50 transition-all transform hover:scale-105"
+              >
+                ✨ Start New Session
+              </button>
+              {storageMode === 'local' && (
+                <p className="text-sm text-yellow-400/60">
+                  <a href="#" className="underline">Sign in</a> to save sessions permanently
+                </p>
               )}
             </div>
-          )}
-
-          {activeTab === 'stats' && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold mb-4">Statistical Analysis</h2>
-              
-              {!stats ? (
-                <p className="text-gray-400 text-center py-8">No data to analyze yet</p>
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-gray-700 rounded-lg p-4">
-                      <h3 className="text-orange-400 font-semibold mb-3 flex items-center gap-2">
-                        Hot Numbers
-                      </h3>
-                      <div className="grid grid-cols-6 gap-2">
-                        {[21, 7, 14, 32, 9, 18].map((num) => (
-                          <div
-                            key={num}
-                            className="aspect-square flex items-center justify-center rounded bg-gradient-to-br from-orange-500 to-red-600 text-white font-bold text-sm"
-                          >
-                            {num}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="bg-gray-700 rounded-lg p-4">
-                      <h3 className="text-blue-400 font-semibold mb-3 flex items-center gap-2">
-                        Cold Numbers
-                      </h3>
-                      <div className="grid grid-cols-6 gap-2">
-                        {[4, 11, 28, 35, 2, 16].map((num) => (
-                          <div
-                            key={num}
-                            className="aspect-square flex items-center justify-center rounded bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-sm"
-                          >
-                            {num}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="bg-gray-700 rounded-lg p-4">
-                      <h3 className="text-yellow-400 font-semibold mb-3 flex items-center gap-2">
-                        Pattern Alerts
-                      </h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between items-center p-2 bg-gray-800 rounded">
-                          <span>Red Streak</span>
-                          <span className="text-yellow-400 font-bold">5 in row</span>
-                        </div>
-                        <div className="flex justify-between items-center p-2 bg-gray-800 rounded">
-                          <span>No Dozen 3</span>
-                          <span className="text-purple-400 font-bold">12 spins</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <StatsMatrix groupStats={groupStats || []} spinsCount={spins.length} />
-                </>
-              )}
+          </div>
+        ) : !session && showAssistant ? (
+          // Setup Flow - Assistant is showing but no session yet
+          <div className="bg-black/40 backdrop-blur rounded-xl border border-yellow-400/20">
+            <div className="flex gap-0 border-b border-yellow-400/20">
+              <button
+                className="px-6 py-3 font-semibold transition-all bg-gradient-to-b from-yellow-400/20 to-transparent text-yellow-400"
+              >
+                Session Setup
+              </button>
             </div>
-          )}
 
-          {activeTab === 'assistant' && (
-            <div className="space-y-6">
-              <div className="flex space-x-2 bg-gray-800 p-2 rounded-lg">
-                <button
-                  onClick={() => setAssistantSubTab('setup')}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                    assistantSubTab === 'setup'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                >
-                  Setup
-                </button>
-                <button
-                  onClick={() => setAssistantSubTab('action')}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                    assistantSubTab === 'action'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                >
-                  Game Action
-                </button>
-                <button
-                  onClick={() => setAssistantSubTab('performance')}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                    assistantSubTab === 'performance'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                >
-                  Performance
-                </button>
-                <button
-                  onClick={() => setAssistantSubTab('analysis')}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                    assistantSubTab === 'analysis'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                  }`}
-                >
-                  Analysis
-                </button>
-              </div>
-
-              {assistantSubTab === 'setup' && (
-                <div className="bg-gray-800 rounded-xl p-6">
-                  <h2 className="text-2xl font-bold text-white mb-6">Session Configuration</h2>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-gray-300 mb-2">Bankroll ($)</label>
-                      <input
-                        type="number"
-                        value={playerSetup.bankroll}
-                        onChange={(e) => setPlayerSetup({...playerSetup, bankroll: Number(e.target.value)})}
-                        className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-300 mb-2">Target Profit ($)</label>
-                      <input
-                        type="number"
-                        value={playerSetup.targetProfit}
-                        onChange={(e) => setPlayerSetup({...playerSetup, targetProfit: Number(e.target.value)})}
-                        className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
-                      />
-                      <span className="text-sm text-gray-400 mt-1">
-                        ({((playerSetup.targetProfit / playerSetup.bankroll) * 100).toFixed(1)}% of bankroll)
-                      </span>
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-300 mb-2">Stop Loss ($)</label>
-                      <input
-                        type="number"
-                        value={playerSetup.stopLoss}
-                        onChange={(e) => setPlayerSetup({...playerSetup, stopLoss: Number(e.target.value)})}
-                        className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
-                      />
-                      <span className="text-sm text-gray-400 mt-1">
-                        ({((playerSetup.stopLoss / playerSetup.bankroll) * 100).toFixed(1)}% of bankroll)
-                      </span>
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-300 mb-2">Time Available (minutes)</label>
-                      <input
-                        type="number"
-                        value={playerSetup.timeAvailable}
-                        onChange={(e) => setPlayerSetup({...playerSetup, timeAvailable: Number(e.target.value)})}
-                        className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-300 mb-2">Bet Unit Size ($)</label>
-                      <input
-                        type="number"
-                        value={playerSetup.betUnit}
-                        onChange={(e) => setPlayerSetup({...playerSetup, betUnit: Number(e.target.value)})}
-                        className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-300 mb-2">Progression Style</label>
-                      <select
-                        value={playerSetup.progressionStyle}
-                        onChange={(e) => setPlayerSetup({...playerSetup, progressionStyle: e.target.value as PlayerSetup['progressionStyle']})}
-                        className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
-                      >
-                        <option value="flat">Flat Betting</option>
-                        <option value="martingale">Martingale</option>
-                        <option value="reverse-martingale">Reverse Martingale</option>
-                        <option value="fibonacci">Fibonacci</option>
-                        <option value="dalembert">DAlembert</option>
-                        <option value="custom">Custom</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-gray-300 mb-2">Player Level</label>
-                      <select
-                        value={playerSetup.playerLevel}
-                        onChange={(e) => setPlayerSetup({...playerSetup, playerLevel: e.target.value as PlayerSetup['playerLevel']})}
-                        className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none"
-                      >
-                        <option value="beginner">Beginner</option>
-                        <option value="intermediate">Intermediate</option>
-                        <option value="professional">Professional</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="flex space-x-4 mt-8">
-                    <button
-                      onClick={() => {
-                        setSessionStartTime(new Date())
-                        setAssistantSubTab('action')
+            <div className="p-6">
+              <div className="max-w-2xl mx-auto space-y-6">
+                <h2 className="text-2xl font-bold text-yellow-400 text-center mb-6">
+                  Configure Your Session
+                </h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-yellow-400/80 text-sm mb-2">Starting Bankroll</label>
+                    <input
+                      type="number"
+                      value={playerSetup.bankroll}
+                      onChange={(e) => {
+                        const value = Number(e.target.value)
+                        setPlayerSetup({...playerSetup, bankroll: value})
+                        setStartingBankroll(value)
+                        setCurrentBankroll(value)
                       }}
-                      className="px-6 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-all"
-                    >
-                      Start Session
-                    </button>
-                    <button
-                      className="px-6 py-3 bg-gray-600 text-white font-bold rounded-lg hover:bg-gray-700 transition-all"
-                    >
-                      Load Previous Settings
-                    </button>
+                      className="w-full px-4 py-3 bg-black/50 border border-yellow-400/30 rounded-lg text-white text-xl focus:border-yellow-400 focus:outline-none"
+                      placeholder="100"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-yellow-400/80 text-sm mb-2">Target Profit</label>
+                    <input
+                      type="number"
+                      value={playerSetup.targetProfit}
+                      onChange={(e) => setPlayerSetup({...playerSetup, targetProfit: Number(e.target.value)})}
+                      className="w-full px-4 py-3 bg-black/50 border border-yellow-400/30 rounded-lg text-white text-xl focus:border-yellow-400 focus:outline-none"
+                      placeholder="50"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-yellow-400/80 text-sm mb-2">Stop Loss</label>
+                    <input
+                      type="number"
+                      value={playerSetup.stopLoss}
+                      onChange={(e) => setPlayerSetup({...playerSetup, stopLoss: Number(e.target.value)})}
+                      className="w-full px-4 py-3 bg-black/50 border border-yellow-400/30 rounded-lg text-white text-xl focus:border-yellow-400 focus:outline-none"
+                      placeholder="50"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-yellow-400/80 text-sm mb-2">Unit Size</label>
+                    <input
+                      type="number"
+                      value={playerSetup.betUnit}
+                      onChange={(e) => setPlayerSetup({...playerSetup, betUnit: Number(e.target.value)})}
+                      className="w-full px-4 py-3 bg-black/50 border border-yellow-400/30 rounded-lg text-white text-xl focus:border-yellow-400 focus:outline-none"
+                      placeholder="5"
+                    />
                   </div>
                 </div>
-              )}
-
-
-
-{assistantSubTab === 'action' && (
-  <div className="space-y-6">
-    {/* Sub-tab Navigation */}
-    <div className="flex gap-2 mb-4">
-      <button
-        onClick={() => setActionView('table')}
-        className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-          actionView === 'table' 
-            ? 'bg-green-600 text-white' 
-            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-        }`}
-      >
-        📊 Table View
-      </button>
-      <button
-        onClick={() => setActionView('wheel')}
-        className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-          actionView === 'wheel' 
-            ? 'bg-green-600 text-white' 
-            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-        }`}
-      >
-        🎯 Wheel View
-      </button>
-    </div>
-
-    {/* TABLE VIEW */}
-    {actionView === 'table' && (
-      <>
-       
-
-        {/* Manual Betting Cards */}
-        <div className="grid grid-cols-3 gap-4">
-          <BettingCards18
-            manualBets={manualBets}
-            setManualBets={setManualBets}
-            playerUnit={playerContext.unitSize}
-            betHistory={betHistory}
-            setBetHistory={setBetHistory}
-          />
-          <BettingCards12
-            manualBets={manualBets}
-            setManualBets={setManualBets}
-            playerUnit={playerContext.unitSize}
-            betHistory={betHistory}
-            setBetHistory={setBetHistory}
-          />
-          <BettingCards6
-            manualBets={manualBets}
-            setManualBets={setManualBets}
-            playerUnit={playerContext.unitSize}
-            betHistory={betHistory}
-            setBetHistory={setBetHistory}
-                  />
-                </div>
-        {/* Your existing Manual Betting Cards code stays here */}
+                
+                <button
+                  onClick={() => {
+                    console.log('Starting tracking session')
+                    createNewSession()
+                  }}
+                  className="w-full py-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold rounded-lg shadow-lg hover:shadow-yellow-400/50 transition-all transform hover:scale-105"
+                >
+                  🎲 Start Tracking
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setShowAssistant(false)
+                  }}
+                  className="w-full py-2 text-gray-400 hover:text-white transition-all"
+                >
+                  ← Back to Landing
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
         
-        {/* Your existing betting matrix code stays here */}
-        {/* Keep your existing betting cards - they should be right after Current Bets */}
-{/* The betting cards code you already have in lines 1009-1157 stays here */}
+              <>
+            {/* Main Tabs - Only show when session is active */}
+            {!showAssistant && (
+              <>
+                <div className="flex gap-2 mb-6 overflow-x-auto bg-black/40 p-2 rounded-lg backdrop-blur">
+                  <button
+                    onClick={() => setActiveTab('table-view')}
+                    className={`px-6 py-3 rounded-lg font-medium transition whitespace-nowrap ${
+                      activeTab === 'table-view'
+                        ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg'
+                        : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-gray-700'
+                    }`}
+                  >
+                    Table View
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('table-bets')}
+                    className={`px-6 py-3 rounded-lg font-medium transition whitespace-nowrap ${
+                      activeTab === 'table-bets'
+                        ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg'
+                        : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-gray-700'
+                    }`}
+                  >
+                    Table Bets
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('table-stats')}
+                    className={`px-6 py-3 rounded-lg font-medium transition whitespace-nowrap ${
+                      activeTab === 'table-stats'
+                        ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg'
+                        : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-gray-700'
+                    }`}
+                  >
+                    Table Stats
+                  </button>
+                </div>
 
-{/* After the betting cards, before the closing of TABLE VIEW */}
-{/* Current Bets & Stake - Improved with bet display */}
-<CurrentBetsSummary manualBets={manualBets} />
-{/* Hot/Cold Visual Reference - Enhanced with click and count */}
-<div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+                <div className="bg-black/40 backdrop-blur rounded-xl p-6 border border-yellow-400/20">
+                  {activeTab === 'table-view' && (
+                    <div className="space-y-8">
+                      <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-yellow-400">Number Entry</h2>
+                        <EntryPanel
+                          inputNumber={inputNumber}
+                          setInputNumber={setInputNumber}
+                          addNumber={addNumber}
+                          loading={loading}
+                        />
+                        <div className="space-y-4">
+                          <h3 className="text-gray-400">Quick Select:</h3>
+                          <div className="grid grid-cols-12 gap-2">
+                            <button
+                              onClick={() => setInputNumber('0')}
+                              className="col-span-12 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-bold transition"
+                            >
+                              0
+                            </button>
+                            {[...Array(36)].map((_, i) => {
+                              const num = i + 1
+                              const color = NUMBERS.RED.includes(num) ? 'bg-red-600 hover:bg-red-700' : 
+                                           'bg-gray-700 hover:bg-gray-600'
+                              return (
+                                <button
+                                  key={num}
+                                  onClick={() => setInputNumber(num.toString())}
+                                  className={`py-3 ${color} rounded-lg font-bold transition`}
+                                >
+                                  {num}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-yellow-400">History</h2>
+                        <HistoryTable spins={spins} />
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'table-bets' && (
+                    <div className="space-y-6">
+                      <h2 className="text-2xl font-bold text-yellow-400">Table Betting</h2>
+                      
+                      <div className="grid grid-cols-3 gap-4">
+                        <BettingCards18
+                          manualBets={manualBets}
+                          setManualBets={setManualBets}
+                          playerUnit={playerSetup.betUnit}
+                          betHistory={betHistory}
+                          setBetHistory={setBetHistory}
+                        />
+                        <BettingCards12
+                          manualBets={manualBets}
+                          setManualBets={setManualBets}
+                          playerUnit={playerSetup.betUnit}
+                          betHistory={betHistory}
+                          setBetHistory={setBetHistory}
+                        />
+                        <BettingCards6
+                          manualBets={manualBets}
+                          setManualBets={setManualBets}
+                          playerUnit={playerSetup.betUnit}
+                          betHistory={betHistory}
+                          setBetHistory={setBetHistory}
+                        />
+                      </div>
+                      
+                      <CurrentBetsSummary manualBets={manualBets} />
+                      
+                      <div className="flex gap-4">
+                        <button
+                          onClick={() => {
+                            if (Object.values(manualBets).some(v => v)) {
+                              setBetHistory([{
+                                spin: null,
+                                bets: {...manualBets},
+                                results: {},
+                                totalPnL: 0,
+                                timestamp: new Date()
+                              }, ...betHistory])
+                            }
+                          }}
+                          className="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-bold transition-all"
+                          disabled={!Object.values(manualBets).some(v => v)}
+                        >
+                          Place Bets
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            setManualBets({
+                              red: '', black: '', even: '', odd: '', low: '', high: '',
+                              alt1_1: '', alt1_2: '', alt2_1: '', alt2_2: '', alt3_1: '', alt3_2: '',
+                              edge: '', center: '', dozen1: '', dozen2: '', dozen3: '',
+                              col1: '', col2: '', col3: '', six1: '', six2: '', six3: '',
+                              six4: '', six5: '', six6: ''
+                            })
+                          }}
+                          className="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg font-bold transition-all"
+                        >
+                          Clear All
+                        </button>
+                      </div>
+                    </div>
+                  )}
+{/* Hot/Cold Visual Reference */}
+<div className="bg-gray-800 rounded-lg border border-gray-700 p-4 mb-4">
   <div className="flex justify-between items-center mb-3">
     <h4 className="font-bold text-green-400">🔥 Hot/Cold Analysis - Last 36 Spins</h4>
     <button 
@@ -863,26 +669,23 @@ Object.entries(updatedHistory[0].bets).forEach(([key, value]) => {
     <HeatmapGrid spins={spins} setInputNumber={setInputNumber} />
   )}
 </div>
-
-{/* Combined Recent Numbers and Add Number - Single Row */}
-<div className="bg-gray-800 rounded-lg border border-gray-700 p-3">
+{/* Recent Numbers and Add Number Row */}
+<div className="bg-gray-800 rounded-lg border border-gray-700 p-3 mt-4">
   <div className="flex items-center gap-4">
     {/* Recent Numbers - Left Side */}
     <div className="flex items-center gap-2">
-      <span className="text-sm font-bold text-blue-400 whitespace-nowrap">Recent:</span>
+      <span className="text-sm font-bold text-blue-400 whitespace-nowrap">Last 10:</span>
       <div className="flex gap-1">
-        {spins.slice(0, 8).map((spin, idx) => {
-          return (
-            <div 
-              key={idx} 
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white
-                ${spin.number === 0 ? 'bg-green-600' : 
-                  NUMBERS.RED.includes(spin.number) ? 'bg-red-600' : 'bg-black border border-gray-600'}`}
-            >
-              {spin.number}
-            </div>
-          )
-        })}
+        {spins.slice(0, 10).map((spin, idx) => (
+          <div 
+            key={idx} 
+            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white
+              ${spin.number === 0 ? 'bg-green-600' : 
+                NUMBERS.RED.includes(spin.number) ? 'bg-red-600' : 'bg-black border border-gray-600'}`}
+          >
+            {spin.number}
+          </div>
+        ))}
         {spins.length === 0 && (
           <span className="text-gray-500 text-xs">No numbers yet</span>
         )}
@@ -893,39 +696,29 @@ Object.entries(updatedHistory[0].bets).forEach(([key, value]) => {
     <div className="h-8 w-px bg-gray-600"></div>
     
     {/* Add Number - Right Side */}
-    <div className="flex items-center gap-2 flex-1">
-      <span className="text-sm font-bold text-green-400 whitespace-nowrap">Add:</span>
+    <div className="flex items-center gap-4">
+      <span className="text-sm font-bold text-green-400">Add Number:</span>
       <input
         type="number"
         min="0"
         max="36"
         value={inputNumber}
         onChange={(e) => setInputNumber(e.target.value)}
-        onKeyPress={(e) => {
-          if (e.key === 'Enter') {
-            addNumber()
-          }
-        }}
+        onKeyPress={(e) => e.key === 'Enter' && addNumber()}
         placeholder="0-36"
-        className="w-20 px-2 py-1.5 bg-black/50 border border-gray-600 rounded text-center text-sm font-bold focus:border-green-500 focus:outline-none"
+        className="w-20 px-2 py-1.5 bg-black/50 border border-gray-600 rounded text-center text-sm font-bold"
       />
       <button
-        onClick={() => addNumber()}
-        className="px-4 py-1.5 bg-green-600 hover:bg-green-700 rounded text-sm font-bold transition-colors"
+        onClick={addNumber}
+        className="px-4 py-1.5 bg-green-600 hover:bg-green-700 rounded text-sm font-bold text-white"
       >
         ADD
-      </button>
-      <button
-        onClick={() => setInputNumber('')}
-        className="px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded text-sm font-bold transition-colors"
-      >
-        CLR
       </button>
     </div>
   </div>
 </div>
-{/* Betting Performance Matrix */}
-<div className="bg-gray-900 rounded-lg border border-gray-700 p-4 mt-4">
+
+<div className="bg-gray-900 rounded-lg border border-gray-700 p-4">
   <h3 className="text-lg font-bold mb-3 text-blue-300">Betting Performance Matrix</h3>
   <div className="overflow-x-auto">
     <div className="max-h-96 overflow-y-auto">
@@ -945,12 +738,12 @@ Object.entries(updatedHistory[0].bets).forEach(([key, value]) => {
             <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">C1</th>
             <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">C2</th>
             <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">C3</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">1-6</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">7-12</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">13-18</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">19-24</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">25-30</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">31-36</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">S1</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">S2</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">S3</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">S4</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">S5</th>
+            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">S6</th>
             <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">A</th>
             <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">B</th>
             <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">AA</th>
@@ -962,92 +755,361 @@ Object.entries(updatedHistory[0].bets).forEach(([key, value]) => {
           </tr>
         </thead>
         <tbody>
-          {betHistory.map((row, index) => (
-            <tr key={index} className={row.spin === null ? 'bg-amber-900/20' : 'hover:bg-gray-800/50'}>
+          {/* Current pending bet row (if exists) */}
+          {Object.values(manualBets).some(v => v) && !betHistory.some(h => h.spin === null) && (
+            <tr className="bg-amber-900/20">
+              <td className="px-2 py-1 text-center border border-gray-700 text-xs font-bold">...</td>
+              {['red', 'black', 'even', 'odd', 'low', 'high', 'dozen1', 'dozen2', 'dozen3',
+                'col1', 'col2', 'col3', 'six1', 'six2', 'six3', 'six4', 'six5', 'six6',
+                'alt1_1', 'alt1_2', 'alt2_1', 'alt2_2', 'alt3_1', 'alt3_2', 'edge', 'center'].map(betKey => (
+                <td key={betKey} className="px-2 py-1 text-center border border-gray-700 text-xs">
+                  {manualBets[betKey] && <span className="text-yellow-400">${manualBets[betKey]}</span>}
+                </td>
+              ))}
+            </tr>
+          )}
+          
+          {/* Completed bet rows */}
+          {betHistory.filter(h => h.spin !== null).map((row, index) => (
+            <tr key={index} className="hover:bg-gray-800/50">
               <td className="px-2 py-1 text-center border border-gray-700 text-xs font-bold">
-                {row.spin === null ? '...' : row.spin}
+                {row.spin}
               </td>
               {['red', 'black', 'even', 'odd', 'low', 'high', 'dozen1', 'dozen2', 'dozen3',
                 'col1', 'col2', 'col3', 'six1', 'six2', 'six3', 'six4', 'six5', 'six6',
                 'alt1_1', 'alt1_2', 'alt2_1', 'alt2_2', 'alt3_1', 'alt3_2', 'edge', 'center'].map(betKey => (
                 <td key={betKey} className="px-2 py-1 text-center border border-gray-700 text-xs">
-                  {row.spin === null && row.bets[betKey] ? 
-                    <span className="text-yellow-400">${row.bets[betKey]}</span> : 
-                    row.results?.[betKey] ? 
-                    <span className={row.results[betKey] > 0 ? 'text-green-400' : 'text-red-400'}>
-                      {row.results[betKey] > 0 ? '+' : ''}{row.results[betKey]}
-                    </span> : ''}
+                  {row.bets[betKey] && (
+                    <span className={row.results[betKey] > 0 ? 'text-green-400 font-bold' : 'text-red-400'}>
+                      {row.results[betKey] > 0 ? '+' : ''}{row.results[betKey] || `-${row.bets[betKey]}`}
+                    </span>
+                  )}
                 </td>
-              ))}
-            </tr>
-          ))}
-          {/* Fill empty rows */}
-          {Array.from({ length: Math.max(0, 10 - betHistory.length) }, (_, index) => (
-            <tr key={`empty-${index}`} className="hover:bg-gray-800/50">
-              <td className="px-2 py-1 text-center border border-gray-700 text-xs font-bold"></td>
-              {Array.from({ length: 26 }, (_, colIndex) => (
-                <td key={colIndex} className="px-2 py-1 text-center border border-gray-700 text-xs"></td>
               ))}
             </tr>
           ))}
         </tbody>
       </table>
     </div>
-    
-    {/* Session totals */}
-    <div className="mt-2 p-2 bg-gray-800 rounded">
-      <div className="flex justify-between text-sm">
-        <span>Session P/L: <span className={sessionPnL >= 0 ? 'text-green-400' : 'text-red-400'}>
-          ${Math.abs(sessionPnL).toFixed(2)}
-        </span></span>
-        <span>Total Spins: {betHistory.filter(b => b.spin !== null).length}</span>
-        <span>Win Rate: {betHistory.filter(b => b.spin !== null).length > 0 ? 
-          Math.round((betHistory.filter(b => b.totalPnL > 0).length / betHistory.filter(b => b.spin !== null).length) * 100) : 0}%</span>
-      </div>
-    </div>
   </div>
 </div>
-{/* Keep your existing betting performance matrix - it should already be in your code */}
-{/* The matrix code you have in lines 1158-1194 stays here */}
-      </>
-    )}
-    {/* WHEEL VIEW */}
-    {actionView === 'wheel' && (
-      <WheelView
-        manualBets={manualBets}
-        setManualBets={setManualBets}
-        betHistory={betHistory}
-        setBetHistory={setBetHistory}
-        spins={spins.map(s => s.number)}
-        inputNumber={inputNumber}
-        setInputNumber={setInputNumber}
-        addNumber={addNumber}
-        playerContext={playerContext}
-        sessionPnL={sessionPnL}
-        showHeatMap={showHeatMap}
-        setShowHeatMap={setShowHeatMap}
-      />
-    )}
-    </div>
-  )}
-              </div>
+
+
+                  {activeTab === 'table-stats' && (
+                    <div className="space-y-6">
+                      <h2 className="text-2xl font-bold text-yellow-400">Table Statistics</h2>
+                      <StatsMatrix groupStats={groupStats || []} spinsCount={spins.length} />
+                    </div>
+                  )}
+                </div>
+              </>
             )}
+            {/* Assistant Section - Now opens from "Start New Session" when no session exists */}
+            {showAssistant && (
+              <>
+                <div className="flex gap-2 mb-6 overflow-x-auto bg-black/40 p-2 rounded-lg backdrop-blur">
+                  <button
+                    onClick={() => setActiveTab('table-view')}
+                    className={`px-4 py-2 rounded-lg font-medium transition whitespace-nowrap ${
+                      activeTab === 'table-view'
+                        ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black'
+                        : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-gray-700'
+                    }`}
+                  >
+                    Table View
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('table-bets')}
+                    className={`px-4 py-2 rounded-lg font-medium transition whitespace-nowrap ${
+                      activeTab === 'table-bets'
+                        ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black'
+                        : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-gray-700'
+                    }`}
+                  >
+                    Table Bets
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('table-stats')}
+                    className={`px-4 py-2 rounded-lg font-medium transition whitespace-nowrap ${
+                      activeTab === 'table-stats'
+                        ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black'
+                        : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-gray-700'
+                    }`}
+                  >
+                    Table Stats
+                  </button>
+                </div>
 
-            {assistantSubTab === 'performance' && (
-  <div className="bg-gray-800 rounded-xl p-6">
-    <h2 className="text-2xl font-bold text-white mb-6">Performance Matrix</h2>
-    <p className="text-gray-400">27-column betting matrix coming soon...</p>
-  </div>
-)}
+                <div className="bg-black/40 backdrop-blur rounded-xl border border-yellow-400/20">
+                  <div className="flex gap-0 border-b border-yellow-400/20">
+                    <button
+                      onClick={() => setAssistantSubTab('setup')}
+                      className={`px-6 py-3 font-semibold transition-all border-r border-yellow-400/20 ${
+                        assistantSubTab === 'setup'
+                          ? 'bg-gradient-to-b from-yellow-400/20 to-transparent text-yellow-400'
+                          : 'text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      Setup
+                    </button>
+                    <button
+                      onClick={() => setAssistantSubTab('action')}
+                      className={`px-6 py-3 font-semibold transition-all border-r border-yellow-400/20 ${
+                        assistantSubTab === 'action'
+                          ? 'bg-gradient-to-b from-yellow-400/20 to-transparent text-yellow-400'
+                          : 'text-gray-400 hover:text-white'
+                      } ${!session ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={!session}
+                    >
+                      Game Action
+                    </button>
+                    <button
+                      onClick={() => setAssistantSubTab('performance')}
+                      className={`px-6 py-3 font-semibold transition-all border-r border-yellow-400/20 ${
+                        assistantSubTab === 'performance'
+                          ? 'bg-gradient-to-b from-yellow-400/20 to-transparent text-yellow-400'
+                          : 'text-gray-400 hover:text-white'
+                      } ${!session ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={!session}
+                    >
+                      Performance
+                    </button>
+                    <button
+                      onClick={() => setAssistantSubTab('analysis')}
+                      className={`px-6 py-3 font-semibold transition-all ${
+                        assistantSubTab === 'analysis'
+                          ? 'bg-gradient-to-b from-yellow-400/20 to-transparent text-yellow-400'
+                          : 'text-gray-400 hover:text-white'
+                      } ${!session ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={!session}
+                    >
+                      Analysis
+                    </button>
+                  </div>
 
-{assistantSubTab === 'analysis' && (
-  <div className="bg-gray-800 rounded-xl p-6">
-    <h2 className="text-2xl font-bold text-white mb-6">AI Analysis</h2>
-    {/* Analysis content */}
-  </div>
-)}
-          </div>
-        
+                  <div className="p-6">
+                    {assistantSubTab === 'setup' && (
+                      <div className="max-w-2xl mx-auto space-y-6">
+                        <h2 className="text-2xl font-bold text-yellow-400 text-center mb-6">
+                          {!session ? 'Configure Your Session' : 'Update Settings'}
+                        </h2>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-yellow-400/80 text-sm mb-2">Starting Bankroll</label>
+                            <input
+                              type="number"
+                              value={playerSetup.bankroll}
+                              onChange={(e) => {
+                                const value = Number(e.target.value)
+                                setPlayerSetup({...playerSetup, bankroll: value})
+                                if (!session) {
+                                  setStartingBankroll(value)
+                                  setCurrentBankroll(value)
+                                }
+                              }}
+                              className="w-full px-4 py-3 bg-black/50 border border-yellow-400/30 rounded-lg text-white text-xl focus:border-yellow-400 focus:outline-none"
+                              placeholder="100"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-yellow-400/80 text-sm mb-2">Target Profit</label>
+                            <input
+                              type="number"
+                              value={playerSetup.targetProfit}
+                              onChange={(e) => setPlayerSetup({...playerSetup, targetProfit: Number(e.target.value)})}
+                              className="w-full px-4 py-3 bg-black/50 border border-yellow-400/30 rounded-lg text-white text-xl focus:border-yellow-400 focus:outline-none"
+                              placeholder="50"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-yellow-400/80 text-sm mb-2">Stop Loss</label>
+                            <input
+                              type="number"
+                              value={playerSetup.stopLoss}
+                              onChange={(e) => setPlayerSetup({...playerSetup, stopLoss: Number(e.target.value)})}
+                              className="w-full px-4 py-3 bg-black/50 border border-yellow-400/30 rounded-lg text-white text-xl focus:border-yellow-400 focus:outline-none"
+                              placeholder="50"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-yellow-400/80 text-sm mb-2">Unit Size</label>
+                            <input
+                              type="number"
+                              value={playerSetup.betUnit}
+                              onChange={(e) => setPlayerSetup({...playerSetup, betUnit: Number(e.target.value)})}
+                              className="w-full px-4 py-3 bg-black/50 border border-yellow-400/30 rounded-lg text-white text-xl focus:border-yellow-400 focus:outline-none"
+                              placeholder="5"
+                            />
+                          </div>
+                        </div>
+                        
+                        {!session ? (
+                          // Show "Start Tracking" button when no session exists
+                          <button
+                            onClick={createNewSession}  // Actually creates the session
+                            className="w-full py-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold rounded-lg shadow-lg hover:shadow-yellow-400/50 transition-all transform hover:scale-105"
+                          >
+                            🎲 Start Tracking
+                          </button>
+                        ) : (
+                          // Show "Apply Settings" when session exists
+                          <button
+                            onClick={() => setAssistantSubTab('action')}
+                            className="w-full py-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold rounded-lg shadow-lg hover:shadow-yellow-400/50 transition-all transform hover:scale-105"
+                          >
+                            Apply Settings
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {assistantSubTab === 'action' && session && (
+                      <div className="space-y-6">
+                        <div className="flex gap-2 mb-4">
+                          <button
+                            onClick={() => setActionView('table-bets')}
+                            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                              actionView === 'table-bets' 
+                                ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
+                                : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                            }`}
+                          >
+                            📊 Table Bets
+                          </button>
+                          <button
+                            onClick={() => setActionView('wheel-bets')}
+                            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                              actionView === 'wheel-bets' 
+                                ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
+                                : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                            }`}
+                          >
+                            🎯 Wheel Bets
+                          </button>
+                        </div>
+                        
+                        {/* Content based on actionView */}
+                        {actionView === 'table-bets' && (
+                          <div>
+                            <div className="grid grid-cols-3 gap-4 mb-6">
+                              <BettingCards18
+                                manualBets={manualBets}
+                                setManualBets={setManualBets}
+                                playerUnit={playerSetup.betUnit}
+                                betHistory={betHistory}
+                                setBetHistory={setBetHistory}
+                              />
+                              <BettingCards12
+                                manualBets={manualBets}
+                                setManualBets={setManualBets}
+                                playerUnit={playerSetup.betUnit}
+                                betHistory={betHistory}
+                                setBetHistory={setBetHistory}
+                              />
+                              <BettingCards6
+                                manualBets={manualBets}
+                                setManualBets={setManualBets}
+                                playerUnit={playerSetup.betUnit}
+                                betHistory={betHistory}
+                                setBetHistory={setBetHistory}
+                              />
+                            </div>
+                            
+                            <CurrentBetsSummary manualBets={manualBets} />
+                            
+                            <div className="mt-4 bg-gray-800 rounded-lg border border-gray-700 p-3">
+                              <div className="flex items-center gap-4">
+                                <span className="text-sm font-bold text-green-400">Add Number:</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="36"
+                                  value={inputNumber}
+                                  onChange={(e) => setInputNumber(e.target.value)}
+                                  onKeyPress={(e) => e.key === 'Enter' && addNumber()}
+                                  placeholder="0-36"
+                                  className="w-20 px-2 py-1.5 bg-black/50 border border-gray-600 rounded text-center text-sm font-bold"
+                                />
+                                <button
+                                  onClick={addNumber}
+                                  className="px-4 py-1.5 bg-green-600 hover:bg-green-700 rounded text-sm font-bold text-white"
+                                >
+                                  ADD
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {actionView === 'wheel-bets' && (
+                          <WheelView
+                            manualBets={manualBets}
+                            setManualBets={setManualBets}
+                            betHistory={betHistory}
+                            setBetHistory={setBetHistory}
+                            spins={spins.map(s => s.number)}
+                            inputNumber={inputNumber}
+                            setInputNumber={setInputNumber}
+                            addNumber={addNumber}
+                            playerContext={{ unitSize: playerSetup.betUnit }}
+                            sessionPnL={sessionPnL}
+                            showHeatMap={showHeatMap}
+                            setShowHeatMap={setShowHeatMap}
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    {assistantSubTab === 'performance' && session && (
+                      <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-yellow-400">Session Performance</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                            <h3 className="text-gray-400 text-sm mb-1">Total Spins</h3>
+                            <p className="text-2xl font-bold text-white">{session.total_spins}</p>
+                          </div>
+                          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                            <h3 className="text-gray-400 text-sm mb-1">Current P/L</h3>
+                            <p className={`text-2xl font-bold ${sessionPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {sessionPnL >= 0 ? '+' : ''}${sessionPnL.toFixed(2)}
+                            </p>
+                          </div>
+                          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                            <h3 className="text-gray-400 text-sm mb-1">Win Rate</h3>
+                            <p className="text-2xl font-bold text-white">
+                              {betHistory.filter(b => b.spin !== null).length > 0 
+                                ? Math.round((betHistory.filter(b => b.totalPnL > 0).length / betHistory.filter(b => b.spin !== null).length) * 100) 
+                                : 0}%
+                            </p>
+                          </div>
+                        </div>
+                        <p className="text-gray-400">Detailed performance tracking coming soon...</p>
+                      </div>
+                    )}
+
+                    {assistantSubTab === 'analysis' && session && (
+                      <div className="space-y-6">
+                        <h2 className="text-2xl font-bold text-yellow-400">AI Analysis</h2>
+                        <p className="text-gray-400">Pattern analysis coming soon...</p>
+                        {storageMode === 'local' && (
+                          <div className="p-4 bg-yellow-400/10 border border-yellow-400/30 rounded-lg">
+                            <p className="text-yellow-400">
+                              ⚠️ Sign in to enable AI predictions and permanent session storage
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </>
+        )}
       </div>
     </div>
   )
