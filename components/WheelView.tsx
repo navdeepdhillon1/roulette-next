@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useMemo } from 'react'
-import { RED_NUMBERS, WHEEL_ORDER, WHEEL_BETS } from '@/lib/roulette-logic'
+import { RED_NUMBERS, WHEEL_ORDER, WHEEL_BETS, checkIfGroupWon, getGroupPayout, type GroupKey } from '@/lib/roulette-logic'
 import { hitCountsByNumberForWindow } from '@/lib/roulette-analytics'
 
 interface WheelViewProps {
@@ -50,11 +50,6 @@ export default function WheelView({
     if (num === 0) return 'bg-green-600'
     return RED_NUMBERS.includes(num) ? 'bg-red-600' : 'bg-gray-900'
   }
-  
-  // const getTextColor = (num: number) => {
-  //   if (num === 0) return 'text-green-400'
-  //   return RED_NUMBERS.includes(num) ? 'text-red-400' : 'text-white'
-  // }
 
   const handleBetClick = (betKey: string) => {
     const currentValue = manualBets[betKey]
@@ -65,6 +60,7 @@ export default function WheelView({
     }
     setManualBets(updatedBets)
     
+    // Update or create pending bet row in history
     if (betHistory.length === 0 || betHistory[0].spin !== null) {
       setBetHistory([{
         spin: null,
@@ -158,6 +154,20 @@ export default function WheelView({
                       [bet.key + '_a']: e.target.value
                     }
                     setManualBets(updatedBets)
+                    
+                    if (betHistory.length > 0 && betHistory[0].spin === null) {
+                      const updatedHistory = [...betHistory]
+                      updatedHistory[0].bets = updatedBets
+                      setBetHistory(updatedHistory)
+                    } else if (e.target.value) {
+                      setBetHistory([{
+                        spin: null,
+                        bets: updatedBets,
+                        results: {},
+                        totalPnL: 0,
+                        timestamp: new Date()
+                      }, ...betHistory])
+                    }
                   }}
                   placeholder="10"
                   className="w-12 px-1 py-1 bg-black/50 border border-gray-600 rounded text-center text-xs"
@@ -179,6 +189,20 @@ export default function WheelView({
                       [bet.key + '_b']: e.target.value
                     }
                     setManualBets(updatedBets)
+                    
+                    if (betHistory.length > 0 && betHistory[0].spin === null) {
+                      const updatedHistory = [...betHistory]
+                      updatedHistory[0].bets = updatedBets
+                      setBetHistory(updatedHistory)
+                    } else if (e.target.value) {
+                      setBetHistory([{
+                        spin: null,
+                        bets: updatedBets,
+                        results: {},
+                        totalPnL: 0,
+                        timestamp: new Date()
+                      }, ...betHistory])
+                    }
                   }}
                   placeholder="10"
                   className="w-12 px-1 py-1 bg-black/50 border border-gray-600 rounded text-center text-xs"
@@ -211,6 +235,20 @@ export default function WheelView({
                       [bet.key]: e.target.value
                     }
                     setManualBets(updatedBets)
+                    
+                    if (betHistory.length > 0 && betHistory[0].spin === null) {
+                      const updatedHistory = [...betHistory]
+                      updatedHistory[0].bets = updatedBets
+                      setBetHistory(updatedHistory)
+                    } else if (e.target.value) {
+                      setBetHistory([{
+                        spin: null,
+                        bets: updatedBets,
+                        results: {},
+                        totalPnL: 0,
+                        timestamp: new Date()
+                      }, ...betHistory])
+                    }
                   }}
                   placeholder="10"
                   className="w-14 px-1 py-1 bg-black/50 border border-gray-600 rounded text-center text-sm"
@@ -237,14 +275,14 @@ export default function WheelView({
         {activeBets > 0 && (
           <div className="mt-2 pt-2 border-t border-gray-700">
             <div className="flex flex-wrap gap-2">
-            {Object.entries(manualBets).filter(([_, value]) => value && parseFloat(value as string) > 0).map(([key, value]) => (
-  <div key={key} className="px-2 py-1 bg-black/40 rounded text-xs">
-    <span className="text-gray-400">{
-      key.replace(/_/g, ' ').toUpperCase()
-    }:</span>
-    <span className="text-green-400 font-bold ml-1">${value as string}</span>
-  </div>
-))}
+              {Object.entries(manualBets).filter(([_, value]) => value && parseFloat(value as string) > 0).map(([key, value]) => (
+                <div key={key} className="px-2 py-1 bg-black/40 rounded text-xs">
+                  <span className="text-gray-400">{
+                    key.replace(/_/g, ' ').toUpperCase()
+                  }:</span>
+                  <span className="text-green-400 font-bold ml-1">${value as string}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
@@ -265,96 +303,95 @@ export default function WheelView({
         </div>
         
         {showHotCold && (
-  <div className="space-y-4">
-   <div className="bg-gray-800 rounded-lg p-6 border border-gray-700"> {/* Matches your app's theme */}
-   <div className="text-center text-xs text-gray-400 mb-3">THE RACETRACK - Wheel Order</div>
-      {/* Simple 3-row track layout */}
-      <div className="space-y-1">
-        
-        {/* Top row - first 18 numbers */}
-        <div className="grid grid-cols-18 gap-1">
-          {wheelOrder.slice(0, 18).map((num) => {
-            const heat = hitCounts[num] || 0
-            const opacity = heat === 0 ? 'opacity-60' : ''
-            return (
-              <button
-                key={num}
-                onClick={() => setInputNumber(num.toString())}
-                className={`h-10 w-full ${
-                  num === 0 ? 'bg-green-600 hover:bg-green-500' :
-                  RED_NUMBERS.includes(num) ? 'bg-red-600 hover:bg-red-500' : 
-                  'bg-gray-900 hover:bg-gray-800'
-                } text-white rounded text-[10px] font-bold relative ${opacity} ${
-                  heat >= 3 ? 'ring-2 ring-yellow-400' : ''
-                }`}
-              >
-                {num}
-                {heat > 0 && (
-                  <span className={`absolute -top-1 -right-1 text-[8px] ${
-                    heat >= 3 ? 'bg-yellow-400' : 'bg-orange-400'
-                  } text-black px-1 rounded-full font-bold`}>
-                    {heat}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-        </div>
-        
-        {/* Middle row - just 2 numbers at the ends */}
-        <div className="grid grid-cols-18 gap-1">
-          <button
-            onClick={() => setInputNumber(wheelOrder[36].toString())}
-            className={`h-10 ${
-                  RED_NUMBERS.includes(wheelOrder[36]) ? 'bg-red-600 hover:bg-red-500' : 
-              'bg-gray-900 hover:bg-gray-800'
-            } text-white rounded text-[10px] font-bold`}
-          >
-            {wheelOrder[36]}
-          </button>
-          <div className="col-span-16"></div>
-          <button
-            onClick={() => setInputNumber(wheelOrder[18].toString())}
-            className={`h-10 ${
-                  RED_NUMBERS.includes(wheelOrder[18]) ? 'bg-red-600 hover:bg-red-500' : 
-              'bg-gray-900 hover:bg-gray-800'
-            } text-white rounded text-[10px] font-bold`}
-          >
-            {wheelOrder[18]}
-          </button>
-        </div>
-        
-        {/* Bottom row - remaining numbers (reversed) */}
-        <div className="grid grid-cols-17 gap-1">
-          {wheelOrder.slice(19, 36).reverse().map((num) => {
-            const heat = hitCounts[num] || 0
-            const opacity = heat === 0 ? 'opacity-60' : ''
-            return (
-              <button
-                key={num}
-                onClick={() => setInputNumber(num.toString())}
-                className={`h-10 w-full ${
-                  RED_NUMBERS.includes(num) ? 'bg-red-600 hover:bg-red-500' : 
-                  'bg-gray-900 hover:bg-gray-800'
-                } text-white rounded text-[10px] font-bold relative ${opacity} ${
-                  heat >= 3 ? 'ring-2 ring-yellow-400' : ''
-                }`}
-              >
-                {num}
-                {heat > 0 && (
-                  <span className={`absolute -top-1 -right-1 text-[8px] ${
-                    heat >= 3 ? 'bg-yellow-400' : 'bg-orange-400'
-                  } text-black px-1 rounded-full font-bold`}>
-                    {heat}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-        </div>
-      </div>
+          <div className="space-y-4">
+            <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+              <div className="text-center text-xs text-gray-400 mb-3">THE RACETRACK - Wheel Order</div>
+              {/* Racetrack layout code (keeping existing) */}
+              <div className="space-y-1">
+                {/* Top row - first 18 numbers */}
+                <div className="grid grid-cols-18 gap-1">
+                  {wheelOrder.slice(0, 18).map((num) => {
+                    const heat = hitCounts[num] || 0
+                    const opacity = heat === 0 ? 'opacity-60' : ''
+                    return (
+                      <button
+                        key={num}
+                        onClick={() => setInputNumber(num.toString())}
+                        className={`h-10 w-full ${
+                          num === 0 ? 'bg-green-600 hover:bg-green-500' :
+                          RED_NUMBERS.includes(num) ? 'bg-red-600 hover:bg-red-500' : 
+                          'bg-gray-900 hover:bg-gray-800'
+                        } text-white rounded text-[10px] font-bold relative ${opacity} ${
+                          heat >= 3 ? 'ring-2 ring-yellow-400' : ''
+                        }`}
+                      >
+                        {num}
+                        {heat > 0 && (
+                          <span className={`absolute -top-1 -right-1 text-[8px] ${
+                            heat >= 3 ? 'bg-yellow-400' : 'bg-orange-400'
+                          } text-black px-1 rounded-full font-bold`}>
+                            {heat}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+                
+                {/* Middle row - just 2 numbers at the ends */}
+                <div className="grid grid-cols-18 gap-1">
+                  <button
+                    onClick={() => setInputNumber(wheelOrder[36].toString())}
+                    className={`h-10 ${
+                      RED_NUMBERS.includes(wheelOrder[36]) ? 'bg-red-600 hover:bg-red-500' : 
+                      'bg-gray-900 hover:bg-gray-800'
+                    } text-white rounded text-[10px] font-bold`}
+                  >
+                    {wheelOrder[36]}
+                  </button>
+                  <div className="col-span-16"></div>
+                  <button
+                    onClick={() => setInputNumber(wheelOrder[18].toString())}
+                    className={`h-10 ${
+                      RED_NUMBERS.includes(wheelOrder[18]) ? 'bg-red-600 hover:bg-red-500' : 
+                      'bg-gray-900 hover:bg-gray-800'
+                    } text-white rounded text-[10px] font-bold`}
+                  >
+                    {wheelOrder[18]}
+                  </button>
+                </div>
+                
+                {/* Bottom row - remaining numbers (reversed) */}
+                <div className="grid grid-cols-17 gap-1">
+                  {wheelOrder.slice(19, 36).reverse().map((num) => {
+                    const heat = hitCounts[num] || 0
+                    const opacity = heat === 0 ? 'opacity-60' : ''
+                    return (
+                      <button
+                        key={num}
+                        onClick={() => setInputNumber(num.toString())}
+                        className={`h-10 w-full ${
+                          RED_NUMBERS.includes(num) ? 'bg-red-600 hover:bg-red-500' : 
+                          'bg-gray-900 hover:bg-gray-800'
+                        } text-white rounded text-[10px] font-bold relative ${opacity} ${
+                          heat >= 3 ? 'ring-2 ring-yellow-400' : ''
+                        }`}
+                      >
+                        {num}
+                        {heat > 0 && (
+                          <span className={`absolute -top-1 -right-1 text-[8px] ${
+                            heat >= 3 ? 'bg-yellow-400' : 'bg-orange-400'
+                          } text-black px-1 rounded-full font-bold`}>
+                            {heat}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
               
-              {/* Heat Legend - this part stays */}
+              {/* Heat Legend */}
               <div className="flex justify-center gap-6 text-xs mt-6">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 bg-red-600 rounded-full ring-4 ring-yellow-400"></div>
@@ -376,10 +413,6 @@ export default function WheelView({
             </div>
           </div>
         )}
-
-
-
-
       </div>
 
       {/* Recent Numbers and Add Input */}
@@ -435,7 +468,7 @@ export default function WheelView({
         </div>
       </div>
 
-      {/* Betting Performance Matrix */}
+      {/* FIXED: Betting Performance Matrix with Active Bets Display */}
       <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
         <h4 className="font-bold mb-3 text-white">Betting Performance Matrix</h4>
         <div className="overflow-x-auto">
@@ -459,84 +492,160 @@ export default function WheelView({
                 <th className="px-2 py-1">3rd9</th>
                 <th className="px-2 py-1">4th9</th>
               </tr>
-            </thead><tbody>
-  {spins.slice(0, 10).map((num, idx) => {
-    // Check which groups each number belongs to
-    const isVoisins = includesNum(wheelBets.special[0].numbers, num)
-    const isOrphelins = includesNum(wheelBets.special[1].numbers, num)
-    const isTiers = includesNum(wheelBets.special[2].numbers, num)
-    const isZero = includesNum(wheelBets.special[3].numbers, num)
-    const isNonVoisin = includesNum(wheelBets.special[4].numbers, num)
-    const isA = includesNum(wheelBets.wheel18s[0].groupA, num)
-    const isB = includesNum(wheelBets.wheel18s[0].groupB, num)
-    const isAA = includesNum(wheelBets.wheel18s[1].groupA, num)
-    const isBB = includesNum(wheelBets.wheel18s[1].groupB, num)
-    const isAAA = includesNum(wheelBets.wheel18s[2].groupA, num)
-    const isBBB = includesNum(wheelBets.wheel18s[2].groupB, num)
-    const is1st9 = includesNum(wheelBets.sectors9s[0].numbers, num)
-    const is2nd9 = includesNum(wheelBets.sectors9s[1].numbers, num)
-    const is3rd9 = includesNum(wheelBets.sectors9s[2].numbers, num)
-    const is4th9 = includesNum(wheelBets.sectors9s[3].numbers, num)
-    
-    return (
-      <tr key={idx} className="border-t border-gray-700 hover:bg-gray-700/50">
-        <td className="px-2 py-1 font-bold text-white">{num}</td>
-        <td className={`px-2 py-1 text-center ${isVoisins ? 'bg-green-600/30 text-green-400' : ''}`}>
-          {isVoisins ? '✓' : ''}
-        </td>
-        <td className={`px-2 py-1 text-center ${isOrphelins ? 'bg-green-600/30 text-green-400' : ''}`}>
-          {isOrphelins ? '✓' : ''}
-        </td>
-        <td className={`px-2 py-1 text-center ${isTiers ? 'bg-green-600/30 text-green-400' : ''}`}>
-          {isTiers ? '✓' : ''}
-        </td>
-        <td className={`px-2 py-1 text-center ${isZero ? 'bg-green-600/30 text-green-400' : ''}`}>
-          {isZero ? '✓' : ''}
-        </td>
-        <td className={`px-2 py-1 text-center ${isNonVoisin ? 'bg-green-600/30 text-green-400' : ''}`}>  {/* Add this cell */}
-        {isNonVoisin ? '✓' : ''}
-       </td>
-        <td className={`px-2 py-1 text-center ${isA ? 'bg-green-600/30 text-green-400' : ''}`}>
-          {isA ? '✓' : ''}
-        </td>
-        <td className={`px-2 py-1 text-center ${isB ? 'bg-green-600/30 text-green-400' : ''}`}>
-          {isB ? '✓' : ''}
-        </td>
-        <td className={`px-2 py-1 text-center ${isAA ? 'bg-green-600/30 text-green-400' : ''}`}>
-          {isAA ? '✓' : ''}
-        </td>
-        <td className={`px-2 py-1 text-center ${isBB ? 'bg-green-600/30 text-green-400' : ''}`}>
-          {isBB ? '✓' : ''}
-        </td>
-        <td className={`px-2 py-1 text-center ${isAAA ? 'bg-green-600/30 text-green-400' : ''}`}>
-          {isAAA ? '✓' : ''}
-        </td>
-        <td className={`px-2 py-1 text-center ${isBBB ? 'bg-green-600/30 text-green-400' : ''}`}>
-          {isBBB ? '✓' : ''}
-        </td>
-        <td className={`px-2 py-1 text-center ${is1st9 ? 'bg-green-600/30 text-green-400' : ''}`}>
-          {is1st9 ? '✓' : ''}
-        </td>
-        <td className={`px-2 py-1 text-center ${is2nd9 ? 'bg-green-600/30 text-green-400' : ''}`}>
-          {is2nd9 ? '✓' : ''}
-        </td>
-        <td className={`px-2 py-1 text-center ${is3rd9 ? 'bg-green-600/30 text-green-400' : ''}`}>
-          {is3rd9 ? '✓' : ''}
-        </td>
-        <td className={`px-2 py-1 text-center ${is4th9 ? 'bg-green-600/30 text-green-400' : ''}`}>
-          {is4th9 ? '✓' : ''}
-        </td>
-      </tr>
-    )
-  })}
-  {spins.length === 0 && (
-    <tr className="border-t border-gray-700">
-      <td className="px-2 py-1 text-center text-gray-500" colSpan={15}>
-        Add spins to see performance data
-      </td>
-    </tr>
-  )}
-</tbody>
+            </thead>
+            <tbody>
+              {/* ACTIVE BETS ROW - Show pending bets from betHistory */}
+              {betHistory.length > 0 && betHistory[0].spin === null && (
+                <tr className="bg-amber-900/20 border-b border-yellow-600/50">
+                  <td className="px-2 py-1 font-bold text-yellow-400">...</td>
+                  <td className="px-2 py-1 text-center text-yellow-400">
+                    {betHistory[0].bets['voisins'] ? `$${betHistory[0].bets['voisins']}` : ''}
+                  </td>
+                  <td className="px-2 py-1 text-center text-yellow-400">
+                    {betHistory[0].bets['orphelins'] ? `$${betHistory[0].bets['orphelins']}` : ''}
+                  </td>
+                  <td className="px-2 py-1 text-center text-yellow-400">
+                    {betHistory[0].bets['tiers'] ? `$${betHistory[0].bets['tiers']}` : ''}
+                  </td>
+                  <td className="px-2 py-1 text-center text-yellow-400">
+                    {betHistory[0].bets['jeu_zero'] ? `$${betHistory[0].bets['jeu_zero']}` : ''}
+                  </td>
+                  <td className="px-2 py-1 text-center text-yellow-400">
+                    {betHistory[0].bets['non_voisin'] ? `$${betHistory[0].bets['non_voisin']}` : ''}
+                  </td>
+                  <td className="px-2 py-1 text-center text-yellow-400">
+                    {betHistory[0].bets['a_b_a'] ? `$${betHistory[0].bets['a_b_a']}` : ''}
+                  </td>
+                  <td className="px-2 py-1 text-center text-yellow-400">
+                    {betHistory[0].bets['a_b_b'] ? `$${betHistory[0].bets['a_b_b']}` : ''}
+                  </td>
+                  <td className="px-2 py-1 text-center text-yellow-400">
+                    {betHistory[0].bets['aa_bb_a'] ? `$${betHistory[0].bets['aa_bb_a']}` : ''}
+                  </td>
+                  <td className="px-2 py-1 text-center text-yellow-400">
+                    {betHistory[0].bets['aa_bb_b'] ? `$${betHistory[0].bets['aa_bb_b']}` : ''}
+                  </td>
+                  <td className="px-2 py-1 text-center text-yellow-400">
+                    {betHistory[0].bets['aaa_bbb_a'] ? `$${betHistory[0].bets['aaa_bbb_a']}` : ''}
+                  </td>
+                  <td className="px-2 py-1 text-center text-yellow-400">
+                    {betHistory[0].bets['aaa_bbb_b'] ? `$${betHistory[0].bets['aaa_bbb_b']}` : ''}
+                  </td>
+                  <td className="px-2 py-1 text-center text-yellow-400">
+                    {betHistory[0].bets['1st_9'] ? `$${betHistory[0].bets['1st_9']}` : ''}
+                  </td>
+                  <td className="px-2 py-1 text-center text-yellow-400">
+                    {betHistory[0].bets['2nd_9'] ? `$${betHistory[0].bets['2nd_9']}` : ''}
+                  </td>
+                  <td className="px-2 py-1 text-center text-yellow-400">
+                    {betHistory[0].bets['3rd_9'] ? `$${betHistory[0].bets['3rd_9']}` : ''}
+                  </td>
+                  <td className="px-2 py-1 text-center text-yellow-400">
+                    {betHistory[0].bets['4th_9'] ? `$${betHistory[0].bets['4th_9']}` : ''}
+                  </td>
+                </tr>
+              )}
+              
+              {/* COMPLETED BETS/RESULTS ROWS */}
+              {betHistory
+                .filter(entry => entry.spin !== null)
+                .slice(0, 10)
+                .map((entry, idx) => {
+                  const num = entry.spin!
+                  
+                  // Check which groups the winning number belongs to
+                  const isVoisins = includesNum(wheelBets.special[0].numbers, num)
+                  const isOrphelins = includesNum(wheelBets.special[1].numbers, num)
+                  const isTiers = includesNum(wheelBets.special[2].numbers, num)
+                  const isZero = includesNum(wheelBets.special[3].numbers, num)
+                  const isNonVoisin = includesNum(wheelBets.special[4].numbers, num)
+                  const isA = includesNum(wheelBets.wheel18s[0].groupA, num)
+                  const isB = includesNum(wheelBets.wheel18s[0].groupB, num)
+                  const isAA = includesNum(wheelBets.wheel18s[1].groupA, num)
+                  const isBB = includesNum(wheelBets.wheel18s[1].groupB, num)
+                  const isAAA = includesNum(wheelBets.wheel18s[2].groupA, num)
+                  const isBBB = includesNum(wheelBets.wheel18s[2].groupB, num)
+                  const is1st9 = includesNum(wheelBets.sectors9s[0].numbers, num)
+                  const is2nd9 = includesNum(wheelBets.sectors9s[1].numbers, num)
+                  const is3rd9 = includesNum(wheelBets.sectors9s[2].numbers, num)
+                  const is4th9 = includesNum(wheelBets.sectors9s[3].numbers, num)
+                  
+                  // Helper to display bet result
+                  const getBetResult = (betKey: string, isWinner: boolean) => {
+                    const betAmount = entry.bets[betKey]
+                    if (!betAmount) return ''
+                    
+                    const amount = parseFloat(betAmount)
+                    if (isWinner) {
+                      // These are special bets with different payouts - simplified for now
+                      const payout = amount * 2 // You can adjust payout calculations
+                      return <span className="text-green-400 font-bold">+${payout}</span>
+                    } else {
+                      return <span className="text-red-400">-${amount}</span>
+                    }
+                  }
+                  
+                  return (
+                    <tr key={idx} className="border-t border-gray-700 hover:bg-gray-700/50">
+                      <td className="px-2 py-1 font-bold text-white">{num}</td>
+                      <td className="px-2 py-1 text-center">
+                        {entry.bets['voisins'] ? getBetResult('voisins', isVoisins) : (isVoisins ? '✓' : '')}
+                      </td>
+                      <td className="px-2 py-1 text-center">
+                        {entry.bets['orphelins'] ? getBetResult('orphelins', isOrphelins) : (isOrphelins ? '✓' : '')}
+                      </td>
+                      <td className="px-2 py-1 text-center">
+                        {entry.bets['tiers'] ? getBetResult('tiers', isTiers) : (isTiers ? '✓' : '')}
+                      </td>
+                      <td className="px-2 py-1 text-center">
+                        {entry.bets['jeu_zero'] ? getBetResult('jeu_zero', isZero) : (isZero ? '✓' : '')}
+                      </td>
+                      <td className="px-2 py-1 text-center">
+                        {entry.bets['non_voisin'] ? getBetResult('non_voisin', isNonVoisin) : (isNonVoisin ? '✓' : '')}
+                      </td>
+                      <td className="px-2 py-1 text-center">
+                        {entry.bets['a_b_a'] ? getBetResult('a_b_a', isA) : (isA ? '✓' : '')}
+                      </td>
+                      <td className="px-2 py-1 text-center">
+                        {entry.bets['a_b_b'] ? getBetResult('a_b_b', isB) : (isB ? '✓' : '')}
+                      </td>
+                      <td className="px-2 py-1 text-center">
+                        {entry.bets['aa_bb_a'] ? getBetResult('aa_bb_a', isAA) : (isAA ? '✓' : '')}
+                      </td>
+                      <td className="px-2 py-1 text-center">
+                        {entry.bets['aa_bb_b'] ? getBetResult('aa_bb_b', isBB) : (isBB ? '✓' : '')}
+                      </td>
+                      <td className="px-2 py-1 text-center">
+                        {entry.bets['aaa_bbb_a'] ? getBetResult('aaa_bbb_a', isAAA) : (isAAA ? '✓' : '')}
+                      </td>
+                      <td className="px-2 py-1 text-center">
+                        {entry.bets['aaa_bbb_b'] ? getBetResult('aaa_bbb_b', isBBB) : (isBBB ? '✓' : '')}
+                      </td>
+                      <td className="px-2 py-1 text-center">
+                        {entry.bets['1st_9'] ? getBetResult('1st_9', is1st9) : (is1st9 ? '✓' : '')}
+                      </td>
+                      <td className="px-2 py-1 text-center">
+                        {entry.bets['2nd_9'] ? getBetResult('2nd_9', is2nd9) : (is2nd9 ? '✓' : '')}
+                      </td>
+                      <td className="px-2 py-1 text-center">
+                        {entry.bets['3rd_9'] ? getBetResult('3rd_9', is3rd9) : (is3rd9 ? '✓' : '')}
+                      </td>
+                      <td className="px-2 py-1 text-center">
+                        {entry.bets['4th_9'] ? getBetResult('4th_9', is4th9) : (is4th9 ? '✓' : '')}
+                      </td>
+                    </tr>
+                  )
+              })}
+              
+              {/* Show message if no data */}
+              {betHistory.filter(e => e.spin !== null).length === 0 && (!betHistory[0] || betHistory[0].spin !== null) && (
+                <tr className="border-t border-gray-700">
+                  <td className="px-2 py-1 text-center text-gray-500" colSpan={16}>
+                    Place bets and add spins to see performance data
+                  </td>
+                </tr>
+              )}
+            </tbody>
           </table>
         </div>
       </div>
@@ -553,7 +662,12 @@ export default function WheelView({
             Total Spins: <span className="text-white font-bold">{spins.length}</span>
           </div>
           <div className="text-gray-400">
-            Win Rate: <span className="text-white font-bold">0%</span>
+            Win Rate: <span className="text-white font-bold">
+              {betHistory.filter(b => b.spin !== null && b.totalPnL > 0).length > 0 
+                ? Math.round((betHistory.filter(b => b.spin !== null && b.totalPnL > 0).length / 
+                   betHistory.filter(b => b.spin !== null).length) * 100) 
+                : 0}%
+            </span>
           </div>
         </div>
       </div>
