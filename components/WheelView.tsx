@@ -1,17 +1,19 @@
 'use client'
 import React, { useState, useMemo } from 'react'
+import { RED_NUMBERS, WHEEL_ORDER, WHEEL_BETS } from '@/lib/roulette-logic'
+import { hitCountsByNumberForWindow } from '@/lib/roulette-analytics'
 
 interface WheelViewProps {
-  spins: any[]
+  spins: number[]
   inputNumber: string
   setInputNumber: (value: string) => void
   addNumber: () => void
-  manualBets: any
-  setManualBets: (bets: any) => void
-  betHistory: any[]
-  setBetHistory: (history: any) => void
+  manualBets: Record<string, string>
+  setManualBets: (bets: Record<string, string>) => void
+  betHistory: Array<{ spin: number | null; bets: Record<string, string>; results: Record<string, number>; totalPnL: number; timestamp: Date }>
+  setBetHistory: (history: WheelViewProps['betHistory']) => void
   sessionPnL: number
-  playerContext: any
+  playerContext: { unitSize: number }
   showHeatMap: boolean
   setShowHeatMap: (show: boolean) => void
 }
@@ -27,66 +29,32 @@ export default function WheelView({
   setBetHistory,
   sessionPnL,
   playerContext,
-  showHeatMap,
-  setShowHeatMap
+  showHeatMap: _showHeatMap,
+  setShowHeatMap: _setShowHeatMap
 }: WheelViewProps) {
   
   const [showHotCold, setShowHotCold] = useState(false)
   
-  // Wheel order for European roulette (clockwise from 0)
-  const wheelOrder = [
-    0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10,
-    5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26
-  ]
+  // Use centralized wheel order and red numbers
+  const wheelOrder = WHEEL_ORDER
   
-  const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]
-  
-  // Wheel betting groups with colors
-  const wheelBets = {
-    special: [
-      { key: 'voisins', label: 'Voisins', color: 'bg-purple-600', numbers: [22,18,29,7,28,12,35,3,26,0,32,15,19,4,21,2,25] },
-      { key: 'orphelins', label: 'Orphelins', color: 'bg-indigo-600', numbers: [17,34,6,1,20,14,31,9] },
-      { key: 'tiers', label: 'Tiers', color: 'bg-blue-600', numbers: [27,13,36,11,30,8,23,10,5,24,16,33] },
-      { key: 'jeu_zero', label: 'Jeu Zero', color: 'bg-teal-600', numbers: [12,35,3,26,0,32,15] },
-      { key: 'non_voisin', label: 'Non-Voisin', color: 'bg-pink-600', numbers: [17,34,6,1,20,14,31,9,27,13,36,11,30,8,23,10,5,24,16,33] }
-    ],
-    wheel18s: [
-      { key: 'a_b', label: 'A/B', colorA: 'bg-red-600', colorB: 'bg-blue-600', groupA: [32,19,21,25,34,27,36,30,23,5,16,1,14,9,18,7,12,3], groupB: [15,4,2,17,6,13,11,8,10,24,33,20,31,22,29,28,35,26] },
-      { key: 'aa_bb', label: 'AA/BB', colorA: 'bg-green-600', colorB: 'bg-yellow-600', groupA: [32,15,21,2,34,6,36,11,23,10,16,33,14,31,18,29,12,35], groupB: [19,4,25,17,27,13,30,8,5,24,1,20,9,22,7,28,3,26] },
-      { key: 'aaa_bbb', label: 'AAA/BBB', colorA: 'bg-cyan-600', colorB: 'bg-rose-600', groupA: [32,15,19,25,17,34,36,11,30,5,24,16,14,31,9,7,28,12], groupB: [4,21,2,6,27,13,8,23,10,33,1,20,22,18,29,35,3,26] },
-      { key: 'a6_b6', label: 'A6/B6', colorA: 'bg-orange-600', colorB: 'bg-lime-600', groupA: [32,15,19,4,21,2,36,11,30,8,23,10,14,31,9,22,18,29], groupB: [25,17,34,6,27,13,5,24,16,33,1,20,7,28,12,35,3,26] },
-      { key: 'a9_b9', label: 'A9/B9', colorA: 'bg-amber-600', colorB: 'bg-emerald-600', groupA: [32,15,19,4,21,2,25,17,34,5,24,16,33,1,20,14,31,9], groupB: [6,27,13,36,11,30,8,23,10,22,18,29,7,28,12,35,3,26] },
-      { key: 'right_left', label: 'Right/Left', colorA: 'bg-fuchsia-600', colorB: 'bg-sky-600', groupA: [32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10], groupB: [5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26] }
-    ],
-    sectors9s: [
-      { key: '1st_9', label: '1st 9', color: 'bg-red-700', numbers: [32,15,19,4,21,2,25,17,34] },
-      { key: '2nd_9', label: '2nd 9', color: 'bg-blue-700', numbers: [6,27,13,36,11,30,8,23,10] },
-      { key: '3rd_9', label: '3rd 9', color: 'bg-green-700', numbers: [5,24,16,33,1,20,14,31,9] },
-      { key: '4th_9', label: '4th 9', color: 'bg-yellow-700', numbers: [22,18,29,7,28,12,35,3,26] }
-    ]
-  }
+  // Centralized wheel betting groups with colors
+  const wheelBets = WHEEL_BETS
 
-  // Calculate hit counts for last 36 spins
-  const hitCounts = useMemo(() => {
-    const counts: { [key: number]: number } = {}
-    const last36 = spins.slice(0, 36)
-    
-    for (let i = 0; i <= 36; i++) {
-      counts[i] = last36.filter(spin => spin === i).length
-    }
-    
-    return counts
-  }, [spins])
+  const includesNum = (arr: readonly number[], n: number) => (arr as readonly number[]).includes(n)
+
+  // Calculate hit counts for last 36 spins (centralized)
+  const hitCounts = useMemo(() => hitCountsByNumberForWindow(spins, 36), [spins])
 
   const getNumberColor = (num: number) => {
     if (num === 0) return 'bg-green-600'
-    return redNumbers.includes(num) ? 'bg-red-600' : 'bg-gray-900'
+    return RED_NUMBERS.includes(num) ? 'bg-red-600' : 'bg-gray-900'
   }
   
-  const getTextColor = (num: number) => {
-    if (num === 0) return 'text-green-400'
-    return redNumbers.includes(num) ? 'text-red-400' : 'text-white'
-  }
+  // const getTextColor = (num: number) => {
+  //   if (num === 0) return 'text-green-400'
+  //   return RED_NUMBERS.includes(num) ? 'text-red-400' : 'text-white'
+  // }
 
   const handleBetClick = (betKey: string) => {
     const currentValue = manualBets[betKey]
@@ -112,7 +80,7 @@ export default function WheelView({
     }
   }
 
-  const totalStake = Object.values(manualBets).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0)
+  const totalStake = Object.values(manualBets).reduce((sum: number, val) => sum + (parseFloat(val) || 0), 0)
   const activeBets = Object.keys(manualBets).filter(key => manualBets[key] && parseFloat(manualBets[key]) > 0).length
 
   return (
@@ -168,7 +136,7 @@ export default function WheelView({
 
         {/* 18's Groups Card */}
         <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
-          <h4 className="text-center font-bold mb-3 text-green-400">18's (1:1)</h4>
+          <h4 className="text-center font-bold mb-3 text-green-400">18&apos;s (1:1)</h4>
           <div className="space-y-2">
             {wheelBets.wheel18s.map(bet => (
               <div key={bet.key} className="flex items-center gap-1">
@@ -222,7 +190,7 @@ export default function WheelView({
 
         {/* 9's Sectors Card */}
         <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
-          <h4 className="text-center font-bold mb-3 text-cyan-400">9's Sectors</h4>
+          <h4 className="text-center font-bold mb-3 text-cyan-400">9&apos;s Sectors</h4>
           <div className="space-y-2">
             {wheelBets.sectors9s.map(bet => (
               <div key={bet.key} className="flex items-center gap-1">
@@ -314,7 +282,7 @@ export default function WheelView({
                 onClick={() => setInputNumber(num.toString())}
                 className={`h-10 w-full ${
                   num === 0 ? 'bg-green-600 hover:bg-green-500' :
-                  redNumbers.includes(num) ? 'bg-red-600 hover:bg-red-500' : 
+                  RED_NUMBERS.includes(num) ? 'bg-red-600 hover:bg-red-500' : 
                   'bg-gray-900 hover:bg-gray-800'
                 } text-white rounded text-[10px] font-bold relative ${opacity} ${
                   heat >= 3 ? 'ring-2 ring-yellow-400' : ''
@@ -338,7 +306,7 @@ export default function WheelView({
           <button
             onClick={() => setInputNumber(wheelOrder[36].toString())}
             className={`h-10 ${
-              redNumbers.includes(wheelOrder[36]) ? 'bg-red-600 hover:bg-red-500' : 
+                  RED_NUMBERS.includes(wheelOrder[36]) ? 'bg-red-600 hover:bg-red-500' : 
               'bg-gray-900 hover:bg-gray-800'
             } text-white rounded text-[10px] font-bold`}
           >
@@ -348,7 +316,7 @@ export default function WheelView({
           <button
             onClick={() => setInputNumber(wheelOrder[18].toString())}
             className={`h-10 ${
-              redNumbers.includes(wheelOrder[18]) ? 'bg-red-600 hover:bg-red-500' : 
+                  RED_NUMBERS.includes(wheelOrder[18]) ? 'bg-red-600 hover:bg-red-500' : 
               'bg-gray-900 hover:bg-gray-800'
             } text-white rounded text-[10px] font-bold`}
           >
@@ -366,7 +334,7 @@ export default function WheelView({
                 key={num}
                 onClick={() => setInputNumber(num.toString())}
                 className={`h-10 w-full ${
-                  redNumbers.includes(num) ? 'bg-red-600 hover:bg-red-500' : 
+                  RED_NUMBERS.includes(num) ? 'bg-red-600 hover:bg-red-500' : 
                   'bg-gray-900 hover:bg-gray-800'
                 } text-white rounded text-[10px] font-bold relative ${opacity} ${
                   heat >= 3 ? 'ring-2 ring-yellow-400' : ''
@@ -494,21 +462,21 @@ export default function WheelView({
             </thead><tbody>
   {spins.slice(0, 10).map((num, idx) => {
     // Check which groups each number belongs to
-    const isVoisins = wheelBets.special[0].numbers.includes(num)
-    const isOrphelins = wheelBets.special[1].numbers.includes(num)
-    const isTiers = wheelBets.special[2].numbers.includes(num)
-    const isZero = wheelBets.special[3].numbers.includes(num)
-    const isNonVoisin = wheelBets.special[4].numbers.includes(num)  
-    const isA = wheelBets.wheel18s[0].groupA.includes(num)
-    const isB = wheelBets.wheel18s[0].groupB.includes(num)
-    const isAA = wheelBets.wheel18s[1].groupA.includes(num)
-    const isBB = wheelBets.wheel18s[1].groupB.includes(num)
-    const isAAA = wheelBets.wheel18s[2].groupA.includes(num)
-    const isBBB = wheelBets.wheel18s[2].groupB.includes(num)
-    const is1st9 = wheelBets.sectors9s[0].numbers.includes(num)
-    const is2nd9 = wheelBets.sectors9s[1].numbers.includes(num)
-    const is3rd9 = wheelBets.sectors9s[2].numbers.includes(num)
-    const is4th9 = wheelBets.sectors9s[3].numbers.includes(num)
+    const isVoisins = includesNum(wheelBets.special[0].numbers, num)
+    const isOrphelins = includesNum(wheelBets.special[1].numbers, num)
+    const isTiers = includesNum(wheelBets.special[2].numbers, num)
+    const isZero = includesNum(wheelBets.special[3].numbers, num)
+    const isNonVoisin = includesNum(wheelBets.special[4].numbers, num)
+    const isA = includesNum(wheelBets.wheel18s[0].groupA, num)
+    const isB = includesNum(wheelBets.wheel18s[0].groupB, num)
+    const isAA = includesNum(wheelBets.wheel18s[1].groupA, num)
+    const isBB = includesNum(wheelBets.wheel18s[1].groupB, num)
+    const isAAA = includesNum(wheelBets.wheel18s[2].groupA, num)
+    const isBBB = includesNum(wheelBets.wheel18s[2].groupB, num)
+    const is1st9 = includesNum(wheelBets.sectors9s[0].numbers, num)
+    const is2nd9 = includesNum(wheelBets.sectors9s[1].numbers, num)
+    const is3rd9 = includesNum(wheelBets.sectors9s[2].numbers, num)
+    const is4th9 = includesNum(wheelBets.sectors9s[3].numbers, num)
     
     return (
       <tr key={idx} className="border-t border-gray-700 hover:bg-gray-700/50">
