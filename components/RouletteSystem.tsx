@@ -23,6 +23,17 @@ type MainTab = 'table-view' | 'table-bets' | 'table-stats'
 type AssistantSubTab = 'setup' | 'action' | 'performance' | 'analysis'
 type StorageMode = 'local' | 'cloud'
 
+// Typed bet keys used across performance matrix
+const BET_KEYS = [
+  'red','black','even','odd','low','high',
+  'dozen1','dozen2','dozen3',
+  'col1','col2','col3',
+  'six1','six2','six3','six4','six5','six6',
+  'alt1_1','alt1_2','alt2_1','alt2_2','alt3_1','alt3_2',
+  'edge','center'
+] as const
+type BetKey = typeof BET_KEYS[number]
+
 interface PlayerSetup {
   bankroll: number
   targetProfit: number
@@ -47,20 +58,14 @@ export default function RouletteSystem() {
   const [localSession, setLocalSession] = useState<Session | null>(null)
   const [localSpins, setLocalSpins] = useState<Spin[]>([])
   
-  // Use Supabase hook only when in cloud mode
+  // Call hook unconditionally to follow Rules of Hooks
   const { 
     session: cloudSession, 
     spins: cloudSpins, 
     loading: sessionLoading, 
     addSpin: addCloudSpin, 
     resetSession: resetCloudSession 
-  } = storageMode === 'cloud' ? useRouletteSession() : { 
-    session: null, 
-    spins: [], 
-    loading: false, 
-    addSpin: async () => null, 
-    resetSession: async () => {} 
-  }
+  } = useRouletteSession()
   
   // Unified getters
   const session = storageMode === 'cloud' ? cloudSession : localSession
@@ -89,6 +94,8 @@ export default function RouletteSystem() {
     progressionStyle: 'flat',
     playerLevel: 'intermediate'
   })
+
+  const playerContext = React.useMemo(() => ({ unitSize: playerSetup.betUnit }), [playerSetup.betUnit])
 
   const [manualBets, setManualBets] = useState<Record<string, string>>({
     red: '', black: '',
@@ -382,8 +389,8 @@ const openSessionSetup = () => {
                     </p>
                   </div>
                 )}
-              </div>
             </div>
+          </div>
           </div>
         )}
 {/* Main Content Area */}
@@ -507,338 +514,6 @@ const openSessionSetup = () => {
         ) : (
         
               <>
-            {/* Main Tabs - Only show when session is active */}
-            {!showAssistant && (
-              <>
-                <div className="flex gap-2 mb-6 overflow-x-auto bg-black/40 p-2 rounded-lg backdrop-blur">
-                  <button
-                    onClick={() => setActiveTab('table-view')}
-                    className={`px-6 py-3 rounded-lg font-medium transition whitespace-nowrap ${
-                      activeTab === 'table-view'
-                        ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg'
-                        : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-gray-700'
-                    }`}
-                  >
-                    Table View
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('table-bets')}
-                    className={`px-6 py-3 rounded-lg font-medium transition whitespace-nowrap ${
-                      activeTab === 'table-bets'
-                        ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg'
-                        : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-gray-700'
-                    }`}
-                  >
-                    Table Bets
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('table-stats')}
-                    className={`px-6 py-3 rounded-lg font-medium transition whitespace-nowrap ${
-                      activeTab === 'table-stats'
-                        ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg'
-                        : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-gray-700'
-                    }`}
-                  >
-                    Table Stats
-                  </button>
-                </div>
-
-                <div className="bg-black/40 backdrop-blur rounded-xl p-6 border border-yellow-400/20">
-                  {activeTab === 'table-view' && (
-                    <div className="space-y-8">
-                      <div className="space-y-6">
-                        <h2 className="text-2xl font-bold text-yellow-400">Number Entry</h2>
-                        <EntryPanel
-                          inputNumber={inputNumber}
-                          setInputNumber={setInputNumber}
-                          addNumber={addNumber}
-                          loading={loading}
-                        />
-                        <div className="space-y-4">
-                          <h3 className="text-gray-400">Quick Select:</h3>
-                          <div className="grid grid-cols-12 gap-2">
-                            <button
-                              onClick={() => setInputNumber('0')}
-                              className="col-span-12 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-bold transition"
-                            >
-                              0
-                            </button>
-                            {[...Array(36)].map((_, i) => {
-                              const num = i + 1
-                              const color = NUMBERS.RED.includes(num) ? 'bg-red-600 hover:bg-red-700' : 
-                                           'bg-gray-700 hover:bg-gray-600'
-                              return (
-                                <button
-                                  key={num}
-                                  onClick={() => setInputNumber(num.toString())}
-                                  className={`py-3 ${color} rounded-lg font-bold transition`}
-                                >
-                                  {num}
-                                </button>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-6">
-                        <h2 className="text-2xl font-bold text-yellow-400">History</h2>
-                        <HistoryTable spins={spins} />
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === 'table-bets' && (
-                    <div className="space-y-6">
-                      <h2 className="text-2xl font-bold text-yellow-400">Table Betting</h2>
-                      
-                      <div className="grid grid-cols-3 gap-4">
-                        <BettingCards18
-                          manualBets={manualBets}
-                          setManualBets={setManualBets}
-                          playerUnit={playerSetup.betUnit}
-                          betHistory={betHistory}
-                          setBetHistory={setBetHistory}
-                        />
-                        <BettingCards12
-                          manualBets={manualBets}
-                          setManualBets={setManualBets}
-                          playerUnit={playerSetup.betUnit}
-                          betHistory={betHistory}
-                          setBetHistory={setBetHistory}
-                        />
-                        <BettingCards6
-                          manualBets={manualBets}
-                          setManualBets={setManualBets}
-                          playerUnit={playerSetup.betUnit}
-                          betHistory={betHistory}
-                          setBetHistory={setBetHistory}
-                        />
-                      </div>
-                      
-                      <CurrentBetsSummary manualBets={manualBets} />
-                      
-                      <div className="flex gap-4">
-                        <button
-                          onClick={() => {
-                            if (Object.values(manualBets).some(v => v)) {
-                              setBetHistory([{
-                                spin: null,
-                                bets: {...manualBets},
-                                results: {},
-                                totalPnL: 0,
-                                timestamp: new Date()
-                              }, ...betHistory])
-                            }
-                          }}
-                          className="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-bold transition-all"
-                          disabled={!Object.values(manualBets).some(v => v)}
-                        >
-                          Place Bets
-                        </button>
-                        
-                        <button
-                          onClick={() => {
-                            setManualBets({
-                              red: '', black: '', even: '', odd: '', low: '', high: '',
-                              alt1_1: '', alt1_2: '', alt2_1: '', alt2_2: '', alt3_1: '', alt3_2: '',
-                              edge: '', center: '', dozen1: '', dozen2: '', dozen3: '',
-                              col1: '', col2: '', col3: '', six1: '', six2: '', six3: '',
-                              six4: '', six5: '', six6: ''
-                            })
-                          }}
-                          className="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg font-bold transition-all"
-                        >
-                          Clear All
-                        </button>
-                      </div>
-                    </div>
-                  )}
-{/* Hot/Cold Visual Reference */}
-<div className="bg-gray-800 rounded-lg border border-gray-700 p-4 mb-4">
-  <div className="flex justify-between items-center mb-3">
-    <h4 className="font-bold text-green-400">🔥 Hot/Cold Analysis - Last 36 Spins</h4>
-    <button 
-      onClick={() => setShowHeatMap(!showHeatMap)}
-      className="text-xs text-gray-400 hover:text-white"
-    >
-      {showHeatMap ? 'Hide' : 'Show'}
-    </button>
-  </div>
-  
-  {showHeatMap && (
-    <HeatmapGrid spins={spins} setInputNumber={setInputNumber} />
-  )}
-</div>
-{/* Recent Numbers and Add Number Row */}
-<div className="bg-gray-800 rounded-lg border border-gray-700 p-3 mt-4">
-  <div className="flex items-center gap-4">
-    {/* Recent Numbers - Left Side */}
-    <div className="flex items-center gap-2">
-      <span className="text-sm font-bold text-blue-400 whitespace-nowrap">Last 10:</span>
-      <div className="flex gap-1">
-        {spins.slice(0, 10).map((spin, idx) => (
-          <div 
-            key={idx} 
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white
-              ${spin.number === 0 ? 'bg-green-600' : 
-                NUMBERS.RED.includes(spin.number) ? 'bg-red-600' : 'bg-black border border-gray-600'}`}
-          >
-            {spin.number}
-          </div>
-        ))}
-        {spins.length === 0 && (
-          <span className="text-gray-500 text-xs">No numbers yet</span>
-        )}
-      </div>
-    </div>
-    
-    {/* Divider */}
-    <div className="h-8 w-px bg-gray-600"></div>
-    
-    {/* Add Number - Right Side */}
-    <div className="flex items-center gap-4">
-      <span className="text-sm font-bold text-green-400">Add Number:</span>
-      <input
-        type="number"
-        min="0"
-        max="36"
-        value={inputNumber}
-        onChange={(e) => setInputNumber(e.target.value)}
-        onKeyPress={(e) => e.key === 'Enter' && addNumber()}
-        placeholder="0-36"
-        className="w-20 px-2 py-1.5 bg-black/50 border border-gray-600 rounded text-center text-sm font-bold"
-      />
-      <button
-        onClick={addNumber}
-        className="px-4 py-1.5 bg-green-600 hover:bg-green-700 rounded text-sm font-bold text-white"
-      >
-        ADD
-      </button>
-    </div>
-  </div>
-</div>
-
-<div className="bg-gray-900 rounded-lg border border-gray-700 p-4">
-  <h3 className="text-lg font-bold mb-3 text-blue-300">Betting Performance Matrix</h3>
-  <div className="overflow-x-auto">
-    <div className="max-h-96 overflow-y-auto">
-      <table className="min-w-full text-sm">
-        <thead className="sticky top-0 bg-gray-800 z-10">
-          <tr>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">Num</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">R</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">B</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">Ev</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">Od</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">L</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">H</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">D1</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">D2</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">D3</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">C1</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">C2</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">C3</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">S1</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">S2</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">S3</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">S4</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">S5</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">S6</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">A</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">B</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">AA</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">BB</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">AAA</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">BBB</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">Ed</th>
-            <th className="px-2 py-1 text-center border border-gray-700 bg-gray-800 text-xs">Ce</th>
-          </tr>
-        </thead>
-        <tbody>
-          {/* Current pending bet row (if exists) */}
-          {Object.values(manualBets).some(v => v) && !betHistory.some(h => h.spin === null) && (
-            <tr className="bg-amber-900/20">
-              <td className="px-2 py-1 text-center border border-gray-700 text-xs font-bold">...</td>
-              {['red', 'black', 'even', 'odd', 'low', 'high', 'dozen1', 'dozen2', 'dozen3',
-                'col1', 'col2', 'col3', 'six1', 'six2', 'six3', 'six4', 'six5', 'six6',
-                'alt1_1', 'alt1_2', 'alt2_1', 'alt2_2', 'alt3_1', 'alt3_2', 'edge', 'center'].map(betKey => (
-                <td key={betKey} className="px-2 py-1 text-center border border-gray-700 text-xs">
-                  {manualBets[betKey] && <span className="text-yellow-400">${manualBets[betKey]}</span>}
-                </td>
-              ))}
-            </tr>
-          )}
-          
-          {/* Completed bet rows */}
-          {betHistory.filter(h => h.spin !== null).map((row, index) => (
-            <tr key={index} className="hover:bg-gray-800/50">
-              <td className="px-2 py-1 text-center border border-gray-700 text-xs font-bold">
-                {row.spin}
-              </td>
-              {['red', 'black', 'even', 'odd', 'low', 'high', 'dozen1', 'dozen2', 'dozen3',
-                'col1', 'col2', 'col3', 'six1', 'six2', 'six3', 'six4', 'six5', 'six6',
-                'alt1_1', 'alt1_2', 'alt2_1', 'alt2_2', 'alt3_1', 'alt3_2', 'edge', 'center'].map(betKey => (
-                <td key={betKey} className="px-2 py-1 text-center border border-gray-700 text-xs">
-                  {row.bets[betKey] && (
-                    <span className={row.results[betKey] > 0 ? 'text-green-400 font-bold' : 'text-red-400'}>
-                      {row.results[betKey] > 0 ? '+' : ''}{row.results[betKey] || `-${row.bets[betKey]}`}
-                    </span>
-                  )}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-
-                  {activeTab === 'table-stats' && (
-                    <div className="space-y-6">
-                      <h2 className="text-2xl font-bold text-yellow-400">Table Statistics</h2>
-                      <StatsMatrix groupStats={groupStats || []} spinsCount={spins.length} />
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-            {/* Assistant Section - Now opens from "Start New Session" when no session exists */}
-            {showAssistant && (
-              <>
-                <div className="flex gap-2 mb-6 overflow-x-auto bg-black/40 p-2 rounded-lg backdrop-blur">
-                  <button
-                    onClick={() => setActiveTab('table-view')}
-                    className={`px-4 py-2 rounded-lg font-medium transition whitespace-nowrap ${
-                      activeTab === 'table-view'
-                        ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black'
-                        : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-gray-700'
-                    }`}
-                  >
-                    Table View
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('table-bets')}
-                    className={`px-4 py-2 rounded-lg font-medium transition whitespace-nowrap ${
-                      activeTab === 'table-bets'
-                        ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black'
-                        : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-gray-700'
-                    }`}
-                  >
-                    Table Bets
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('table-stats')}
-                    className={`px-4 py-2 rounded-lg font-medium transition whitespace-nowrap ${
-                      activeTab === 'table-stats'
-                        ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black'
-                        : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300 border border-gray-700'
-                    }`}
-                  >
-                    Table Stats
-                  </button>
-                </div>
 
                 <div className="bg-black/40 backdrop-blur rounded-xl border border-yellow-400/20">
                   <div className="flex gap-0 border-b border-yellow-400/20">
@@ -965,86 +640,407 @@ const openSessionSetup = () => {
                           </button>
                         )}
                       </div>
-                    )}
-
-                    {assistantSubTab === 'action' && session && (
+                    )}{assistantSubTab === 'action' && session && (
                       <div className="space-y-6">
-                        <div className="flex gap-2 mb-4">
+                        {/* Main Game Action toggle: Table vs Wheel */}
+                        <div className="flex gap-2 mb-4 bg-black/30 p-2 rounded-lg">
                           <button
-                            onClick={() => setActionView('table-bets')}
-                            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                              actionView === 'table-bets' 
-                                ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
+                            onClick={() => setActionView(actionView.startsWith('wheel') ? 'table-view' : actionView)}
+                            className={`px-6 py-2 rounded-lg font-bold transition-all ${
+                              !actionView.startsWith('wheel')
+                                ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg' 
                                 : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
                             }`}
                           >
-                            📊 Table Bets
+                            📊 Table
                           </button>
                           <button
-                            onClick={() => setActionView('wheel-bets')}
-                            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                              actionView === 'wheel-bets' 
-                                ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
+                            onClick={() => setActionView(actionView.startsWith('table') ? 'wheel-view' : actionView)}
+                            className={`px-6 py-2 rounded-lg font-bold transition-all ${
+                              actionView.startsWith('wheel')
+                                ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg' 
                                 : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
                             }`}
                           >
-                            🎯 Wheel Bets
+                            🎰 Wheel
                           </button>
                         </div>
+                    
+                        {/* Sub-tabs based on Table or Wheel selection */}
+                        <div className="flex gap-2 mb-4">
+                          {!actionView.startsWith('wheel') ? (
+                            <>
+                              <button
+                                onClick={() => setActionView('table-view')}
+                                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                                  actionView === 'table-view' 
+                                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
+                                    : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                                }`}
+                              >
+                                Table View
+                              </button>
+                              <button
+                                onClick={() => setActionView('table-bets')}
+                                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                                  actionView === 'table-bets' 
+                                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
+                                    : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                                }`}
+                              >
+                                Table Bets
+                              </button>
+                              <button
+                                onClick={() => setActionView('table-stats')}
+                                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                                  actionView === 'table-stats' 
+                                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
+                                    : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                                }`}
+                              >
+                                Table Stats
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => setActionView('wheel-view')}
+                                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                                  actionView === 'wheel-view' 
+                                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
+                                    : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                                }`}
+                              >
+                                Wheel View
+                              </button>
+                              <button
+                                onClick={() => setActionView('wheel-bets')}
+                                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                                  actionView === 'wheel-bets' 
+                                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
+                                    : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                                }`}
+                              >
+                                Wheel Bets
+                              </button>
+                              <button
+                                onClick={() => setActionView('wheel-stats')}
+                                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+                                  actionView === 'wheel-stats' 
+                                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
+                                    : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+                                }`}
+                              >
+                                Wheel Stats
+                              </button>
+                            </>
+                          )}
+                        </div>
+                    
+                        {/* CONTENT SECTIONS */}
                         
-                        {/* Content based on actionView */}
-                        {actionView === 'table-bets' && (
-                          <div>
-                            <div className="grid grid-cols-3 gap-4 mb-6">
-                              <BettingCards18
-                                manualBets={manualBets}
-                                setManualBets={setManualBets}
-                                playerUnit={playerSetup.betUnit}
-                                betHistory={betHistory}
-                                setBetHistory={setBetHistory}
-                              />
-                              <BettingCards12
-                                manualBets={manualBets}
-                                setManualBets={setManualBets}
-                                playerUnit={playerSetup.betUnit}
-                                betHistory={betHistory}
-                                setBetHistory={setBetHistory}
-                              />
-                              <BettingCards6
-                                manualBets={manualBets}
-                                setManualBets={setManualBets}
-                                playerUnit={playerSetup.betUnit}
-                                betHistory={betHistory}
-                                setBetHistory={setBetHistory}
-                              />
-                            </div>
-                            
-                            <CurrentBetsSummary manualBets={manualBets} />
-                            
-                            <div className="mt-4 bg-gray-800 rounded-lg border border-gray-700 p-3">
-                              <div className="flex items-center gap-4">
-                                <span className="text-sm font-bold text-green-400">Add Number:</span>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  max="36"
-                                  value={inputNumber}
-                                  onChange={(e) => setInputNumber(e.target.value)}
-                                  onKeyPress={(e) => e.key === 'Enter' && addNumber()}
-                                  placeholder="0-36"
-                                  className="w-20 px-2 py-1.5 bg-black/50 border border-gray-600 rounded text-center text-sm font-bold"
-                                />
-                                <button
-                                  onClick={addNumber}
-                                  className="px-4 py-1.5 bg-green-600 hover:bg-green-700 rounded text-sm font-bold text-white"
-                                >
-                                  ADD
-                                </button>
-                              </div>
+                        {/* TABLE VIEW CONTENT */}
+                        {actionView === 'table-view' && (
+  <div className="space-y-3">
+    {/* ENTRY SECTION - Compact */}
+    <div className="bg-gray-800 rounded-lg border border-gray-700 p-3">
+      <EntryPanel
+        inputNumber={inputNumber}
+        setInputNumber={setInputNumber}
+        addNumber={addNumber}
+        loading={loading}
+      />
+      <div className="grid grid-cols-12 gap-1 mt-3">
+        <button
+          onClick={() => setInputNumber('0')}
+          className="col-span-12 py-2 bg-green-600 hover:bg-green-700 rounded font-bold text-sm transition"
+        >
+          0
+        </button>
+        {[...Array(36)].map((_, i) => {
+          const num = i + 1
+          const color = NUMBERS.RED.includes(num) ? 'bg-red-600 hover:bg-red-700' : 
+                       'bg-gray-700 hover:bg-gray-600'
+          return (
+            <button
+              key={num}
+              onClick={() => setInputNumber(num.toString())}
+              className={`py-2 ${color} rounded font-bold text-sm transition`}
+            >
+              {num}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+                    
+                            {/* HISTORY SECTION */}
+                            <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+                              <h3 className="text-xl font-bold text-yellow-400 mb-4">History</h3>
+                              <HistoryTable spins={spins} />
                             </div>
                           </div>
                         )}
                         
+                        {/* TABLE BETS CONTENT */}{/* TABLE BETS CONTENT */}
+{actionView === 'table-bets' && (
+  <div className="space-y-4">
+    {/* BETTING CARDS */}
+    <div className="grid grid-cols-3 gap-4">
+      <BettingCards18
+        manualBets={manualBets}
+        setManualBets={setManualBets}
+        playerUnit={playerContext.unitSize}
+        betHistory={betHistory}
+        setBetHistory={setBetHistory}
+      />
+      <BettingCards12
+        manualBets={manualBets}
+        setManualBets={setManualBets}
+        playerUnit={playerContext.unitSize}
+        betHistory={betHistory}
+        setBetHistory={setBetHistory}
+      />
+      <BettingCards6
+        manualBets={manualBets}
+        setManualBets={setManualBets}
+        playerUnit={playerContext.unitSize}
+        betHistory={betHistory}
+        setBetHistory={setBetHistory}
+      />
+    </div>
+    
+    {/* CURRENT BETS SUMMARY */}
+    <CurrentBetsSummary manualBets={manualBets} />
+    
+    {/* HOT/COLD HEATMAP */}
+    <div className="bg-gray-800 rounded-lg border border-gray-700 p-3">
+      <div className="flex justify-between items-center mb-2">
+        <h4 className="font-bold text-green-400 text-sm">🔥 Hot/Cold Analysis - Last 36 Spins</h4>
+        <button 
+          onClick={() => setShowHeatMap(!showHeatMap)}
+          className="text-xs text-gray-400 hover:text-white"
+        >
+          {showHeatMap ? 'Hide' : 'Show'}
+        </button>
+      </div>
+      {showHeatMap && (
+        <HeatmapGrid spins={spins} setInputNumber={setInputNumber} />
+      )}
+    </div>
+
+    {/* RECENT NUMBERS AND ADD NUMBER */}
+    <div className="bg-gray-800 rounded-lg border border-gray-700 p-3">
+      <div className="flex items-center gap-4">
+        {/* Recent 15 Numbers */}
+        <div className="flex items-center gap-2 flex-1">
+          <span className="text-sm font-bold text-blue-400 whitespace-nowrap">Last 15:</span>
+          <div className="flex gap-1 overflow-x-auto">
+            {spins.slice(0, 15).map((spin, idx) => (
+              <div 
+                key={idx} 
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0
+                  ${spin.number === 0 ? 'bg-green-600' : 
+                    NUMBERS.RED.includes(spin.number) ? 'bg-red-600' : 'bg-black border border-gray-600'}`}
+              >
+                {spin.number}
+              </div>
+            ))}
+            {spins.length === 0 && (
+              <span className="text-gray-500 text-xs">No numbers yet</span>
+            )}
+          </div>
+        </div>
+        
+        <div className="h-7 w-px bg-gray-600"></div>
+        
+        {/* Add Number */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold text-green-400">Add:</span>
+          <input
+            type="number"
+            min="0"
+            max="36"
+            value={inputNumber}
+            onChange={(e) => setInputNumber(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && addNumber()}
+            placeholder="0-36"
+            className="w-20 px-2 py-1 bg-black/50 border border-gray-600 rounded text-center text-sm font-bold"
+          />
+          <button
+            onClick={addNumber}
+            className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm font-bold text-white"
+          >
+            ADD
+          </button>
+        </div>
+      </div>
+    </div>
+
+   {/* BETTING PERFORMANCE MATRIX */}
+<div className="bg-gray-900 rounded-lg border border-gray-700 p-3">
+  <h3 className="text-base font-bold mb-2 text-blue-300">Betting Performance Matrix</h3>
+  <div className="overflow-x-auto">
+    <div className="max-h-64 overflow-y-auto">
+      <table className="min-w-full text-xs">
+        <thead className="sticky top-0 bg-gray-800 z-10">
+          {/* Group headers row */}
+          <tr className="bg-gray-900">
+            <th rowSpan={2} className="px-1 py-1 text-center border border-gray-700 bg-gray-800 text-xs">Num</th>
+            <th colSpan={2} className="px-1 py-1 text-center border border-gray-700 bg-red-900/50 text-xs font-semibold">Colors</th>
+            <th colSpan={2} className="px-1 py-1 text-center border border-gray-700 bg-green-900/50 text-xs font-semibold">Even/Odd</th>
+            <th colSpan={2} className="px-1 py-1 text-center border border-gray-700 bg-blue-900/50 text-xs font-semibold">Low/High</th>
+            <th colSpan={3} className="px-1 py-1 text-center border border-gray-700 bg-orange-900/50 text-xs font-semibold">Dozens</th>
+            <th colSpan={3} className="px-1 py-1 text-center border border-gray-700 bg-purple-900/50 text-xs font-semibold">Columns</th>
+            <th colSpan={6} className="px-1 py-1 text-center border border-gray-700 bg-teal-900/50 text-xs font-semibold">Six Groups</th>
+            <th colSpan={6} className="px-1 py-1 text-center border border-gray-700 bg-yellow-900/50 text-xs font-semibold">Alternative Groups</th>
+            <th colSpan={2} className="px-1 py-1 text-center border border-gray-700 bg-pink-900/50 text-xs font-semibold">Position</th>
+          </tr>
+          {/* Individual column headers */}
+          <tr className="bg-gray-800">
+            {/* Colors */}
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Red">R</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Black">B</th>
+            {/* Even/Odd */}
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Even">E</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Odd">O</th>
+            {/* Low/High */}
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Low (1-18)">L</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="High (19-36)">H</th>
+            {/* Dozens */}
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="1st Dozen (1-12)">D1</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="2nd Dozen (13-24)">D2</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="3rd Dozen (25-36)">D3</th>
+            {/* Columns */}
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Column 1">C1</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Column 2">C2</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Column 3">C3</th>
+            {/* Six Groups */}
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Six 1-6">S1</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Six 7-12">S2</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Six 13-18">S3</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Six 19-24">S4</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Six 25-30">S5</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Six 31-36">S6</th>
+            {/* Alternative Groups */}
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Alt1 Group A">A1A</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Alt1 Group B">A1B</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Alt2 Group AA">A2A</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Alt2 Group BB">A2B</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Alt3 Group AAA">A3A</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Alt3 Group BBB">A3B</th>
+            {/* Position */}
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Edge Numbers">EDG</th>
+            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Center Numbers">CTR</th>
+          </tr>
+        </thead>
+        <tbody>
+          {/* Show ALL spins, not just ones with bets */}
+          {spins.slice(0, 10).map((spin, index) => {
+            const num = spin.number;
+            // Find if there was a bet for this spin
+            const betRow = betHistory.find(b => b.spin === num);
+            
+            // Determine which groups won - using exact key names
+            const winningGroups: Record<string, boolean> = {
+              'red': spin.color === 'red',
+              'black': spin.color === 'black',
+              'even': spin.even_odd === 'even',
+              'odd': spin.even_odd === 'odd',
+              'low': spin.low_high === 'low',
+              'high': spin.low_high === 'high',
+              'dozen1': spin.dozen === 'first',
+              'dozen2': spin.dozen === 'second',
+              'dozen3': spin.dozen === 'third',
+              'col1': spin.column_num === 1,
+              'col2': spin.column_num === 2,
+              'col3': spin.column_num === 3,
+              'six1': num >= 1 && num <= 6,
+              'six2': num >= 7 && num <= 12,
+              'six3': num >= 13 && num <= 18,
+              'six4': num >= 19 && num <= 24,
+              'six5': num >= 25 && num <= 30,
+              'six6': num >= 31 && num <= 36,
+              'alt1_1': num > 0 && [1,2,3,7,8,9,13,14,15,19,20,21,25,26,27,31,32,33].includes(num),
+              'alt1_2': num > 0 && [4,5,6,10,11,12,16,17,18,22,23,24,28,29,30,34,35,36].includes(num),
+              'alt2_1': num > 0 && [1,2,3,4,5,6,13,14,15,16,17,18,25,26,27,28,29,30].includes(num),
+              'alt2_2': num > 0 && [7,8,9,10,11,12,19,20,21,22,23,24,31,32,33,34,35,36].includes(num),
+              'alt3_1': num > 0 && [1,2,3,4,5,6,7,8,9,19,20,21,22,23,24,25,26,27].includes(num),
+              'alt3_2': num > 0 && [10,11,12,13,14,15,16,17,18,28,29,30,31,32,33,34,35,36].includes(num),
+              'edge': num > 0 && [1,2,3,4,5,6,7,8,9,28,29,30,31,32,33,34,35,36].includes(num),
+              'center': num > 0 && [10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27].includes(num)
+            };
+
+            return (
+              <tr key={index} className="hover:bg-gray-800/50">
+                <td className="px-1 py-1 text-center border border-gray-700 text-xs font-bold">
+                  {num}
+                </td>
+                {['red', 'black', 'even', 'odd', 'low', 'high', 'dozen1', 'dozen2', 'dozen3',
+                  'col1', 'col2', 'col3', 'six1', 'six2', 'six3', 'six4', 'six5', 'six6',
+                  'alt1_1', 'alt1_2', 'alt2_1', 'alt2_2', 'alt3_1', 'alt3_2', 'edge', 'center'].map(betKey => {
+                  
+                  const won = winningGroups[betKey];
+                  const hasBet = betRow?.bets?.[betKey];
+                  const result = betRow?.results?.[betKey];
+                  
+                  return (
+                    <td 
+                      key={betKey} 
+                      className={`px-1 py-1 text-center border border-gray-700 text-xs ${
+                        won ? 'bg-green-900/30' : ''  // Highlight winning cells
+                      }`}
+                    >
+                      {hasBet && result !== undefined ? (
+                        <span className={result > 0 ? 'text-green-400 font-bold' : 'text-red-400'}>
+                          {result > 0 ? '+' : ''}{result}
+                        </span>
+                      ) : (
+                        won ? '✓' : ''  // Show checkmark for winning groups even without bets
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+    
+    {/* Session totals */}
+    <div className="mt-2 p-2 bg-gray-800 rounded text-xs">
+      <div className="flex justify-between">
+        <span>P/L: <span className={sessionPnL >= 0 ? 'text-green-400' : 'text-red-400'}>
+          ${Math.abs(sessionPnL).toFixed(2)}
+        </span></span>
+        <span>Spins: {spins.length}</span>
+        <span>Win Rate: {betHistory.filter(b => b.spin !== null && b.totalPnL > 0).length > 0 ? 
+          Math.round((betHistory.filter(b => b.totalPnL > 0).length / betHistory.filter(b => b.spin !== null).length) * 100) : 0}%
+        </span>
+      </div>
+    </div>
+  </div>
+)}
+                        {/* TABLE STATS CONTENT */}
+                        {actionView === 'table-stats' && (
+                          <div className="space-y-6">
+                            <h2 className="text-2xl font-bold text-yellow-400">Table Statistics</h2>
+                            <StatsMatrix groupStats={groupStats || []} spinsCount={spins.length} />
+                          </div>
+                        )}
+                        
+                        {/* WHEEL VIEW CONTENT */}
+                        {actionView === 'wheel-view' && (
+                          <div className="space-y-6">
+                            <h2 className="text-2xl font-bold text-yellow-400">Wheel View</h2>
+                            <p className="text-gray-400">Wheel visualization coming soon...</p>
+                          </div>
+                        )}
+                        
+                        {/* WHEEL BETS CONTENT */}
                         {actionView === 'wheel-bets' && (
                           <WheelView
                             manualBets={manualBets}
@@ -1055,11 +1051,19 @@ const openSessionSetup = () => {
                             inputNumber={inputNumber}
                             setInputNumber={setInputNumber}
                             addNumber={addNumber}
-                            playerContext={{ unitSize: playerSetup.betUnit }}
+                            playerContext={playerContext}
                             sessionPnL={sessionPnL}
                             showHeatMap={showHeatMap}
                             setShowHeatMap={setShowHeatMap}
                           />
+                        )}
+                        
+                        {/* WHEEL STATS CONTENT */}
+                        {actionView === 'wheel-stats' && (
+                          <div className="space-y-6">
+                            <h2 className="text-2xl font-bold text-yellow-400">Wheel Statistics</h2>
+                            <p className="text-gray-400">Wheel-specific statistics coming soon...</p>
+                          </div>
                         )}
                       </div>
                     )}
@@ -1107,8 +1111,6 @@ const openSessionSetup = () => {
                   </div>
                 </div>
               </>
-            )}
-          </>
         )}
       </div>
     </div>
