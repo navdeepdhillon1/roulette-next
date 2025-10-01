@@ -1,0 +1,149 @@
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+
+export default function EvenMoneyCard() {
+  const [group, setGroup] = useState("red/black");
+  const [reflection, setReflection] = useState("");
+
+  const volatilityData = {
+    "red/black": { 5: "60% R", 10: "70% R", 15: "65% R", 20: "55% R" },
+    "even/odd": { 5: "50/50", 10: "60% O", 15: "53% O", 20: "52% O" },
+    "low/high": { 5: "40% L", 10: "55% H", 15: "58% H", 20: "60% H" },
+  };
+
+  const colorBadge = (val) => {
+    const num = parseInt(val);
+    if (isNaN(num)) return "bg-gray-300";
+    if (num >= 45 && num <= 55) return "bg-green-500";
+    if (num > 55 && num <= 65) return "bg-yellow-500";
+    return "bg-red-500";
+  };
+
+  const betLog = [
+    { bet: 1, group: "Red", stake: "$5", outcome: "Win", pl: "+$5", total: "+$5" },
+    { bet: 2, group: "Red", stake: "$5", outcome: "Loss", pl: "-$5", total: "$0" },
+    { bet: 3, group: "Red", stake: "$10", outcome: "Win", pl: "+$10", total: "+$10" },
+  ];
+
+  return (
+    <Card className="w-full max-w-4xl mx-auto p-4">
+      <CardHeader>
+        <CardTitle className="flex justify-between items-center">
+          <span>🎴 Even-Money Card #023</span>
+          <span className="text-sm text-gray-400">Bankroll: $985 / $1000</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {/* Dropdown for Group Selection */}
+        <div className="mb-4">
+          <label className="block mb-1 text-sm font-medium">Select Group</label>
+          <Select value={group} onValueChange={setGroup}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="low/high">Low / High</SelectItem>
+              <SelectItem value="even/odd">Even / Odd</SelectItem>
+              <SelectItem value="red/black">Red / Black</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Volatility Index */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold mb-2">Volatility Index</h3>
+          <table className="w-full text-sm border border-gray-200 rounded">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-2 text-left">Group</th>
+                <th className="p-2">5 Spins</th>
+                <th className="p-2">10 Spins</th>
+                <th className="p-2">15 Spins</th>
+                <th className="p-2">20 Spins</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="p-2 font-medium capitalize">{group}</td>
+                {[5, 10, 15, 20].map((k) => (
+                  <td key={k} className="p-2 text-center">
+                    <span
+                      className={`inline-block px-2 py-1 text-white rounded ${colorBadge(
+                        volatilityData[group][k]
+                      )}`}
+                    >
+                      {volatilityData[group][k]}
+                    </span>
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Progression Section */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold mb-2">Progression Tracker</h3>
+          <Progress value={30} className="w-full" />
+          <p className="text-xs text-gray-400 mt-1">Currently at step 3 of 10</p>
+        </div>
+
+        {/* Bet Log Table */}
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold mb-2">Bet Log</h3>
+          <table className="w-full text-sm border border-gray-200 rounded">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-2">#</th>
+                <th className="p-2">Group</th>
+                <th className="p-2">Stake</th>
+                <th className="p-2">Outcome</th>
+                <th className="p-2">P/L</th>
+                <th className="p-2">Running Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {betLog.map((row) => (
+                <tr key={row.bet}>
+                  <td className="p-2 text-center">{row.bet}</td>
+                  <td className="p-2 text-center">{row.group}</td>
+                  <td className="p-2 text-center">{row.stake}</td>
+                  <td className="p-2 text-center">{row.outcome}</td>
+                  <td className="p-2 text-center">{row.pl}</td>
+                  <td className="p-2 text-center">{row.total}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Responsible Play Indicators */}
+        <div className="grid grid-cols-3 gap-4 text-sm mb-6">
+          <div className="bg-green-100 p-2 rounded">✅ Discipline: 100%</div>
+          <div className="bg-yellow-100 p-2 rounded">⏱ Time: 12 min</div>
+          <div className="bg-blue-100 p-2 rounded">🎯 Target: +$3</div>
+        </div>
+
+        {/* Card Outcome Footer */}
+        <div className="border-t pt-4 mt-4">
+          <h3 className="text-sm font-semibold mb-2">Card Outcome</h3>
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-medium">Result: <span className="text-green-600">Won Target</span></span>
+            <span className="text-sm">Final P/L: +$3</span>
+          </div>
+          <Textarea
+            placeholder="Add your reflection (e.g. 😌 Calm / 🎯 Disciplined / 😡 Tilt)"
+            value={reflection}
+            onChange={(e) => setReflection(e.target.value)}
+            className="mb-2"
+          />
+          <Button variant="secondary" size="sm">Save Outcome</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

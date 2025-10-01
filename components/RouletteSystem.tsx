@@ -6,6 +6,8 @@ import { supabase } from '@/lib/supabase'
 import { getNumberProperties, NUMBERS, checkIfGroupWon, getGroupPayout, type GroupKey } from '@/lib/roulette-logic'
 import type { Session, Spin } from '@/lib/types'
 import { useRouletteSession } from '@/hooks/useRouletteSession'
+import { useGameState } from '@/stores/gameState'
+import ActiveRedBlackCard from '@/components/gamified/ActiveRedBlackCard'
 import HeaderBar from '@/components/roulette/HeaderBar'
 import EntryPanel from '@/components/roulette/EntryPanel'
 import CurrentBetsSummary from '@/components/roulette/CurrentBetsSummary'
@@ -16,11 +18,14 @@ import BettingCards6 from '@/components/roulette/BettingCards6'
 import HistoryTable from '@/components/roulette/HistoryTable'
 import StatsMatrix from '@/components/roulette/StatsMatrix'
 import WheelView from '@/components/WheelView'
-import { calculateHitCounts, calculateAbsence, calculateConsecutive, expectedPercentageFor, statusFrom } from '@/lib/roulette-analytics'
+import WheelDisplay from '@/components/WheelDisplay'
+import WheelHistory from '@/components/WheelHistory'
+import WheelStats from '@/components/WheelStats'
+import { calculateAbsence, calculateConsecutive, expectedPercentageFor, statusFrom } from '@/lib/roulette-analytics'
 
 // Type definitions
 type MainTab = 'table-view' | 'table-bets' | 'table-stats'
-type AssistantSubTab = 'setup' | 'action' | 'performance' | 'analysis'
+type AssistantSubTab = 'setup' | 'action' | 'performance' | 'analysis'| 'gamified'
 type StorageMode = 'local' | 'cloud'
 
 // Typed bet keys used across performance matrix
@@ -57,7 +62,10 @@ export default function RouletteSystem() {
   const [userProfile, setUserProfile] = useState<UserProfile>({ isPremium: false })
   const [localSession, setLocalSession] = useState<Session | null>(null)
   const [localSpins, setLocalSpins] = useState<Spin[]>([])
+  const gameState = useGameState()  // <-- Add this line
   
+  
+
   // Call hook unconditionally to follow Rules of Hooks
   const { 
     session: cloudSession, 
@@ -79,7 +87,7 @@ export default function RouletteSystem() {
   const [showAssistant, setShowAssistant] = useState(false)
   const [assistantSubTab, setAssistantSubTab] = useState<AssistantSubTab>('setup')
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null)
-  
+  const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
   // Financial tracking
   const [startingBankroll, setStartingBankroll] = useState(100)
   const [currentBankroll, setCurrentBankroll] = useState(100)
@@ -180,7 +188,14 @@ const openSessionSetup = () => {
     // Move to action tab after session creation
     setAssistantSubTab('action')
   }
-
+  const calculateHitCounts = (spins: Spin[], window: number) => {
+    const counts: Record<number, number> = {}
+    spins.slice(0, window).forEach(spin => {
+      counts[spin.number] = (counts[spin.number] || 0) + 1
+    })
+    return counts
+  }
+  
   const addNumber = async () => {
     const num = parseInt(inputNumber)
     if (isNaN(num) || num < 0 || num > 36) return
@@ -213,7 +228,9 @@ const openSessionSetup = () => {
         localStorage.setItem('currentSpins', JSON.stringify(updatedSpins))
       }
     }
-    
+    if (gameState.cardsModeOn) {
+    gameState.addSpin(num)  // <-- Add this line
+  }
     // Process bets if any
     if (betHistory.length > 0 && betHistory[0].spin === null) {
       const updatedHistory = [...betHistory]
@@ -254,6 +271,7 @@ const openSessionSetup = () => {
     }
     
     setInputNumber('')
+    setSelectedNumber(null) 
     setLoading(false)
   }
 
@@ -560,6 +578,21 @@ const openSessionSetup = () => {
                     >
                       Analysis
                     </button>
+
+                   <button
+                    onClick={() => setAssistantSubTab('gamified')}
+                    className={`px-6 py-3 font-semibold transition-all ${
+                     assistantSubTab === 'gamified'
+                     ? 'bg-gradient-to-b from-yellow-400/20 to-transparent text-yellow-400'
+                    : 'text-gray-400 hover:text-white'
+                    } ${!session ? 'opacity-50 cursor-not-allowed' : ''}`}
+                   disabled={!session}
+                    >
+                 🎯 Gamified
+                      </button>
+
+
+
                   </div>
 
                   <div className="p-6">
@@ -1034,11 +1067,22 @@ const openSessionSetup = () => {
                         
                         {/* WHEEL VIEW CONTENT */}
                         {actionView === 'wheel-view' && (
-                          <div className="space-y-6">
-                            <h2 className="text-2xl font-bold text-yellow-400">Wheel View</h2>
-                            <p className="text-gray-400">Wheel visualization coming soon...</p>
-                          </div>
-                        )}
+  <div className="space-y-4">
+    <WheelDisplay
+      spins={spins.map(s => s.number)}
+      selectedNumber={selectedNumber}
+      setSelectedNumber={setSelectedNumber}
+      inputNumber={inputNumber}
+      setInputNumber={setInputNumber}
+      addNumber={addNumber}
+      hitCounts={calculateHitCounts(spins, 36)}
+    />
+    <WheelHistory
+      spins={spins}
+      selectedNumber={selectedNumber}
+    />
+  </div>
+)}
                         
                         {/* WHEEL BETS CONTENT */}
                         {actionView === 'wheel-bets' && (
@@ -1060,11 +1104,9 @@ const openSessionSetup = () => {
                         
                         {/* WHEEL STATS CONTENT */}
                         {actionView === 'wheel-stats' && (
-                          <div className="space-y-6">
-                            <h2 className="text-2xl font-bold text-yellow-400">Wheel Statistics</h2>
-                            <p className="text-gray-400">Wheel-specific statistics coming soon...</p>
-                          </div>
-                        )}
+  <WheelStats spins={spins} />
+)}
+                        
                       </div>
                     )}
 
@@ -1108,11 +1150,69 @@ const openSessionSetup = () => {
                         )}
                       </div>
                     )}
+                    {assistantSubTab === 'gamified' && session && (
+  <div className="space-y-6">
+    <h2 className="text-2xl font-bold text-yellow-400">Gamified Betting Cards</h2>
+    
+    {/* Check if cards mode is active */}
+    {!gameState.cardsModeOn ? (
+      <div className="bg-gray-800/50 rounded-lg p-6 text-center">
+        <p className="text-gray-400 mb-4">Ready to start structured betting?</p>
+        <button
+          onClick={() => {
+            // Start cards mode with current player setup
+            gameState.startCardsMode(
+              {
+                bankrollStart: currentBankroll,
+                targetProfit: playerSetup.targetProfit,
+                stopLoss: playerSetup.stopLoss,
+                maxMinutes: playerSetup.timeAvailable
+              },
+              {
+                group: "red/black",
+                perCardTarget: 3,
+                maxBetsPerCard: 10,
+                maxStepsPerCard: 15,
+                progression: [1, 1, 2, 2, 3, 3, 4, 4],
+                baseUnit: playerSetup.betUnit,
+                adaptiveRule: "adaptive9",
+                skipPenalty: false
+              }
+            )
+          }}
+          className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold rounded-lg"
+        >
+          Start Cards Mode
+        </button>
+      </div>
+    ) : (
+      <div>
+{gameState.activeCard ? (
+  <ActiveRedBlackCard />
+) : (
+  <div className="text-yellow-400">Loading card component...</div>
+)}
+      </div>
+    )}
+  </div>
+)}
                   </div>
                 </div>
               </>
-        )}
+            )}
       </div>
+      {/* Dev-only debug panel */}
+      {process.env.NODE_ENV === 'development' ? (
+        <div className="fixed bottom-4 right-4 bg-black/80 p-2 rounded text-xs text-white border border-yellow-400/20 z-50">
+          <div className="text-yellow-400 font-bold mb-1">🔍 Debug Store</div>
+          <pre>{JSON.stringify({
+            cardsModeOn: gameState.cardsModeOn,
+            hasActiveCard: !!gameState.activeCard,
+            spinsCount: gameState.spins.length,
+            bankroll: gameState.bankroll
+          }, null, 2)}</pre>
+        </div>
+      ) : null}
     </div>
   )
 }
