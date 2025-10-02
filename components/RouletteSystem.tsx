@@ -21,8 +21,11 @@ import WheelView from '@/components/WheelView'
 import WheelDisplay from '@/components/WheelDisplay'
 import WheelHistory from '@/components/WheelHistory'
 import WheelStats from '@/components/WheelStats'
+import PatternDetectionEngine from '@/components/PatternDetectionEngine';
+import TimeCorrelationTable from '@/components/TimeCorrelationTable';
+import StreakAnalysisTable from '@/components/StreakAnalysisTable';
 import { calculateAbsence, calculateConsecutive, expectedPercentageFor, statusFrom } from '@/lib/roulette-analytics'
-
+import CommonGroupsTable from '@/components/CommonGroupsTable';
 // Type definitions
 type MainTab = 'table-view' | 'table-bets' | 'table-stats'
 type AssistantSubTab = 'setup' | 'action' | 'performance' | 'analysis'| 'gamified'
@@ -63,7 +66,7 @@ export default function RouletteSystem() {
   const [localSession, setLocalSession] = useState<Session | null>(null)
   const [localSpins, setLocalSpins] = useState<Spin[]>([])
   const gameState = useGameState()  // <-- Add this line
-  
+  const [analysisSection, setAnalysisSection] = useState<'patterns' | 'time' | 'streaks'>('patterns');
   
 
   // Call hook unconditionally to follow Rules of Hooks
@@ -1136,20 +1139,63 @@ const openSessionSetup = () => {
                         <p className="text-gray-400">Detailed performance tracking coming soon...</p>
                       </div>
                     )}
+{assistantSubTab === 'analysis' && (
+  <div className="space-y-6">
+    {/* 1. Common Groups Table at the TOP */}
+    <CommonGroupsTable 
+      spinHistory={spins.map(s => s.number)}
+      onAddNumber={addNumber}
+    />
+    
+    {/* 2. Section Selector Tabs */}
+    <div className="flex flex-wrap gap-2">
+      <button
+        onClick={() => setAnalysisSection('patterns')}
+        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+          analysisSection === 'patterns'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+        }`}
+      >
+        🎯 Pattern Detection
+      </button>
+      <button
+        onClick={() => setAnalysisSection('time')}
+        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+          analysisSection === 'time'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+        }`}
+      >
+        ⏰ Time Correlation
+      </button>
+      <button
+        onClick={() => setAnalysisSection('streaks')}
+        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+          analysisSection === 'streaks'
+            ? 'bg-blue-600 text-white'
+            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+        }`}
+      >
+        📈 Streak Analysis
+      </button>
+    </div>
 
-                    {assistantSubTab === 'analysis' && session && (
-                      <div className="space-y-6">
-                        <h2 className="text-2xl font-bold text-yellow-400">AI Analysis</h2>
-                        <p className="text-gray-400">Pattern analysis coming soon...</p>
-                        {storageMode === 'local' && (
-                          <div className="p-4 bg-yellow-400/10 border border-yellow-400/30 rounded-lg">
-                            <p className="text-yellow-400">
-                              ⚠️ Sign in to enable AI predictions and permanent session storage
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )}
+    {/* 3. Pattern Detection and other components BELOW */}
+    {analysisSection === 'patterns' && (
+      <PatternDetectionEngine spinHistory={spins.map(s => s.number)} />
+    )}
+    
+    {analysisSection === 'time' && (
+      <TimeCorrelationTable spinHistory={spins.map(s => s.number)} />
+    )}
+    
+    {analysisSection === 'streaks' && (
+      <StreakAnalysisTable spinHistory={spins.map(s => s.number)} />
+    )}
+  </div>
+)}
+                      
                     {assistantSubTab === 'gamified' && session && (
   <div className="space-y-6">
     <h2 className="text-2xl font-bold text-yellow-400">Gamified Betting Cards</h2>
