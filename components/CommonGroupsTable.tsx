@@ -1,5 +1,5 @@
 // CommonGroupsTable.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';  // Add useEffect
 import { Card } from '@/components/ui/card';
 
 // Add this style tag right before your component function
@@ -28,13 +28,14 @@ const pulseStyles = `
 
 interface CommonGroupsTableProps {
   spinHistory: number[];
-  onAddNumber?: (num: number) => void;
+ 
 }
 
-export default function CommonGroupsTable({ spinHistory, onAddNumber }: CommonGroupsTableProps) {
-  const [inputNumber, setInputNumber] = useState('');
+export default function CommonGroupsTable({ spinHistory }: CommonGroupsTableProps) {
   const [flashingRows, setFlashingRows] = useState<Set<string>>(new Set());
   const orderedHistory = spinHistory;
+ 
+  
   
   // Red numbers constant
   const RED_NUMBERS = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
@@ -208,64 +209,27 @@ export default function CommonGroupsTable({ spinHistory, onAddNumber }: CommonGr
       default: return '';
     }
   };
+  useEffect(() => {
+    const newFlashingRows = new Set<string>();
+    
+    COMMON_GROUPS.forEach(group => {
+      const streak = calculateStreak(group.id, orderedHistory);
+      const absence = calculateAbsence(group.id, orderedHistory);
+      
+      if (streak.current >= 5 || absence.current >= 10) {
+        newFlashingRows.add(group.id);
+      }
+    });
+    
+    setFlashingRows(newFlashingRows);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderedHistory]);
+
 
   return (
     <div className="space-y-4">
       <style>{pulseStyles}</style>
       
-      {/* Last 20 Numbers Display */}
-      <Card className="p-3 bg-gray-900 border-gray-700">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-yellow-400 font-bold text-sm">Last 20:</span>
-            <div className="flex gap-1">
-              {spinHistory.slice(0, 20).map((num, idx) => (
-                <div
-                  key={idx}
-                  className={`
-                    w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
-                    ${idx === 0 ? 'ring-2 ring-yellow-400 animate-pulse' : ''}
-                    ${num === 0 ? 'bg-green-600' :
-                      RED_NUMBERS.includes(num) ? 'bg-red-600' : 'bg-black border border-gray-600'}
-                    text-white cursor-pointer hover:scale-110 transition-all
-                  `}
-                  onClick={() => setInputNumber(num.toString())}
-                >
-                  {num}
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Quick Add */}
-          {onAddNumber && (
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min="0"
-                max="36"
-                value={inputNumber}
-                onChange={(e) => setInputNumber(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && onAddNumber(parseInt(inputNumber))}
-                className="w-14 px-2 py-1 bg-black border border-gray-600 rounded text-center text-sm"
-                placeholder="0-36"
-              />
-              <button
-                onClick={() => {
-                  const num = parseInt(inputNumber);
-                  if (!isNaN(num) && num >= 0 && num <= 36 && onAddNumber) {
-                    onAddNumber(num);
-                    setInputNumber('');
-                  }
-                }}
-                className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm font-bold"
-              >
-                ADD
-              </button>
-            </div>
-          )}
-        </div>
-      </Card>
 
       {/* Statistics Table */}
 <Card className="bg-gray-900 border-gray-700">

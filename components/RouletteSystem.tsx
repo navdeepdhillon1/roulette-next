@@ -10,6 +10,7 @@ import { useGameState } from '@/stores/gameState'
 import ActiveRedBlackCard from '@/components/gamified/ActiveRedBlackCard'
 import HeaderBar from '@/components/roulette/HeaderBar'
 import EntryPanel from '@/components/roulette/EntryPanel'
+import { Card } from '@/components/ui/card';
 import CurrentBetsSummary from '@/components/roulette/CurrentBetsSummary'
 import HeatmapGrid from '@/components/roulette/HeatmapGrid'
 import BettingCards18 from '@/components/roulette/BettingCards18'
@@ -26,6 +27,9 @@ import TimeCorrelationTable from '@/components/TimeCorrelationTable';
 import StreakAnalysisTable from '@/components/StreakAnalysisTable';
 import { calculateAbsence, calculateConsecutive, expectedPercentageFor, statusFrom } from '@/lib/roulette-analytics'
 import CommonGroupsTable from '@/components/CommonGroupsTable';
+import SpecialBetsTable from '@/components/SpecialBetsTable';
+import WheelBetStats from '@/components/WheelBetStats';
+import NumbersStatsTab from './NumbersStatsTab';
 // Type definitions
 type MainTab = 'table-view' | 'table-bets' | 'table-stats'
 type AssistantSubTab = 'setup' | 'action' | 'performance' | 'analysis'| 'gamified'
@@ -65,10 +69,9 @@ export default function RouletteSystem() {
   const [userProfile, setUserProfile] = useState<UserProfile>({ isPremium: false })
   const [localSession, setLocalSession] = useState<Session | null>(null)
   const [localSpins, setLocalSpins] = useState<Spin[]>([])
-  const gameState = useGameState()  // <-- Add this line
-  const [analysisSection, setAnalysisSection] = useState<'patterns' | 'time' | 'streaks'>('patterns');
-  
-
+  const gameState = useGameState()
+  const [analysisSection, setAnalysisSection] = useState<'patterns' | 'time' | 'streaks'>('patterns')
+  const [analysisView, setAnalysisView] = useState<'common' | 'special' | 'wheel' | 'numbers'>('common');
   // Call hook unconditionally to follow Rules of Hooks
   const { 
     session: cloudSession, 
@@ -83,7 +86,7 @@ export default function RouletteSystem() {
   const spins = storageMode === 'cloud' ? cloudSpins : localSpins
   
   const [inputNumber, setInputNumber] = useState('')
-  const [actionView, setActionView] = useState('table-bets')
+  const [actionView, setActionView] = useState('table-view')
   const [showHeatMap, setShowHeatMap] = useState(false)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<MainTab>('table-view')
@@ -370,6 +373,53 @@ const openSessionSetup = () => {
     storageMode={storageMode}
   />
 )}
+{/* ADD THIS NEW PERSISTENT INPUT BAR */}
+{session && (
+  <Card className="mb-4 p-3 bg-gray-900 border-gray-700">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <span className="text-yellow-400 font-bold text-sm">Last 20:</span>
+        <div className="flex gap-1">
+          {spins.slice(0, 20).map((spin, idx) => (
+            <div
+              key={idx}
+              className={`
+                w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
+                ${idx === 0 ? 'ring-2 ring-yellow-400 animate-pulse' : ''}
+                ${spin.number === 0 ? 'bg-green-600' :
+                  [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(spin.number) 
+                    ? 'bg-red-600' : 'bg-black border border-gray-600'}
+                text-white cursor-pointer hover:scale-110 transition-all
+              `}
+              onClick={() => setInputNumber(spin.number.toString())}
+            >
+              {spin.number}
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-2">
+      <input
+  type="number"
+  min="0"
+  max="36"
+  value={inputNumber}
+  onChange={(e) => setInputNumber(e.target.value)}
+  onKeyPress={(e) => e.key === 'Enter' && addNumber()}
+  className="w-14 px-2 py-1 bg-black border border-gray-600 rounded text-center text-sm text-white"  // Add text-white here
+  placeholder="0-36"
+/>
+        <button
+          onClick={addNumber}
+          className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm font-bold"
+        >
+          ADD
+        </button>
+      </div>
+    </div>
+  </Card>
+)}
 
         {/* Financial Bar - Only shows when Assistant is active AND session exists */}
         {showAssistant && session && (
@@ -533,8 +583,7 @@ const openSessionSetup = () => {
             </div>
           </div>
         ) : (
-        
-              <>
+              <div>
 
                 <div className="bg-black/40 backdrop-blur rounded-xl border border-yellow-400/20">
                   <div className="flex gap-0 border-b border-yellow-400/20">
@@ -774,41 +823,116 @@ const openSessionSetup = () => {
                         </div>
                     
                         {/* CONTENT SECTIONS */}
-                        
-                        {/* TABLE VIEW CONTENT */}
                         {actionView === 'table-view' && (
-  <div className="space-y-3">
-    {/* ENTRY SECTION - Compact */}
-    <div className="bg-gray-800 rounded-lg border border-gray-700 p-3">
-      <EntryPanel
-        inputNumber={inputNumber}
-        setInputNumber={setInputNumber}
-        addNumber={addNumber}
-        loading={loading}
-      />
-      <div className="grid grid-cols-12 gap-1 mt-3">
+<div className="space-y-1">
+  {/* Zero with hit count */}
+  <div className="relative">
+    <button
+      onClick={() => setInputNumber('0')}
+      className="w-full py-3 bg-green-600 hover:bg-green-700 rounded font-bold text-white transition"
+    >
+      0
+      {/* Hit count badge */}
+      {spins.filter(s => s.number === 0).length > 0 && (
+        <span className="absolute top-0 right-0 bg-yellow-400 text-black text-xs rounded-full px-1">
+          {spins.filter(s => s.number === 0).length}
+        </span>
+      )}
+    </button>
+  </div>
+  
+  {/* Main number grid with heat map */}
+  <div className="grid grid-cols-12 gap-1">
+    {/* Top row */}
+    {[3,6,9,12,15,18,21,24,27,30,33,36].map(num => {
+      const hitCount = spins.slice(0, 36).filter(s => s.number === num).length;
+      const isHot = hitCount >= 3;
+      const isCold = hitCount === 0;
+      
+      return (
         <button
-          onClick={() => setInputNumber('0')}
-          className="col-span-12 py-2 bg-green-600 hover:bg-green-700 rounded font-bold text-sm transition"
+          key={num}
+          onClick={() => setInputNumber(num.toString())}
+          className={`relative py-3 rounded font-bold text-white transition ${
+            isHot ? 'ring-2 ring-yellow-400 animate-pulse' : ''
+          } ${
+            [3,9,12,18,21,27,30,36].includes(num) 
+              ? 'bg-red-600 hover:bg-red-700' 
+              : 'bg-black hover:bg-gray-800 border border-gray-600'
+          } ${isCold ? 'opacity-50' : ''}`}
         >
-          0
+          {num}
+          {hitCount > 0 && (
+            <span className={`absolute -top-1 -right-1 text-xs rounded-full px-1 ${
+              isHot ? 'bg-yellow-400 text-black font-bold' : 'bg-gray-600 text-white'
+            }`}>
+              {hitCount}
+            </span>
+          )}
         </button>
-        {[...Array(36)].map((_, i) => {
-          const num = i + 1
-          const color = NUMBERS.RED.includes(num) ? 'bg-red-600 hover:bg-red-700' : 
-                       'bg-gray-700 hover:bg-gray-600'
-          return (
-            <button
-              key={num}
-              onClick={() => setInputNumber(num.toString())}
-              className={`py-2 ${color} rounded font-bold text-sm transition`}
-            >
-              {num}
-            </button>
-          )
-        })}
-      </div>
-    </div>
+      );
+    })}
+    
+    {/* Middle row */}
+    {[2,5,8,11,14,17,20,23,26,29,32,35].map(num => {
+      const hitCount = spins.slice(0, 36).filter(s => s.number === num).length;
+      const isHot = hitCount >= 3;
+      const isCold = hitCount === 0;
+      
+      return (
+        <button
+          key={num}
+          onClick={() => setInputNumber(num.toString())}
+          className={`relative py-3 rounded font-bold text-white transition ${
+            isHot ? 'ring-2 ring-yellow-400 animate-pulse' : ''
+          } ${
+            [5,14,23,32].includes(num) 
+              ? 'bg-red-600 hover:bg-red-700' 
+              : 'bg-black hover:bg-gray-800 border border-gray-600'
+          } ${isCold ? 'opacity-50' : ''}`}
+        >
+          {num}
+          {hitCount > 0 && (
+            <span className={`absolute -top-1 -right-1 text-xs rounded-full px-1 ${
+              isHot ? 'bg-yellow-400 text-black font-bold' : 'bg-gray-600 text-white'
+            }`}>
+              {hitCount}
+            </span>
+          )}
+        </button>
+      );
+    })}
+    
+    {/* Bottom row */}
+    {[1,4,7,10,13,16,19,22,25,28,31,34].map(num => {
+      const hitCount = spins.slice(0, 36).filter(s => s.number === num).length;
+      const isHot = hitCount >= 3;
+      const isCold = hitCount === 0;
+      
+      return (
+        <button
+          key={num}
+          onClick={() => setInputNumber(num.toString())}
+          className={`relative py-3 rounded font-bold text-white transition ${
+            isHot ? 'ring-2 ring-yellow-400 animate-pulse' : ''
+          } ${
+            [1,7,16,19,25,34].includes(num) 
+              ? 'bg-red-600 hover:bg-red-700' 
+              : 'bg-black hover:bg-gray-800 border border-gray-600'
+          } ${isCold ? 'opacity-50' : ''}`}
+        >
+          {num}
+          {hitCount > 0 && (
+            <span className={`absolute -top-1 -right-1 text-xs rounded-full px-1 ${
+              isHot ? 'bg-yellow-400 text-black font-bold' : 'bg-gray-600 text-white'
+            }`}>
+              {hitCount}
+            </span>
+          )}
+        </button>
+      );
+    })}
+  </div>
                     
                             {/* HISTORY SECTION */}
                             <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
@@ -865,53 +989,6 @@ const openSessionSetup = () => {
       )}
     </div>
 
-    {/* RECENT NUMBERS AND ADD NUMBER */}
-    <div className="bg-gray-800 rounded-lg border border-gray-700 p-3">
-      <div className="flex items-center gap-4">
-        {/* Recent 15 Numbers */}
-        <div className="flex items-center gap-2 flex-1">
-          <span className="text-sm font-bold text-blue-400 whitespace-nowrap">Last 15:</span>
-          <div className="flex gap-1 overflow-x-auto">
-            {spins.slice(0, 15).map((spin, idx) => (
-              <div 
-                key={idx} 
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0
-                  ${spin.number === 0 ? 'bg-green-600' : 
-                    NUMBERS.RED.includes(spin.number) ? 'bg-red-600' : 'bg-black border border-gray-600'}`}
-              >
-                {spin.number}
-              </div>
-            ))}
-            {spins.length === 0 && (
-              <span className="text-gray-500 text-xs">No numbers yet</span>
-            )}
-          </div>
-        </div>
-        
-        <div className="h-7 w-px bg-gray-600"></div>
-        
-        {/* Add Number */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-green-400">Add:</span>
-          <input
-            type="number"
-            min="0"
-            max="36"
-            value={inputNumber}
-            onChange={(e) => setInputNumber(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && addNumber()}
-            placeholder="0-36"
-            className="w-20 px-2 py-1 bg-black/50 border border-gray-600 rounded text-center text-sm font-bold"
-          />
-          <button
-            onClick={addNumber}
-            className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm font-bold text-white"
-          >
-            ADD
-          </button>
-        </div>
-      </div>
-    </div>
 
    {/* BETTING PERFORMANCE MATRIX */}
 <div className="bg-gray-900 rounded-lg border border-gray-700 p-3">
@@ -1112,7 +1189,6 @@ const openSessionSetup = () => {
                         
                       </div>
                     )}
-
                     {assistantSubTab === 'performance' && session && (
                       <div className="space-y-6">
                         <h2 className="text-2xl font-bold text-yellow-400">Session Performance</h2>
@@ -1141,11 +1217,73 @@ const openSessionSetup = () => {
                     )}
 {assistantSubTab === 'analysis' && (
   <div className="space-y-6">
-    {/* 1. Common Groups Table at the TOP */}
-    <CommonGroupsTable 
-      spinHistory={spins.map(s => s.number)}
-      onAddNumber={addNumber}
-    />
+  {/* Stats type selector - ADD THIS NEW SECTION */}
+  <div className="flex gap-2 mb-4">
+    <button
+      onClick={() => setAnalysisView('common')}
+      className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+        analysisView === 'common' 
+          ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
+          : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+      }`}
+    >
+      Common Bets Stats
+    </button>
+    <button
+      onClick={() => setAnalysisView('special')}
+      className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+        analysisView === 'special' 
+          ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
+          : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+      }`}
+    >
+Special Bets Stats
+  </button>
+  <button
+    onClick={() => setAnalysisView('wheel')}
+    className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+      analysisView === 'wheel' 
+        ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
+        : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+    }`}>
+   
+   Wheel Bets Stats
+  </button>
+  {/* Add this button after "Wheel Bets Stats" button */}
+<button
+  onClick={() => setAnalysisView('numbers')}
+  className={`
+    px-3 py-1.5 text-xs font-medium rounded transition-colors
+    ${analysisView === 'numbers' 
+      ? 'bg-purple-600 text-white' 
+      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}
+  `}
+>
+  Numbers Stats
+</button>
+</div>
+  
+{/* Conditional rendering based on selection */}
+{analysisView === 'common' ? (
+  <CommonGroupsTable 
+    spinHistory={spins.map(s => s.number)}
+
+  />
+) : analysisView === 'special' ? (
+  <SpecialBetsTable 
+    spinHistory={spins.map(s => s.number)}
+  />
+) : analysisView === 'wheel' ? (
+  <WheelBetStats 
+    spinHistory={spins.map(s => s.number)}
+  />
+) : analysisView === 'numbers' ? (
+  <NumbersStatsTab
+    history={spins.map(s => s.number)}
+  />
+) : null}
+
+  {/* Keep your existing Section Selector Tabs below */}
     
     {/* 2. Section Selector Tabs */}
     <div className="flex flex-wrap gap-2">
@@ -1244,21 +1382,9 @@ const openSessionSetup = () => {
 )}
                   </div>
                 </div>
-              </>
+              </div>
             )}
       </div>
-      {/* Dev-only debug panel */}
-      {process.env.NODE_ENV === 'development' ? (
-        <div className="fixed bottom-4 right-4 bg-black/80 p-2 rounded text-xs text-white border border-yellow-400/20 z-50">
-          <div className="text-yellow-400 font-bold mb-1">🔍 Debug Store</div>
-          <pre>{JSON.stringify({
-            cardsModeOn: gameState.cardsModeOn,
-            hasActiveCard: !!gameState.activeCard,
-            spinsCount: gameState.spins.length,
-            bankroll: gameState.bankroll
-          }, null, 2)}</pre>
-        </div>
-      ) : null}
     </div>
   )
 }
