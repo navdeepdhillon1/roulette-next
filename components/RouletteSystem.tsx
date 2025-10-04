@@ -30,6 +30,9 @@ import CommonGroupsTable from '@/components/CommonGroupsTable';
 import SpecialBetsTable from '@/components/SpecialBetsTable';
 import WheelBetStats from '@/components/WheelBetStats';
 import NumbersStatsTab from './NumbersStatsTab';
+import PredictionOracle from './PredictionOracle';
+import SequenceTracker from './SequenceTracker';
+import GroupPredictions from './GroupPredictions';
 // Type definitions
 type MainTab = 'table-view' | 'table-bets' | 'table-stats'
 type AssistantSubTab = 'setup' | 'action' | 'performance' | 'analysis'| 'gamified'
@@ -71,7 +74,7 @@ export default function RouletteSystem() {
   const [localSpins, setLocalSpins] = useState<Spin[]>([])
   const gameState = useGameState()
   const [analysisSection, setAnalysisSection] = useState<'patterns' | 'time' | 'streaks'>('patterns')
-  const [analysisView, setAnalysisView] = useState<'common' | 'special' | 'wheel' | 'numbers'>('common');
+  const [analysisView, setAnalysisView] = useState<'common' | 'special' | 'wheel' | 'numbers' | 'oracle'>('common');
   // Call hook unconditionally to follow Rules of Hooks
   const { 
     session: cloudSession, 
@@ -94,6 +97,7 @@ export default function RouletteSystem() {
   const [assistantSubTab, setAssistantSubTab] = useState<AssistantSubTab>('setup')
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null)
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
+  
   // Financial tracking
   const [startingBankroll, setStartingBankroll] = useState(100)
   const [currentBankroll, setCurrentBankroll] = useState(100)
@@ -1218,7 +1222,8 @@ const openSessionSetup = () => {
 {assistantSubTab === 'analysis' && (
   <div className="space-y-6">
   {/* Stats type selector - ADD THIS NEW SECTION */}
-  <div className="flex gap-2 mb-4">
+  <div className="flex justify-between items-center mb-4">
+  <div className="flex gap-2">
     <button
       onClick={() => setAnalysisView('common')}
       className={`px-4 py-2 rounded-lg font-semibold transition-all ${
@@ -1262,8 +1267,24 @@ Special Bets Stats
   Numbers Stats
 </button>
 </div>
-  
-{/* Conditional rendering based on selection */}
+</div>
+
+ {/* Oracle button on the right */}
+ <button
+        onClick={() => setAnalysisView('oracle')}
+        className={`
+          px-4 py-2 rounded-lg font-semibold transition-all transform hover:scale-105
+          ${analysisView === 'oracle' 
+            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/50' 
+            : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white opacity-80 hover:opacity-100'}
+          flex items-center gap-2
+        `}
+      >
+        <span>🔮</span>
+        Oracle Predictions Chamber
+        <span className="text-xs bg-white/20 rounded px-1">BETA</span>
+      </button>
+    {/* Conditional rendering based on selection */}
 {analysisView === 'common' ? (
   <CommonGroupsTable 
     spinHistory={spins.map(s => s.number)}
@@ -1280,10 +1301,33 @@ Special Bets Stats
 ) : analysisView === 'numbers' ? (
   <NumbersStatsTab
     history={spins.map(s => s.number)}
-  />
-) : null}
 
-  {/* Keep your existing Section Selector Tabs below */}
+  />) : analysisView === 'oracle' ? (
+    <div className="h-full">
+      {/* Container with fixed height and grid layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 h-[calc(100vh-300px)]">
+        {/* Left Column - Individual Number Predictions */}
+        <div className="bg-gray-900/50 rounded-lg p-4 overflow-hidden flex flex-col">
+          <h3 className="text-lg font-semibold mb-3 text-white sticky top-0 bg-gray-900/50 pb-2">
+            🎯 Individual Number Predictions
+          </h3>
+          <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar">
+            <PredictionOracle history={spins.map(s => s.number)} />
+          </div>
+        </div>
+        
+        {/* Right Column - Group Predictions */}
+        <div className="bg-gray-900/50 rounded-lg p-4 overflow-hidden flex flex-col">
+          <h3 className="text-lg font-semibold mb-3 text-white sticky top-0 bg-gray-900/50 pb-2">
+            🎰 Group Predictions
+          </h3>
+          <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar">
+            <GroupPredictions history={spins.map(s => s.number)} />
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : null}
     
     {/* 2. Section Selector Tabs */}
     <div className="flex flex-wrap gap-2">

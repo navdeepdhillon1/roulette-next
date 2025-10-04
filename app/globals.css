@@ -119,4 +119,42 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+/* Custom animations for Prediction Oracle */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.animate-shimmer {
+  animation: shimmer 3s infinite;
+}
+/* Optional: Add these for better oracle effects */
+.hover\:scale-102:hover {
+  transform: scale(1.02);
+}
+/* Gradient text effect (optional) */
+.bg-gradient-text {
+  background: linear-gradient(to right, #a855f7, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+/* In your global.css or at the top of your component */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.5);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(107, 114, 128, 0.5);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(107, 114, 128, 0.8);
+}
+}
 }
