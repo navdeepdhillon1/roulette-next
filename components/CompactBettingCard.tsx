@@ -1,7 +1,79 @@
 'use client'
 import React, { useState, useRef, useEffect } from 'react'
 import { ChevronRight, Minimize2, Maximize2, X, Move, TrendingUp, DollarSign } from 'lucide-react'
+import { useCardManager } from '@/app/contexts/CardManagerContext';
+import { CardManagerProvider } from '@/app/contexts/CardManagerContext'
+import { FloatingAdvisorCard } from './FloatingAdvisorCard'
+import { FloatingProbabilityCard } from './FloatingProbabilityCard'
+import { Wrench, Target } from 'lucide-react'
 
+// Betting System Helpers
+const FIBONACCI_SEQUENCE = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144];
+
+function calculateNextBet(system: any, outcome: 'win' | 'loss' | null): number {
+  const { id, baseBet, consecutiveWins, consecutiveLosses, sequenceIndex = 0, customRules } = system;
+  
+  // Custom system
+  if (id === 'custom' && customRules) {
+    let multiplier = system.currentBet / baseBet;
+    
+    if (outcome === 'win') {
+      if (customRules.resetAfterWin) return baseBet;
+      if (customRules.onWin === 'double') multiplier *= 2;
+      if (customRules.onWin === 'reset') return baseBet;
+    } else if (outcome === 'loss') {
+      if (consecutiveLosses === 0 && customRules.onFirstLoss === 'double') multiplier *= 2;
+      if (consecutiveLosses === 1 && customRules.onSecondLoss === 'double') multiplier *= 2;
+      if (consecutiveLosses === 2 && customRules.onThirdLoss === 'double') multiplier *= 2;
+      
+      if (customRules.onFirstLoss === 'reset' || 
+          customRules.onSecondLoss === 'reset' || 
+          customRules.onThirdLoss === 'reset') {
+        return baseBet;
+      }
+    }
+    
+    const nextBet = baseBet * multiplier;
+    return Math.min(nextBet, baseBet * customRules.maxMultiplier);
+  }
+  
+  if (id === 'flat') return baseBet;
+  
+  if (id === 'paroli') {
+    if (outcome === 'win' && consecutiveWins < 3) return system.currentBet * 2;
+    return baseBet;
+  }
+  
+  if (id === 'dalembert') {
+    if (outcome === 'win') return Math.max(baseBet, system.currentBet - baseBet);
+    if (outcome === 'loss') return system.currentBet + baseBet;
+    return system.currentBet;
+  }
+  
+  if (id === 'reverse-dalembert') {
+    if (outcome === 'win') return system.currentBet + baseBet;
+    if (outcome === 'loss') return Math.max(baseBet, system.currentBet - baseBet);
+    return system.currentBet;
+  }
+  
+  if (id === 'martingale') {
+    if (outcome === 'loss') return system.currentBet * 2;
+    return baseBet;
+  }
+  
+  if (id === 'fibonacci') {
+    if (outcome === 'loss') {
+      const nextIndex = Math.min(sequenceIndex + 1, FIBONACCI_SEQUENCE.length - 1);
+      return baseBet * FIBONACCI_SEQUENCE[nextIndex];
+    } else if (outcome === 'win') {
+      const nextIndex = Math.max(0, sequenceIndex - 2);
+      return baseBet * FIBONACCI_SEQUENCE[nextIndex];
+    }
+    return system.currentBet;
+  }
+  
+  return baseBet;
+}
 // Types
 type BetKey = 'red' | 'black' | 'even' | 'odd' | 'low' | 'high' | 
   'dozen1' | 'dozen2' | 'dozen3' | 'col1' | 'col2' | 'col3' |
@@ -25,8 +97,40 @@ interface CardData {
   target: number
   maxBets: number
 }
+// Add this helper component before your main component
+interface QuickToolCardProps {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  iconBg: string;
+  onPopOut: () => void;
+}
 
-// Wrapper for BettingAssistant integration
+const QuickToolCard: React.FC<QuickToolCardProps> = ({ 
+  title, 
+  description, 
+  icon, 
+  iconBg, 
+  onPopOut 
+}) => (
+  <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 hover:border-yellow-400/50 transition-all group">
+    <div className="flex items-start justify-between mb-3">
+      <div className={`w-10 h-10 rounded-full ${iconBg} flex items-center justify-center`}>
+        {icon}
+      </div>
+      <button
+        onClick={onPopOut}
+        className="p-1.5 bg-gray-700 hover:bg-yellow-600 rounded opacity-0 group-hover:opacity-100 transition-all"
+        title="Open in window"
+      >
+        <Maximize2 className="w-4 h-4 text-white" />
+      </button>
+    </div>
+    <h4 className="text-white font-bold text-sm mb-1">{title}</h4>
+    <p className="text-gray-400 text-xs">{description}</p>
+  </div>
+);
+// Wrapper with CardManagerProvider
 export default function CompactBettingCard(props: any) {
   // If called from BettingAssistant with props
   if (props.card && props.onBack) {
@@ -37,17 +141,20 @@ export default function CompactBettingCard(props: any) {
     }
 
     return (
-      <FloatingBettingCard
-        card={cardData}
-        onClose={props.onBack}
-        onCardComplete={(pnl) => {
-          console.log('Card complete with P/L:', pnl)
-          props.onBack()
-        }}
-        onNumberAdded={(num) => {
-          console.log('Number added to tracker:', num)
-        }}
-      />
+      <CardManagerProvider>
+        <FloatingBettingCard
+          card={cardData}
+          onClose={props.onBack}
+          onCardComplete={(pnl) => {
+            console.log('Card complete with P/L:', pnl)
+            props.onBack()
+          }}
+          onNumberAdded={(num) => {
+            console.log('Number added to tracker:', num)
+          }}
+        />
+        <FloatingCardsPortal />
+      </CardManagerProvider>
     )
   }
 
@@ -55,7 +162,6 @@ export default function CompactBettingCard(props: any) {
   return <CompactBettingCardDemo />
 }
 
-// Main Demo Component
 export function CompactBettingCardDemo() {
   const [isCardOpen, setIsCardOpen] = useState(true)
   const [currentCard, setCurrentCard] = useState<CardData>({
@@ -82,32 +188,78 @@ export function CompactBettingCardDemo() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-      {/* Instructions */}
-      <div className="max-w-7xl mx-auto mb-6">
-        <div className="bg-blue-900/40 backdrop-blur rounded-xl border border-blue-400/30 p-4">
-          <h2 className="text-xl font-bold text-blue-300 mb-2">📋 Preview Instructions</h2>
-          <div className="text-sm text-blue-200 space-y-1">
-            <p>✅ <strong>Betting card is now open by default</strong></p>
-            <p>🎯 Click <strong>"Place Your Bets"</strong> to expand betting groups</p>
-            <p>💰 Place some bets on different groups (Red, Black, Dozens, etc.)</p>
-            <p>🎲 Enter a number (0-36) and click "Add & Calculate"</p>
-            <p>📊 Then expand <strong>"Betting Performance Matrix"</strong> to see the 4 tabs!</p>
-            <p className="text-yellow-300 mt-2">💡 Try switching between tabs to see different group organizations</p>
+    <CardManagerProvider>
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+        {/* Instructions */}
+        <div className="max-w-7xl mx-auto mb-6">
+          <div className="bg-blue-900/40 backdrop-blur rounded-xl border border-blue-400/30 p-4">
+            <h2 className="text-xl font-bold text-blue-300 mb-2">📋 Preview Instructions</h2>
+            <div className="text-sm text-blue-200 space-y-1">
+              <p>✅ <strong>Betting card is now open by default</strong></p>
+              <p>🎯 Click <strong>"Place Your Bets"</strong> to expand betting groups</p>
+              <p>💰 Place some bets on different groups (Red, Black, Dozens, etc.)</p>
+              <p>🎲 Enter a number (0-36) and click "Add & Calculate"</p>
+              <p>📊 Then expand <strong>"Betting Performance Matrix"</strong> to see the 4 tabs!</p>
+              <p className="text-yellow-300 mt-2">💡 Try switching between tabs to see different group organizations</p>
+              <p className="text-cyan-300 mt-2">🆕 <strong>NEW: Click Quick Tools cards to open floating windows!</strong></p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Floating Betting Card */}
-      {isCardOpen && (
-        <FloatingBettingCard
-          card={currentCard}
-          onClose={handleCloseCard}
-          onCardComplete={handleCardComplete}
-          onNumberAdded={handleNumberAdded}
-        />
-      )}
-    </div>
+        {/* Floating Betting Card */}
+        {isCardOpen && (
+          <FloatingBettingCard
+            card={currentCard}
+            onClose={handleCloseCard}
+            onCardComplete={handleCardComplete}
+            onNumberAdded={handleNumberAdded}
+          />
+        )}
+        
+        {/* Floating Cards Portal */}
+        <FloatingCardsPortal />
+      </div>
+    </CardManagerProvider>
+  )
+}
+// Floating Cards Portal
+function FloatingCardsPortal() {
+  const { openCards, closeCard, minimizeCard, maximizeCard, updatePosition, bringToFront } = useCardManager()
+  
+  return (
+    <>
+      {openCards.map((card) => {
+        if (card.type === 'advisor') {
+          return (
+            <FloatingAdvisorCard
+              key={card.id}
+              card={card}
+              onClose={() => closeCard(card.id)}
+              onMinimize={() => minimizeCard(card.id)}
+              onMaximize={() => maximizeCard(card.id)}
+              onPositionChange={(position) => updatePosition(card.id, position)}
+              onBringToFront={() => bringToFront(card.id)}
+            />
+          )
+        }
+        
+        if (card.type === 'probability') {
+          return (
+            <FloatingProbabilityCard
+              key={card.id}
+              card={card}
+              onClose={() => closeCard(card.id)}
+              onMinimize={() => minimizeCard(card.id)}
+              onMaximize={() => maximizeCard(card.id)}
+              onPositionChange={(position) => updatePosition(card.id, position)}
+              onBringToFront={() => bringToFront(card.id)}
+            />
+          )
+        }
+        
+        return null
+      })}
+    </>
   )
 }
 
@@ -147,7 +299,7 @@ function FloatingBettingCard({
   const [cardProgress, setCardProgress] = useState({ betsUsed: 0, currentPnL: 0 })
   const [lastBets, setLastBets] = useState<Record<BetKey, number>>({} as any)
   const [matrixTab, setMatrixTab] = useState<'table-common' | 'table-special' | 'wheel-common' | 'wheel-special'>('table-common')
-
+  const { openCard } = useCardManager()
   const betLabels: Record<BetKey, string> = {
     red: 'Red', black: 'Black', even: 'Even', odd: 'Odd',
     low: 'Low', high: 'High', dozen1: '1st Doz', dozen2: '2nd Doz', dozen3: '3rd Doz',
@@ -469,6 +621,33 @@ function FloatingBettingCard({
               />
               <span className="text-orange-200">Use system amount</span>
             </label>
+          </div>
+
+
+{/* Quick Tools Section */}
+<div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700">
+            <div className="flex items-center gap-2 mb-4">
+              <Wrench className="w-5 h-5 text-yellow-400" />
+              <h3 className="text-yellow-400 font-bold text-sm">Quick Tools</h3>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <QuickToolCard
+                title="Betting Advisor"
+                description="Get AI-powered betting recommendations"
+                icon={<Target className="w-5 h-5 text-purple-400" />}
+                iconBg="bg-purple-600/20"
+                onPopOut={() => openCard('advisor')}
+              />
+              
+              <QuickToolCard
+                title="Probability Chamber"
+                description="Statistical analysis & predictions"
+                icon={<TrendingUp className="w-5 h-5 text-cyan-400" />}
+                iconBg="bg-cyan-600/20"
+                onPopOut={() => openCard('probability')}
+              />
+            </div>
           </div>
 
           {/* Betting Performance Matrix */}
