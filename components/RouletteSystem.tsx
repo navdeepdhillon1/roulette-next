@@ -33,6 +33,7 @@ import NumbersStatsTab from './NumbersStatsTab';
 import PredictionOracle from './PredictionOracle';
 import SequenceTracker from './SequenceTracker';
 import GroupPredictions from './GroupPredictions';
+import EnhancedProbabilityAnalysis from '@/components/EnhancedProbabilityAnalysis'
 // Type definitions
 type MainTab = 'table-view' | 'table-bets' | 'table-stats'
 type AssistantSubTab = 'setup' | 'action' | 'performance' | 'analysis'| 'gamified'
@@ -352,7 +353,7 @@ const openSessionSetup = () => {
   const groupStats = calculateGroupStats()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0A0E27] via-[#0B5345] to-[#0A0E27] text-white">
+    <div className="text-white">
       <div className="max-w-7xl mx-auto p-4">
         {/* Casino-style Title */}
         <div className="text-center mb-6 relative">
@@ -1271,19 +1272,13 @@ Special Bets Stats
 
  {/* Oracle button on the right */}
  <button
-        onClick={() => setAnalysisView('oracle')}
-        className={`
-          px-4 py-2 rounded-lg font-semibold transition-all transform hover:scale-105
-          ${analysisView === 'oracle' 
-            ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/50' 
-            : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white opacity-80 hover:opacity-100'}
-          flex items-center gap-2
-        `}
-      >
-        <span>🔮</span>
-        Oracle Predictions Chamber
-        <span className="text-xs bg-white/20 rounded px-1">BETA</span>
-      </button>
+  onClick={() => setAnalysisView('oracle')}
+  className={`...`}
+>
+  <span>📊</span>
+  Enhanced Probability Analysis
+  <span className="text-xs bg-white/20 rounded px-1">NEW</span>
+</button>
     {/* Conditional rendering based on selection */}
 {analysisView === 'common' ? (
   <CommonGroupsTable 
@@ -1303,30 +1298,7 @@ Special Bets Stats
     history={spins.map(s => s.number)}
 
   />) : analysisView === 'oracle' ? (
-    <div className="h-full">
-      {/* Container with fixed height and grid layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 h-[calc(100vh-300px)]">
-        {/* Left Column - Individual Number Predictions */}
-        <div className="bg-gray-900/50 rounded-lg p-4 overflow-hidden flex flex-col">
-          <h3 className="text-lg font-semibold mb-3 text-white sticky top-0 bg-gray-900/50 pb-2">
-            🎯 Individual Number Predictions
-          </h3>
-          <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar">
-            <PredictionOracle history={spins.map(s => s.number)} />
-          </div>
-        </div>
-        
-        {/* Right Column - Group Predictions */}
-        <div className="bg-gray-900/50 rounded-lg p-4 overflow-hidden flex flex-col">
-          <h3 className="text-lg font-semibold mb-3 text-white sticky top-0 bg-gray-900/50 pb-2">
-            🎰 Group Predictions
-          </h3>
-          <div className="overflow-y-auto flex-1 pr-2 custom-scrollbar">
-            <GroupPredictions history={spins.map(s => s.number)} />
-          </div>
-        </div>
-      </div>
-    </div>
+    <EnhancedProbabilityAnalysis history={spins.map(s => s.number)} />
   ) : null}
     
     {/* 2. Section Selector Tabs */}
