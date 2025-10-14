@@ -6,10 +6,12 @@ import SessionSetup from './SessionSetup'
 import BetCardDashboard from './BetCardDashboard'
 import CompactBettingCard from './CompactBettingCard'
 import BetAdvisor from './BetAdvisor'
+import { CardSuccessCelebration, CardFailureModal, BreakTimerModal } from './CardCelebration'
 import type { SessionState, SessionConfig, BetCard, BetRecord, BettingSystemConfig } from '../types/bettingAssistant'
+import BettingAssistantPerformance from './BettingAssistantPerformance'
 import { useBettingData } from './BettingDataContext'
+
 function updateBettingSystem(config: BettingSystemConfig, outcome: 'win' | 'loss'): BettingSystemConfig {
-  // For flat betting, bet amount stays the same
   if (config.id === 'flat') {
     return {
       ...config,
@@ -17,14 +19,20 @@ function updateBettingSystem(config: BettingSystemConfig, outcome: 'win' | 'loss
       consecutiveLosses: outcome === 'loss' ? config.consecutiveLosses + 1 : 0,
     }
   }
-  
   return config
 }
 
 export default function BettingAssistant() {
   const { addSpin, updateSessionStats } = useBettingData()
-  const [viewMode, setViewMode] = useState<'setup' | 'dashboard' | 'activeCard' | 'advisor'>('setup')
+  const [viewMode, setViewMode] = useState<'setup' | 'dashboard' | 'activeCard' | 'advisor' | 'performance'>('setup')
   const [session, setSession] = useState<SessionState | null>(null)
+  
+  // ✅ NEW: Celebration states
+  const [showSuccessCelebration, setShowSuccessCelebration] = useState(false)
+  const [showFailureCelebration, setShowFailureCelebration] = useState(false)
+  const [showBreakTimer, setShowBreakTimer] = useState(false)
+  const [completedCard, setCompletedCard] = useState<BetCard | null>(null)
+  const [consecutiveFailures, setConsecutiveFailures] = useState(0)
 
   const startSession = (config: SessionConfig) => {
     const cards: BetCard[] = Array.from({ length: config.totalCards }, (_, i) => ({
@@ -68,6 +76,81 @@ export default function BettingAssistant() {
     setViewMode('dashboard')
   }
 
+  // ✅ NEW: Handle card completion
+  const handleCardComplete = (pnl: number) => {
+    if (!session) return
+    
+    const currentCard = session.cards[session.currentCardIndex]
+    const completedCardData = {
+      ...currentCard,
+      currentTotal: pnl,
+      status: 'completed' as const
+    }
+    
+    setCompletedCard(completedCardData)
+    setConsecutiveFailures(0) // Reset on success
+    
+    // Wait for the inline celebration to finish, then show modal
+    setTimeout(() => {
+      setShowSuccessCelebration(true)
+    }, 200)
+  }
+
+  // ✅ NEW: Handle card failure
+  const handleCardFailure = () => {
+    if (!session) return
+    
+    const currentCard = session.cards[session.currentCardIndex]
+    const failedCardData = {
+      ...currentCard,
+      status: 'failed' as const
+    }
+    
+    setCompletedCard(failedCardData)
+    setConsecutiveFailures(prev => prev + 1)
+    
+    // Show failure modal immediately
+    setShowFailureCelebration(true)
+  }
+
+  // ✅ NEW: Continue to next card
+  const handleContinue = () => {
+    setShowSuccessCelebration(false)
+    setShowFailureCelebration(false)
+    setCompletedCard(null)
+    
+    if (!session) return
+    
+    // Unlock next card
+    const nextCardIndex = session.currentCardIndex + 1
+    if (nextCardIndex < session.cards.length) {
+      const updatedCards = [...session.cards]
+      updatedCards[nextCardIndex].status = 'active'
+      updatedCards[nextCardIndex].startTime = new Date()
+      
+      setSession({
+        ...session,
+        cards: updatedCards,
+        currentCardIndex: nextCardIndex
+      })
+    }
+    
+    // Return to dashboard
+    setViewMode('dashboard')
+  }
+
+  // ✅ NEW: Take a break
+  const handleTakeBreak = () => {
+    setShowSuccessCelebration(false)
+    setShowBreakTimer(true)
+  }
+
+  // ✅ NEW: Break complete
+  const handleBreakComplete = () => {
+    setShowBreakTimer(false)
+    handleContinue()
+  }
+
   const placeBet = (betType: string, betAmount: number, outcome: 'win' | 'loss', winAmount: number, numberHit: number) => {
     if (!session) return
 
@@ -89,12 +172,14 @@ export default function BettingAssistant() {
       results: {} as any,
       totalPnL: outcome === 'win' ? winAmount - betAmount : -betAmount,
     }
+    
     addSpin({
       number: numberHit,
       timestamp: Date.now(),
       sessionId: session.id,
       cardId: currentCard.id
     })
+    
     const updatedCard = {
       ...currentCard,
       bets: [...currentCard.bets, newBet],
@@ -102,20 +187,14 @@ export default function BettingAssistant() {
       betsUsed: currentCard.betsUsed + 1,
     }
 
+    // ✅ UPDATED: Check for completion or failure
     if (updatedCard.currentTotal >= updatedCard.target) {
       updatedCard.status = 'completed'
-      const nextCardIndex = session.currentCardIndex + 1
-      if (nextCardIndex < session.cards.length) {
-        session.cards[nextCardIndex].status = 'active'
-        session.cards[nextCardIndex].startTime = new Date()
-      }
+      // Don't unlock next card yet - wait for user to continue
     } else if (updatedCard.betsUsed >= updatedCard.maxBets) {
       updatedCard.status = 'failed'
-      const nextCardIndex = session.currentCardIndex + 1
-      if (nextCardIndex < session.cards.length) {
-        session.cards[nextCardIndex].status = 'active'
-        session.cards[nextCardIndex].startTime = new Date()
-      }
+      // Trigger failure modal
+      setTimeout(() => handleCardFailure(), 500)
     }
 
     const updatedCards = [...session.cards]
@@ -147,6 +226,7 @@ export default function BettingAssistant() {
         : 0
     })
   }
+  
   const endSession = () => {
     setSession(null)
     setViewMode('setup')
@@ -163,71 +243,101 @@ export default function BettingAssistant() {
   return (
     <div className="min-h-screen">
       {viewMode === 'setup' && <SessionSetup onStartSession={startSession} />}
-      {viewMode === 'dashboard' && session && (
-  <>
-    {/* ✅ ADD THIS: Advisor Button */}
-    <div className="fixed top-4 right-4 z-40">
-      <button
-        onClick={() => setViewMode('advisor')}
-        className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-bold shadow-2xl transition-all transform hover:scale-105"
-      >
-        <div className="flex items-center gap-2">
-          <span>🧠</span>
-          <span>Open Bet Advisor</span>
-        </div>
-      </button>
-    </div>
-
-    <BetCardDashboard
-      session={session}
-      onSelectCard={selectCard}
-      onEndSession={endSession}
-    />
-  </>
-
-      )}
       
+      {viewMode === 'dashboard' && session && (
+  <BetCardDashboard
+    session={session}
+    onSelectCard={selectCard}
+    onEndSession={endSession}
+    onOpenAdvisor={() => setViewMode('advisor')}
+    onOpenPerformance={() => setViewMode('performance')}
+  />
+)}
       {viewMode === 'activeCard' && session && (
-        <>
-          <div className="opacity-50 pointer-events-none">
-            <BetCardDashboard 
-              session={session} 
-              onSelectCard={() => {}} 
-              onEndSession={() => {}} 
-            />
-          </div>
+  <>
+    <div className="opacity-50 pointer-events-none">
+      <BetCardDashboard 
+        session={session} 
+        onSelectCard={() => {}} 
+        onEndSession={() => {}}
+        onOpenAdvisor={() => {}}      // ✅ ADD THIS
+        onOpenPerformance={() => {}}  // ✅ ADD THIS
+      />
+    </div>
           
           <div className="fixed inset-0 z-50 overflow-y-auto">
             <CompactBettingCard 
               card={session.cards[session.currentCardIndex]}
               bettingSystem={session.config.bettingSystem}
               onPlaceBet={placeBet}
+              onCardComplete={handleCardComplete} // ✅ ADDED THIS
               onBack={backToDashboard}
             />
           </div>
         </>
       )}
 
-{/* ✅ ADD THIS ENTIRE SECTION: Advisor View */}
-{viewMode === 'advisor' && session && (
-  <>
-    {/* Back Button */}
-    <div className="fixed top-4 right-4 z-50">
-      <button
-        onClick={() => setViewMode('dashboard')}
-        className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white rounded-xl font-bold shadow-2xl transition-all transform hover:scale-105"
-      >
-        <div className="flex items-center gap-2">
-          <span>←</span>
-          <span>Back to Dashboard</span>
-        </div>
-      </button>
-    </div>
+      {viewMode === 'advisor' && session && (
+        <>
+          <div className="fixed top-4 right-4 z-50">
+            <button
+              onClick={() => setViewMode('dashboard')}
+              className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white rounded-xl font-bold shadow-2xl transition-all transform hover:scale-105"
+            >
+              <div className="flex items-center gap-2">
+                <span>←</span>
+                <span>Back to Dashboard</span>
+              </div>
+            </button>
+          </div>
 
-    {/* BetAdvisor Component */}
-    <BetAdvisor />
-  </>
-)}
+          <BetAdvisor />
+        </>
+      )}
+      
+      {viewMode === 'performance' && session && (
+        <>
+          <div className="fixed top-4 right-4 z-50">
+            <button
+              onClick={() => setViewMode('dashboard')}
+              className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white rounded-xl font-bold shadow-2xl transition-all transform hover:scale-105"
+            >
+              <div className="flex items-center gap-2">
+                <span>←</span>
+                <span>Back to Dashboard</span>
+              </div>
+            </button>
+          </div>
+
+          <BettingAssistantPerformance session={session} />
+        </>
+      )}
+
+      {/* ✅ NEW: Success Celebration Modal */}
+      {showSuccessCelebration && completedCard && (
+        <CardSuccessCelebration
+          card={completedCard}
+          onContinue={handleContinue}
+          onTakeBreak={handleTakeBreak}
+        />
+      )}
+
+      {/* ✅ NEW: Failure Modal */}
+      {showFailureCelebration && completedCard && (
+        <CardFailureModal
+          card={completedCard}
+          onContinue={handleContinue}
+          consecutiveFailures={consecutiveFailures}
+        />
+      )}
+
+      {/* ✅ NEW: Break Timer */}
+      {showBreakTimer && (
+        <BreakTimerModal
+          duration={300}
+          onComplete={handleBreakComplete}
+        />
+      )}
     </div>
   )
 }

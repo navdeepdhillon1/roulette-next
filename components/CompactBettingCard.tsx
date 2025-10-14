@@ -6,9 +6,9 @@ import { CardManagerProvider } from '@/app/contexts/CardManagerContext'
 import { FloatingAdvisorCard } from './FloatingAdvisorCard'
 import { FloatingProbabilityCard } from './FloatingProbabilityCard'
 import { Wrench, Target } from 'lucide-react'
-
 // Betting System Helpers
 const FIBONACCI_SEQUENCE = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144];
+
 
 function calculateNextBet(system: any, outcome: 'win' | 'loss' | null): number {
   const { id, baseBet, consecutiveWins, consecutiveLosses, sequenceIndex = 0, customRules } = system;
@@ -96,6 +96,8 @@ interface CardData {
   cardNumber: number
   target: number
   maxBets: number
+  currentTotal?: number
+  betsUsed?: number
 }
 // Add this helper component before your main component
 interface QuickToolCardProps {
@@ -137,21 +139,25 @@ export default function CompactBettingCard(props: any) {
     const cardData = {
       cardNumber: props.card.cardNumber,
       target: props.card.target,
-      maxBets: props.card.maxBets
+      maxBets: props.card.maxBets,
+      currentTotal: props.card.currentTotal || 0,
+      betsUsed: props.card.betsUsed || 0
     }
 
     return (
       <CardManagerProvider>
         <FloatingBettingCard
           card={cardData}
+          bettingSystem={props.bettingSystem}
+onPlaceBet={props.onPlaceBet}
           onClose={props.onBack}
-          onCardComplete={(pnl) => {
+          onCardComplete={props.onCardComplete || ((pnl) => {
             console.log('Card complete with P/L:', pnl)
             props.onBack()
-          }}
-          onNumberAdded={(num) => {
+          })}
+          onNumberAdded={props.onNumberAdded || ((num) => {
             console.log('Number added to tracker:', num)
-          }}
+          })}
         />
         <FloatingCardsPortal />
       </CardManagerProvider>
@@ -170,6 +176,16 @@ export function CompactBettingCardDemo() {
     maxBets: 15
   })
 
+  const [demoSystem] = useState({
+    id: 'martingale',
+    name: 'Martingale System',
+    description: 'Demo - doubles after loss',
+    riskLevel: 'high' as const,
+    baseBet: 10,
+    currentBet: 10,
+    consecutiveWins: 0,
+    consecutiveLosses: 0
+  })
   const handleCloseCard = () => {
     setIsCardOpen(false)
   }
@@ -210,6 +226,7 @@ export function CompactBettingCardDemo() {
         {isCardOpen && (
           <FloatingBettingCard
             card={currentCard}
+            bettingSystem={demoSystem} 
             onClose={handleCloseCard}
             onCardComplete={handleCardComplete}
             onNumberAdded={handleNumberAdded}
@@ -263,14 +280,17 @@ function FloatingCardsPortal() {
   )
 }
 
-// Floating Card Component
 function FloatingBettingCard({ 
   card, 
+  bettingSystem,
+  onPlaceBet,
   onClose, 
   onCardComplete,
   onNumberAdded,
 }: {
   card: CardData
+  bettingSystem?: any
+  onPlaceBet?: (betType: string, betAmount: number, outcome: 'win' | 'loss', winAmount: number, numberHit: number) => void 
   onClose: () => void
   onCardComplete: (pnl: number) => void
   onNumberAdded: (number: number) => void
@@ -285,18 +305,41 @@ function FloatingBettingCard({
   const [isMaximized, setIsMaximized] = useState(false)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const cardRef = useRef<HTMLDivElement>(null)
-
+ 
   // Betting State
   const [inputNumber, setInputNumber] = useState('')
   const [currentBets, setCurrentBets] = useState<Record<BetKey, number>>({} as any)
   const [betHistory, setBetHistory] = useState<BetRow[]>([])
-  const [baseUnit] = useState(10)
+  // Use betting system or default to flat
+const [systemState, setSystemState] = useState(bettingSystem || {
+  id: 'flat',
+  name: 'Flat Betting',
+  baseBet: 10,
+  currentBet: 10,
+  consecutiveWins: 0,
+  consecutiveLosses: 0,
+  sequenceIndex: 0
+})
+
+const baseUnit = systemState.currentBet
   const [useSystemAmount, setUseSystemAmount] = useState(true)
   const [showMatrix, setShowMatrix] = useState(true)
   const [showBettingGroups, setShowBettingGroups] = useState(true)
   const [bettingTab, setBettingTab] = useState<'table-common' | 'table-special' | 'wheel-common' | 'wheel-special'>('table-common')
   const [betOrder, setBetOrder] = useState<Array<{key: BetKey, amount: number}>>([])
-  const [cardProgress, setCardProgress] = useState({ betsUsed: 0, currentPnL: 0 })
+  // Initialize from card props (source of truth)
+const [cardProgress, setCardProgress] = useState({ 
+  betsUsed: card.betsUsed || 0, 
+  currentPnL: card.currentTotal || 0 
+})
+
+// Sync with props when session updates the card
+useEffect(() => {
+  setCardProgress({
+    betsUsed: card.betsUsed || 0,
+    currentPnL: card.currentTotal || 0
+  })
+}, [card.betsUsed, card.currentTotal])
   const [lastBets, setLastBets] = useState<Record<BetKey, number>>({} as any)
   const [matrixTab, setMatrixTab] = useState<'table-common' | 'table-special' | 'wheel-common' | 'wheel-special'>('table-common')
   const { openCard } = useCardManager()
@@ -476,7 +519,26 @@ function FloatingBettingCard({
           }
         }
       })
-      
+      // Update local state for immediate UI feedback (BEFORE onPlaceBet!)
+const newBetsUsed = cardProgress.betsUsed + 1
+const newPnL = cardProgress.currentPnL + totalPnL
+setCardProgress({ betsUsed: newBetsUsed, currentPnL: newPnL })
+
+// Sync to BettingAssistant - ONE CALL PER SPIN (not per bet type)
+if (onPlaceBet) {
+  // Calculate total wagered this spin
+  const totalWagered = Object.values(currentBets).reduce((sum, val) => sum + (val || 0), 0)
+  
+  // One call with the net result of this entire spin
+  onPlaceBet(
+    `Spin #${newBetsUsed}`,            // Label it as a spin, not individual bets
+    totalWagered,                       // Total amount wagered this spin
+    totalPnL >= 0 ? 'win' : 'loss',    // Net outcome
+    totalPnL >= 0 ? totalWagered + totalPnL : 0,  // Total returned
+    num                                 // Number that hit
+  )
+}
+
       const newRow: BetRow = {
         id: Date.now().toString(),
         timestamp: Date.now(),
@@ -490,19 +552,50 @@ function FloatingBettingCard({
       setLastBets({...currentBets})
       setCurrentBets({} as any)
       setBetOrder([])
+
       
-      const newBetsUsed = cardProgress.betsUsed + 1
-      const newPnL = cardProgress.currentPnL + totalPnL
-      setCardProgress({ betsUsed: newBetsUsed, currentPnL: newPnL })
+
+// Check if card is complete (local check for immediate feedback)
+if (newPnL >= card.target) {
+  onCardComplete(newPnL)
+}
       
-      if (newPnL >= card.target) {
-        setTimeout(() => onCardComplete(newPnL), 500)
-      }
+      // Update betting system based on NET outcome
+      setSystemState((prev: any) => {
+  // Determine overall outcome based on total P/L
+  const overallOutcome: 'win' | 'loss' = totalPnL > 0 ? 'win' : 'loss'
+  
+  // If break-even (totalPnL === 0), reset streaks but keep bet same
+  if (totalPnL === 0) {
+    return {
+      ...prev,
+      consecutiveWins: 0,
+      consecutiveLosses: 0
     }
-    
+  }
+  
+  const nextBet = calculateNextBet(prev, overallOutcome)
+  
+  let newSequenceIndex = prev.sequenceIndex || 0
+  if (prev.id === 'fibonacci') {
+    if (overallOutcome === 'loss') {
+      newSequenceIndex = Math.min(newSequenceIndex + 1, FIBONACCI_SEQUENCE.length - 1)
+    } else {
+      newSequenceIndex = Math.max(0, newSequenceIndex - 2)
+    }
+  }
+  return {
+    ...prev,
+    currentBet: nextBet,
+    consecutiveWins: overallOutcome === 'win' ? prev.consecutiveWins + 1 : 0,
+    consecutiveLosses: overallOutcome === 'loss' ? prev.consecutiveLosses + 1 : 0,
+    sequenceIndex: newSequenceIndex
+  }
+})    
+    }
+   
     setInputNumber('')
   }
-
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('.no-drag')) return
     setIsDragging(true)
@@ -597,31 +690,72 @@ function FloatingBettingCard({
       {!isMinimized && (
         <div className="overflow-y-auto p-2 space-y-2 no-drag" style={{ height: 'calc(100% - 68px)' }}>
           
-          {/* Flat Betting System */}
-          <div className="bg-gradient-to-br from-orange-900/50 via-red-900/40 to-orange-900/50 border-2 border-orange-600/60 rounded-xl p-3">
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-2">
-                <div className="bg-orange-600/30 rounded-lg p-1.5">
-                  <TrendingUp className="w-4 h-4 text-orange-300" />
-                </div>
-                <span className="font-bold text-orange-200 text-sm">Flat Betting System</span>
-              </div>
-              <div className="text-right">
-                <div className="text-[9px] text-orange-300/80 font-semibold">Base Unit</div>
-                <div className="text-xl font-bold text-yellow-300">${baseUnit}</div>
-              </div>
-            </div>
-            
-            <label className="flex items-center gap-2 text-xs cursor-pointer bg-black/30 rounded-lg p-2">
-              <input 
-                type="checkbox" 
-                checked={useSystemAmount}
-                onChange={(e) => setUseSystemAmount(e.target.checked)}
-                className="w-3.5 h-3.5 accent-orange-500"
-              />
-              <span className="text-orange-200">Use system amount</span>
-            </label>
-          </div>
+          {/* Enhanced Betting System Display */}
+<div className={`rounded-xl p-3 border-2 ${
+  !systemState.riskLevel || systemState.riskLevel === 'low' 
+    ? 'bg-gradient-to-br from-green-900/50 via-emerald-900/40 to-green-900/50 border-green-600/60' 
+    : systemState.riskLevel === 'medium' 
+    ? 'bg-gradient-to-br from-yellow-900/50 via-orange-900/40 to-yellow-900/50 border-yellow-600/60' 
+    : 'bg-gradient-to-br from-red-900/50 via-rose-900/40 to-red-900/50 border-red-600/60'
+}`}>
+  <div className="flex justify-between items-center mb-3">
+    <div className="flex items-center gap-2">
+      <div className={`rounded-lg p-1.5 ${
+        !systemState.riskLevel || systemState.riskLevel === 'low' ? 'bg-green-600/30' :
+        systemState.riskLevel === 'medium' ? 'bg-yellow-600/30' :
+        'bg-red-600/30'
+      }`}>
+        <TrendingUp className="w-4 h-4 text-white" />
+      </div>
+      <div>
+        <span className="font-bold text-white text-sm">{systemState.name || 'Flat Betting'}</span>
+        {systemState.riskLevel && (
+          <span className={`ml-2 text-[9px] px-1.5 py-0.5 rounded font-bold ${
+            systemState.riskLevel === 'low' ? 'bg-green-600' :
+            systemState.riskLevel === 'medium' ? 'bg-yellow-600' :
+            'bg-red-600'
+          }`}>
+            {systemState.riskLevel.toUpperCase()}
+          </span>
+        )}
+      </div>
+    </div>
+    
+    <div className="text-right">
+      <div className="text-[9px] text-gray-300 font-semibold">Next Bet</div>
+      <div className="text-2xl font-bold text-yellow-300">${systemState.currentBet}</div>
+    </div>
+  </div>
+  
+  <div className="grid grid-cols-4 gap-2 text-center">
+    <div className="bg-black/30 rounded p-1.5">
+      <div className="text-[8px] text-gray-400">Base</div>
+      <div className="text-sm font-bold text-white">${systemState.baseBet}</div>
+    </div>
+    <div className="bg-black/30 rounded p-1.5">
+      <div className="text-[8px] text-gray-400">Wins</div>
+      <div className="text-sm font-bold text-green-400">{systemState.consecutiveWins}</div>
+    </div>
+    <div className="bg-black/30 rounded p-1.5">
+      <div className="text-[8px] text-gray-400">Losses</div>
+      <div className="text-sm font-bold text-red-400">{systemState.consecutiveLosses}</div>
+    </div>
+    <div className="bg-black/30 rounded p-1.5">
+      <div className="text-[8px] text-gray-400">Multi</div>
+      <div className="text-sm font-bold text-blue-400">
+        {(systemState.currentBet / systemState.baseBet).toFixed(1)}x
+      </div>
+    </div>
+  </div>
+  
+  {/* Warning for high bets */}
+  {systemState.currentBet > systemState.baseBet * 4 && (
+    <div className="mt-2 bg-red-900/30 border border-red-500/50 rounded p-2 text-xs text-red-200 flex items-center gap-2">
+      <span>⚠️</span>
+      <span>Bet increased to {(systemState.currentBet / systemState.baseBet).toFixed(1)}x base!</span>
+    </div>
+  )}
+</div>
 
 
 {/* Quick Tools Section */}
@@ -1475,6 +1609,7 @@ function FloatingBettingCard({
           </div>
         </div>
       )}
+      
     </div>
   )
 }

@@ -8,6 +8,7 @@ interface CardCelebrationProps {
   card: BetCard;
   onContinue: () => void;
   onTakeBreak: () => void;
+  consecutiveFailures?: number;
 }
 
 export function CardSuccessCelebration({ card, onContinue, onTakeBreak }: CardCelebrationProps) {
@@ -98,7 +99,7 @@ export function CardSuccessCelebration({ card, onContinue, onTakeBreak }: CardCe
   );
 }
 
-export function CardFailureModal({ card, onContinue, consecutiveFailures }: Omit<CardCelebrationProps, 'onTakeBreak'>) {
+export function CardFailureModal({ card, onContinue, consecutiveFailures = 0 }: Omit<CardCelebrationProps, 'onTakeBreak'> & { consecutiveFailures?: number }) {
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
       <div className="bg-gradient-to-br from-red-900 to-orange-900 rounded-2xl border-4 border-red-400 p-8 max-w-lg w-full shadow-2xl">
