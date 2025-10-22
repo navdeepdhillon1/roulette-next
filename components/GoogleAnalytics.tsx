@@ -2,20 +2,19 @@
 'use client'
 
 import Script from 'next/script'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 import { GA_MEASUREMENT_ID, pageview } from '@/lib/analytics'
 
 export default function GoogleAnalytics() {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
 
   // Track page views on route change
   useEffect(() => {
     if (pathname) {
-      pageview(pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : ''))
+      pageview(pathname)
     }
-  }, [pathname, searchParams])
+  }, [pathname])
 
   // Don't load in development (optional - remove if you want to test in dev)
   if (process.env.NODE_ENV === 'development') {
