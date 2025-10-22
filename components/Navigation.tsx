@@ -2,11 +2,34 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { trackNavigationClick } from '@/lib/analytics';
+import { getCurrentUser, signOut } from '@/lib/auth';
+import AuthModal from './AuthModal';
 
 export default function Navigation() {
   const pathname = usePathname();
-  
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+
+  // Check authentication status on mount
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const currentUser = await getCurrentUser();
+    setUser(currentUser);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    setUser(null);
+    setShowUserMenu(false);
+    window.location.reload(); // Refresh to clear session
+  };
+
   // For now, show all 5 tabs - we'll add tier restrictions later with auth
   let userTier: 'free' | 'pro' | 'elite' = 'elite'; // ✅ allows all 3 types without literal narrowing
   
@@ -48,8 +71,8 @@ export default function Navigation() {
             </div>
           </Link>
           
-          {/* Navigation Links */}
-          <div className="flex gap-2">
+          {/* Navigation Links + Auth */}
+          <div className="flex gap-2 items-center">
             {links.map((link) => {
               const isActive = pathname === link.href;
               return (
@@ -68,9 +91,56 @@ export default function Navigation() {
                 </Link>
               );
             })}
+
+            {/* Auth Button / User Menu */}
+            {!user ? (
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <span>👤</span>
+                <span className="hidden md:inline">Sign In</span>
+              </button>
+            ) : (
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <span>👤</span>
+                  <span className="hidden md:inline">{user.email?.split('@')[0]}</span>
+                </button>
+
+                {/* User Dropdown Menu */}
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-50">
+                    <div className="p-3 border-b border-gray-700">
+                      <p className="text-sm text-gray-400">Signed in as</p>
+                      <p className="text-sm font-medium text-white truncate">{user.email}</p>
+                    </div>
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 transition-all"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => {
+          checkAuth();
+          setShowAuthModal(false);
+        }}
+      />
     </nav>
   );
 }
