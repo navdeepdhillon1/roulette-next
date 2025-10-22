@@ -89,3 +89,25 @@ export async function isAuthenticated(): Promise<boolean> {
   const user = await getCurrentUser()
   return !!user
 }
+
+/**
+ * Sign in with Google OAuth
+ */
+export async function signInWithGoogle(): Promise<AuthResult> {
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+
+    if (error) {
+      return { success: false, error: { message: error.message } }
+    }
+
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: { message: 'An unexpected error occurred' } }
+  }
+}
