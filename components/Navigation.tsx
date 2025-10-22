@@ -5,11 +5,9 @@ import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { trackNavigationClick } from '@/lib/analytics';
 import { getCurrentUser, signOut } from '@/lib/auth';
-import AuthModal from './AuthModal';
 
 export default function Navigation() {
   const pathname = usePathname();
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -39,12 +37,14 @@ export default function Navigation() {
       { href: '/', label: 'Home', icon: '🏠' },
       { href: '/tracker', label: 'Basic Tracker', icon: '📋' },
       { href: '/learn', label: 'Learning', icon: '📚' },
+      { href: '/pricing', label: 'Pricing', icon: '💎' },
     ],
     pro: [
       { href: '/', label: 'Home', icon: '🏠' },
       { href: '/tracker', label: 'Basic Tracker', icon: '📋' },
       { href: '/analysis', label: 'Advanced Tracker', icon: '📊' },
       { href: '/learn', label: 'Learning', icon: '📚' },
+      { href: '/pricing', label: 'Pricing', icon: '💎' },
     ],
     elite: [
       { href: '/', label: 'Home', icon: '🏠' },
@@ -52,6 +52,7 @@ export default function Navigation() {
       { href: '/analysis', label: 'Advanced Tracker', icon: '📊' },
       { href: '/assistant', label: 'Betting Assistant', icon: '🎯' },
       { href: '/learn', label: 'Learning', icon: '📚' },
+      { href: '/pricing', label: 'Pricing', icon: '💎' },
     ],
   };
   const links = linksByTier[userTier];
@@ -94,13 +95,14 @@ export default function Navigation() {
 
             {/* Auth Button / User Menu */}
             {!user ? (
-              <button
-                onClick={() => setShowAuthModal(true)}
-                className="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+              <Link
+                href="/pricing"
+                onClick={() => trackNavigationClick('Get Started')}
+                className="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
               >
-                <span>👤</span>
-                <span className="hidden md:inline">Sign In</span>
-              </button>
+                <span>🚀</span>
+                <span className="hidden md:inline">Get Started</span>
+              </Link>
             ) : (
               <div className="relative">
                 <button
@@ -131,16 +133,6 @@ export default function Navigation() {
           </div>
         </div>
       </div>
-
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        onSuccess={() => {
-          checkAuth();
-          setShowAuthModal(false);
-        }}
-      />
     </nav>
   );
 }
