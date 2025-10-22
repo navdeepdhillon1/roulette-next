@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Activity, Flame, Snowflake, Eye, BarChart3, Filter, Bell, Calculator, TrendingUp, AlertTriangle, Zap, DollarSign, Users, Target, CheckCircle2, X } from 'lucide-react';
-import { useBettingData } from './BettingDataContext'
+import { useBettingData } from './BettingDataContext';
+import EnhancedRaceCard from './EnhancedRaceCard';
 // ==================== TYPE DEFINITIONS ====================
 interface Spin {
   spinId: string;
@@ -93,12 +94,18 @@ const SIXLINE3 = [13, 14, 15, 16, 17, 18];
 const SIXLINE4 = [19, 20, 21, 22, 23, 24];
 const SIXLINE5 = [25, 26, 27, 28, 29, 30];
 const SIXLINE6 = [31, 32, 33, 34, 35, 36];
-const ALT1_A = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]; // Same as LOW
-const ALT1_B = [19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36]; // Same as HIGH
-const ALT2_AA = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-const ALT2_BB = [10, 11, 12, 13, 14, 15, 16, 17, 18];
-const ALT2_CC = [19, 20, 21, 22, 23, 24, 25, 26, 27];
-const ALT2_DD = [28, 29, 30, 31, 32, 33, 34, 35, 36];
+
+// 1st Alternate Streets (A/B) - Alternating streets 1,3,5,7,9,11 vs 2,4,6,8,10,12
+const ALT1_A = [1, 2, 3, 7, 8, 9, 13, 14, 15, 19, 20, 21, 25, 26, 27, 31, 32, 33];
+const ALT1_B = [4, 5, 6, 10, 11, 12, 16, 17, 18, 22, 23, 24, 28, 29, 30, 34, 35, 36];
+
+// 2nd Alternate Streets (AA/BB) - Alternating pairs of streets
+const ALT2_AA = [1, 2, 3, 4, 5, 6, 13, 14, 15, 16, 17, 18, 25, 26, 27, 28, 29, 30];
+const ALT2_BB = [7, 8, 9, 10, 11, 12, 19, 20, 21, 22, 23, 24, 31, 32, 33, 34, 35, 36];
+
+// 3rd Alternate Streets (AAA/BBB) - Alternating triplets of streets
+const ALT3_AAA = [1, 2, 3, 4, 5, 6, 7, 8, 9, 19, 20, 21, 22, 23, 24, 25, 26, 27];
+const ALT3_BBB = [10, 11, 12, 13, 14, 15, 16, 17, 18, 28, 29, 30, 31, 32, 33, 34, 35, 36];
 
 // Wheel Common Groups (accurate European wheel layout)
 const VOISINS = [22, 18, 29, 7, 28, 12, 35, 3, 26, 0, 32, 15, 19, 4, 21, 2, 25]; // Voisins du Zero (17 numbers)
@@ -193,17 +200,25 @@ function calculateMetrics(spins: number[], groupNumbers: number[], expected: num
   const deviation = hitRate - expected;
   const n = spins.length;
   const zScore = n > 0 ? (hits - n * expected) / Math.sqrt(n * expected * (1 - expected)) : 0;
-  
+
+  // Streak: count from index 0 (most recent) until we hit a miss
   let streak = 0;
-  for (let i = spins.length - 1; i >= 0; i--) {
-    if (groupNumbers.includes(spins[i])) streak++;
-    else break;
+  for (let i = 0; i < spins.length; i++) {
+    if (groupNumbers.includes(spins[i])) {
+      streak++;
+    } else {
+      break; // Stop at first miss
+    }
   }
-  
+
+  // Absence: count from index 0 (most recent) until we hit a match
   let absence = 0;
-  for (let i = spins.length - 1; i >= 0; i--) {
-    if (groupNumbers.includes(spins[i])) break;
-    absence++;
+  for (let i = 0; i < spins.length; i++) {
+    if (groupNumbers.includes(spins[i])) {
+      break; // Stop at first hit
+    } else {
+      absence++;
+    }
   }
   
   let ewma = 0;
@@ -388,54 +403,59 @@ export default function BetAdvisor() {
     { id: '3', name: 'High Score Alert', criteria: 'Score ≥ 75', active: true, matchCount: 3, triggered: true },
   ]);
 
-  // Generate scenario spins
-  const getScenarioSpins = (): Spin[] => {
-    const base = Array.from({ length: 40 }, (_, i) => {
-      let num: number;
-      if (scenario === 'red-hot') {
-        num = i % 10 < 6 ? RED_NUMBERS[i % RED_NUMBERS.length] : BLACK_NUMBERS[i % BLACK_NUMBERS.length];
-      } else if (scenario === 'volatility') {
-        num = i % 2 === 0 ? RED_NUMBERS[i % RED_NUMBERS.length] : BLACK_NUMBERS[i % BLACK_NUMBERS.length];
-      } else {
-        const arr = [...RED_NUMBERS, ...BLACK_NUMBERS, 0];
-        num = arr[i % arr.length];
-      }
-      return {
-        spinId: `spin-${i}`,
-        number: String(num),
-        ts: Date.now() - (40 - i) * 60000
-      };
-    });
-    return base;
-  };
-  
-  const spins = getScenarioSpins();
-  const numericSpins = spins.map(s => parseInt(s.number));
+  // Get real spin history from context
+  const { spinHistory } = useBettingData();
+
+  // Use real spins if available, otherwise show demo
+  // IMPORTANT: Memoize this so reference only changes when spinHistory actually changes
+  const numericSpins = useMemo(() =>
+    spinHistory.length > 0
+      ? spinHistory.map(s => s.number)
+      : (() => {
+          // Demo data for when no real spins yet
+          const base = Array.from({ length: 40 }, (_, i) => {
+            let num: number;
+            if (scenario === 'red-hot') {
+              num = i % 10 < 6 ? RED_NUMBERS[i % RED_NUMBERS.length] : BLACK_NUMBERS[i % BLACK_NUMBERS.length];
+            } else if (scenario === 'volatility') {
+              num = i % 2 === 0 ? RED_NUMBERS[i % RED_NUMBERS.length] : BLACK_NUMBERS[i % BLACK_NUMBERS.length];
+            } else {
+              const arr = [...RED_NUMBERS, ...BLACK_NUMBERS, 0];
+              num = arr[i % arr.length];
+            }
+            return num;
+          });
+          return base;
+        })(),
+    [spinHistory, scenario]
+  );
   
   // Calculate races
-  const redBlack = useMemo(() => calculateRace(numericSpins, [RED_NUMBERS, BLACK_NUMBERS], ['RED', 'BLACK'], ['#EF4444', '#6B7280'], 0.5), [spins]);
-  const oddEven = useMemo(() => calculateRace(numericSpins, [ODD_NUMBERS, EVEN_NUMBERS], ['ODD', 'EVEN'], ['#F97316', '#8B5CF6'], 0.5), [spins]);
-  const lowHigh = useMemo(() => calculateRace(numericSpins, [LOW_NUMBERS, HIGH_NUMBERS], ['LOW', 'HIGH'], ['#3B82F6', '#14B8A6'], 0.5), [spins]);
-  const dozens = useMemo(() => calculateRace(numericSpins, [DOZEN1, DOZEN2, DOZEN3], ['D1', 'D2', 'D3'], ['#3B82F6', '#8B5CF6', '#EC4899'], 1/3), [spins]);
-  const columns = useMemo(() => calculateRace(numericSpins, [COL1, COL2, COL3], ['C1', 'C2', 'C3'], ['#06B6D4', '#10B981', '#84CC16'], 1/3), [spins]);
+  const redBlack = useMemo(() => calculateRace(numericSpins, [RED_NUMBERS, BLACK_NUMBERS], ['RED', 'BLACK'], ['#EF4444', '#6B7280'], 0.5), [numericSpins]);
+  const oddEven = useMemo(() => calculateRace(numericSpins, [ODD_NUMBERS, EVEN_NUMBERS], ['ODD', 'EVEN'], ['#F97316', '#8B5CF6'], 0.5), [numericSpins]);
+  const lowHigh = useMemo(() => calculateRace(numericSpins, [LOW_NUMBERS, HIGH_NUMBERS], ['LOW', 'HIGH'], ['#3B82F6', '#14B8A6'], 0.5), [numericSpins]);
+  const dozens = useMemo(() => calculateRace(numericSpins, [DOZEN1, DOZEN2, DOZEN3], ['D1', 'D2', 'D3'], ['#3B82F6', '#8B5CF6', '#EC4899'], 1/3), [numericSpins]);
+  const columns = useMemo(() => calculateRace(numericSpins, [COL1, COL2, COL3], ['C1', 'C2', 'C3'], ['#06B6D4', '#10B981', '#84CC16'], 1/3), [numericSpins]);
 
   // Table Special Races
-  const edgeCenter = useMemo(() => calculateRace(numericSpins, [EDGE_NUMBERS, CENTER_NUMBERS], ['EDGE', 'CENTER'], ['#F59E0B', '#8B5CF6'], 0.5), [spins]);
-  const sixLines = useMemo(() => calculateRace(numericSpins, [SIXLINE1, SIXLINE2, SIXLINE3, SIXLINE4, SIXLINE5, SIXLINE6], ['6L-1', '6L-2', '6L-3', '6L-4', '6L-5', '6L-6'], ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'], 1/6), [spins]);
-  const alt2Groups = useMemo(() => calculateRace(numericSpins, [ALT2_AA, ALT2_BB, ALT2_CC, ALT2_DD], ['AA (1-9)', 'BB (10-18)', 'CC (19-27)', 'DD (28-36)'], ['#EF4444', '#F97316', '#3B82F6', '#8B5CF6'], 0.25), [spins]);
+  const edgeCenter = useMemo(() => calculateRace(numericSpins, [EDGE_NUMBERS, CENTER_NUMBERS], ['EDGE', 'CENTER'], ['#F59E0B', '#8B5CF6'], 0.5), [numericSpins]);
+  const sixLines = useMemo(() => calculateRace(numericSpins, [SIXLINE1, SIXLINE2, SIXLINE3, SIXLINE4, SIXLINE5, SIXLINE6], ['6L-1', '6L-2', '6L-3', '6L-4', '6L-5', '6L-6'], ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'], 1/6), [numericSpins]);
+  const alt1Groups = useMemo(() => calculateRace(numericSpins, [ALT1_A, ALT1_B], ['A', 'B'], ['#EF4444', '#3B82F6'], 0.5), [numericSpins]);
+  const alt2Groups = useMemo(() => calculateRace(numericSpins, [ALT2_AA, ALT2_BB], ['AA', 'BB'], ['#F97316', '#8B5CF6'], 0.5), [numericSpins]);
+  const alt3Groups = useMemo(() => calculateRace(numericSpins, [ALT3_AAA, ALT3_BBB], ['AAA', 'BBB'], ['#10B981', '#EC4899'], 0.5), [numericSpins]);
 
   // Wheel Common Races
-  const wheelMajor = useMemo(() => calculateRace(numericSpins, [VOISINS, TIERS, ORPHELINS], ['Voisins', 'Tiers', 'Orphelins'], ['#EF4444', '#3B82F6', '#F59E0B'], 0.33), [spins]);
-  const voisinSplit = useMemo(() => calculateRace(numericSpins, [VOISINS, NON_VOISINS], ['Voisins', 'Non-Voisins'], ['#EF4444', '#6B7280'], 0.5), [spins]);
-  const wheelHalves = useMemo(() => calculateRace(numericSpins, [WHEEL_RIGHT, WHEEL_LEFT], ['Right 18', 'Left 18'], ['#3B82F6', '#F59E0B'], 0.5), [spins]);
-  const wheelNines = useMemo(() => calculateRace(numericSpins, [WHEEL_9_1ST, WHEEL_9_2ND, WHEEL_9_3RD, WHEEL_9_4TH], ['1st 9', '2nd 9', '3rd 9', '4th 9'], ['#EF4444', '#F97316', '#10B981', '#3B82F6'], 0.25), [spins]);
+  const wheelMajor = useMemo(() => calculateRace(numericSpins, [VOISINS, TIERS, ORPHELINS], ['Voisins', 'Tiers', 'Orphelins'], ['#EF4444', '#3B82F6', '#F59E0B'], 0.33), [numericSpins]);
+  const voisinSplit = useMemo(() => calculateRace(numericSpins, [VOISINS, NON_VOISINS], ['Voisins', 'Non-Voisins'], ['#EF4444', '#6B7280'], 0.5), [numericSpins]);
+  const wheelHalves = useMemo(() => calculateRace(numericSpins, [WHEEL_RIGHT, WHEEL_LEFT], ['Right 18', 'Left 18'], ['#3B82F6', '#F59E0B'], 0.5), [numericSpins]);
+  const wheelNines = useMemo(() => calculateRace(numericSpins, [WHEEL_9_1ST, WHEEL_9_2ND, WHEEL_9_3RD, WHEEL_9_4TH], ['1st 9', '2nd 9', '3rd 9', '4th 9'], ['#EF4444', '#F97316', '#10B981', '#3B82F6'], 0.25), [numericSpins]);
 
   // Wheel Special Races
-  const wheelAB = useMemo(() => calculateRace(numericSpins, [WHEEL_A, WHEEL_B], ['A Pattern', 'B Pattern'], ['#EF4444', '#3B82F6'], 0.5), [spins]);
-  const wheelAABB = useMemo(() => calculateRace(numericSpins, [WHEEL_AA, WHEEL_BB], ['AA Pattern', 'BB Pattern'], ['#F97316', '#8B5CF6'], 0.5), [spins]);
-  const wheelAAABBB = useMemo(() => calculateRace(numericSpins, [WHEEL_AAA, WHEEL_BBB], ['AAA Pattern', 'BBB Pattern'], ['#10B981', '#EC4899'], 0.5), [spins]);
-  const wheelA6B6 = useMemo(() => calculateRace(numericSpins, [WHEEL_A6, WHEEL_B6], ['A6 Pattern', 'B6 Pattern'], ['#06B6D4', '#F59E0B'], 0.5), [spins]);
-  const wheelA9B9 = useMemo(() => calculateRace(numericSpins, [WHEEL_A9, WHEEL_B9], ['A9 Pattern', 'B9 Pattern'], ['#8B5CF6', '#14B8A6'], 0.5), [spins]);
+  const wheelAB = useMemo(() => calculateRace(numericSpins, [WHEEL_A, WHEEL_B], ['A Pattern', 'B Pattern'], ['#EF4444', '#3B82F6'], 0.5), [numericSpins]);
+  const wheelAABB = useMemo(() => calculateRace(numericSpins, [WHEEL_AA, WHEEL_BB], ['AA Pattern', 'BB Pattern'], ['#F97316', '#8B5CF6'], 0.5), [numericSpins]);
+  const wheelAAABBB = useMemo(() => calculateRace(numericSpins, [WHEEL_AAA, WHEEL_BBB], ['AAA Pattern', 'BBB Pattern'], ['#10B981', '#EC4899'], 0.5), [numericSpins]);
+  const wheelA6B6 = useMemo(() => calculateRace(numericSpins, [WHEEL_A6, WHEEL_B6], ['A6 Pattern', 'B6 Pattern'], ['#06B6D4', '#F59E0B'], 0.5), [numericSpins]);
+  const wheelA9B9 = useMemo(() => calculateRace(numericSpins, [WHEEL_A9, WHEEL_B9], ['A9 Pattern', 'B9 Pattern'], ['#8B5CF6', '#14B8A6'], 0.5), [numericSpins]);
 
   // Analytics functions
   const hotGroups = SAMPLE_GROUPS.filter(g => g.metrics.badge === 'HOT' && g.metrics.volatility === 'STABLE');
@@ -567,7 +587,7 @@ export default function BetAdvisor() {
         {/* Header */}
         <div className="text-center mb-6">
           <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-purple-500 bg-clip-text text-transparent">
-          🎯 BET ADVISOR
+          📊 GAME STATS
           </h1>
           <p className="text-gray-400">Race Analytics + Smart Filtering + Advanced Calculator</p>
         </div>
@@ -609,36 +629,54 @@ export default function BetAdvisor() {
         {/* TOPPERS TAB - Race Analytics */}
         {mainTab === 'toppers' && (
           <>
-            {/* Scenario Selector */}
-            <div className="bg-gray-800/50 rounded-xl border border-yellow-400/30 p-4 mb-6">
+            {/* Data Source Indicator */}
+            <div className={`rounded-xl border p-4 mb-6 ${
+              spinHistory.length > 0
+                ? 'bg-green-800/30 border-green-400/30'
+                : 'bg-gray-800/50 border-yellow-400/30'
+            }`}>
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-yellow-400">Demo Scenario:</h3>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setScenario('balanced')}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                      scenario === 'balanced' ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    }`}
-                  >
-                   ⚖️ Balanced
-                  </button>
-                  <button
-                    onClick={() => setScenario('red-hot')}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                      scenario === 'red-hot' ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    }`}
-                  >
-                   🔥 Red Hot
-                  </button>
-                  <button
-                    onClick={() => setScenario('volatility')}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                      scenario === 'volatility' ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    }`}
-                  >
-                    ⚡ Volatile
-                  </button>
-                </div>
+                {spinHistory.length > 0 ? (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="text-green-400 text-lg">✓</span>
+                      <h3 className="text-sm font-bold text-green-400">Using Live Session Data</h3>
+                    </div>
+                    <div className="text-sm text-green-300">
+                      {spinHistory.length} spins analyzed
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-sm font-bold text-yellow-400">Demo Scenario (No Live Data Yet):</h3>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setScenario('balanced')}
+                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                          scenario === 'balanced' ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }`}
+                      >
+                       ⚖️ Balanced
+                      </button>
+                      <button
+                        onClick={() => setScenario('red-hot')}
+                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                          scenario === 'red-hot' ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }`}
+                      >
+                       🔥 Red Hot
+                      </button>
+                      <button
+                        onClick={() => setScenario('volatility')}
+                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                          scenario === 'volatility' ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }`}
+                      >
+                        ⚡ Volatile
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
             
@@ -647,7 +685,7 @@ export default function BetAdvisor() {
               <div className="grid grid-cols-4">
                 {[
                  { id: 'table-common' as const, icon: '📊', label: 'Table Common', count: 5 },
-                 { id: 'table-special' as const, icon: '⭐', label: 'Table Special', count: 14 },
+                 { id: 'table-special' as const, icon: '⭐', label: 'Table Special', count: 5 },
                  { id: 'wheel-common' as const, icon: '🎡', label: 'Wheel Common', count: 11 },
                  { id: 'wheel-special' as const, icon: '🎯', label: 'Wheel Special', count: 10 },
                 ].map((tab) => (
@@ -673,96 +711,173 @@ export default function BetAdvisor() {
             {/* Toppers Content */}
             <div className="space-y-6">
               {toppersTab === 'table-common' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-red-500/30 p-5 shadow-xl">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-red-400" />
-                      <h2 className="text-lg font-bold text-white">Red vs Black</h2>
-                      <div className="ml-auto text-xs text-gray-400">1:1 Payout</div>
+                <>
+                  {/* Quick Navigation */}
+                  <div className="sticky top-4 z-10 bg-gray-900/95 backdrop-blur-sm rounded-lg border border-gray-700/50 p-3 shadow-lg">
+                    <div className="text-xs font-semibold text-gray-400 mb-2">QUICK JUMP:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { id: 'red-vs-black', label: 'Red/Black' },
+                        { id: 'odd-vs-even', label: 'Odd/Even' },
+                        { id: 'low-vs-high', label: 'Low/High' },
+                        { id: 'dozens', label: 'Dozens' },
+                        { id: 'columns', label: 'Columns' }
+                      ].map(link => (
+                        <a
+                          key={link.id}
+                          href={`#${link.id}`}
+                          className="px-3 py-1 bg-gray-800 hover:bg-cyan-600 text-gray-300 hover:text-white rounded text-xs font-medium transition-all"
+                        >
+                          {link.label}
+                        </a>
+                      ))}
                     </div>
-                    <RaceTrack result={redBlack} />
                   </div>
-                  
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-orange-500/30 p-5 shadow-xl">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-orange-400" />
-                      <h2 className="text-lg font-bold text-white">Odd vs Even</h2>
-                      <div className="ml-auto text-xs text-gray-400">1:1 Payout</div>
-                    </div>
-                    <RaceTrack result={oddEven} />
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-blue-500/30 p-5 shadow-xl">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-blue-400" />
-                      <h2 className="text-lg font-bold text-white">Low vs High</h2>
-                      <div className="ml-auto text-xs text-gray-400">1:1 Payout</div>
-                    </div>
-                    <RaceTrack result={lowHigh} />
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-purple-500/30 p-5 shadow-xl">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-purple-400" />
-                      <h2 className="text-lg font-bold text-white">Dozens</h2>
-                      <div className="ml-auto text-xs text-gray-400">2:1 Payout</div>
-                    </div>
-                    <RaceTrack result={dozens} />
-                  </div>
-                  
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-green-500/30 p-5 shadow-xl lg:col-span-2">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-green-400" />
-                      <h2 className="text-lg font-bold text-white">Columns</h2>
-                      <div className="ml-auto text-xs text-gray-400">2:1 Payout</div>
-                    </div>
-                    <RaceTrack result={columns} />
-                  </div>
+
+                  <div className="grid grid-cols-1 gap-6">
+                  <EnhancedRaceCard
+                    result={redBlack}
+                    title="🔴 Red vs Black"
+                    payout="1:1"
+                    spins={numericSpins}
+                    groupNumbers={[RED_NUMBERS, BLACK_NUMBERS]}
+                  />
+
+                  <EnhancedRaceCard
+                    result={oddEven}
+                    title="🟠 Odd vs Even"
+                    payout="1:1"
+                    spins={numericSpins}
+                    groupNumbers={[ODD_NUMBERS, EVEN_NUMBERS]}
+                  />
+
+                  <EnhancedRaceCard
+                    result={lowHigh}
+                    title="🔵 Low vs High"
+                    payout="1:1"
+                    spins={numericSpins}
+                    groupNumbers={[LOW_NUMBERS, HIGH_NUMBERS]}
+                  />
+
+                  <EnhancedRaceCard
+                    result={dozens}
+                    title="🟣 Dozens"
+                    payout="2:1"
+                    spins={numericSpins}
+                    groupNumbers={[DOZEN1, DOZEN2, DOZEN3]}
+                  />
+
+                  <EnhancedRaceCard
+                    result={columns}
+                    title="🟢 Columns"
+                    payout="2:1"
+                    spins={numericSpins}
+                    groupNumbers={[COL1, COL2, COL3]}
+                  />
                 </div>
-              )}
+              </>
+            )}
               
               {toppersTab === 'table-special' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-orange-500/30 p-5 shadow-xl">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-orange-400" />
-                      <h2 className="text-lg font-bold text-white">Edge vs Center</h2>
-                      <div className="ml-auto text-xs text-gray-400">Table Position</div>
+                <>
+                  {/* Quick Navigation */}
+                  <div className="sticky top-4 z-10 bg-gray-900/95 backdrop-blur-sm rounded-lg border border-gray-700/50 p-3 shadow-lg">
+                    <div className="text-xs font-semibold text-gray-400 mb-2">QUICK JUMP:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { id: 'edge-vs-center', label: 'Edge/Center' },
+                        { id: '1st-alternate-streets', label: '1st Alt Streets' },
+                        { id: '2nd-alternate-streets', label: '2nd Alt Streets' },
+                        { id: '3rd-alternate-streets', label: '3rd Alt Streets' },
+                        { id: 'six-lines-1-36', label: 'Six Lines' }
+                      ].map(link => (
+                        <a
+                          key={link.id}
+                          href={`#${link.id}`}
+                          className="px-3 py-1 bg-gray-800 hover:bg-cyan-600 text-gray-300 hover:text-white rounded text-xs font-medium transition-all"
+                        >
+                          {link.label}
+                        </a>
+                      ))}
                     </div>
-                    <RaceTrack result={edgeCenter} />
                   </div>
 
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-purple-500/30 p-5 shadow-xl">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-purple-400" />
-                      <h2 className="text-lg font-bold text-white">Alt Groups (9s)</h2>
-                      <div className="ml-auto text-xs text-gray-400">Quarter Splits</div>
-                    </div>
-                    <RaceTrack result={alt2Groups} />
-                  </div>
+                  <div className="grid grid-cols-1 gap-6">
+                    <EnhancedRaceCard
+                      result={edgeCenter}
+                      title="🟠 Edge vs Center"
+                      payout="Table Position"
+                      spins={numericSpins}
+                      groupNumbers={[EDGE_NUMBERS, CENTER_NUMBERS]}
+                    />
 
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-pink-500/30 p-5 shadow-xl lg:col-span-2">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-pink-400" />
-                      <h2 className="text-lg font-bold text-white">Six Lines (1-36)</h2>
-                      <div className="ml-auto text-xs text-gray-400">5:1 Payout</div>
-                    </div>
-                    <RaceTrack result={sixLines} />
+                    <EnhancedRaceCard
+                      result={alt1Groups}
+                      title="🔴 1st Alternate Streets"
+                      payout="A vs B"
+                      spins={numericSpins}
+                      groupNumbers={[ALT1_A, ALT1_B]}
+                    />
+
+                    <EnhancedRaceCard
+                      result={alt2Groups}
+                      title="🟠 2nd Alternate Streets"
+                      payout="AA vs BB"
+                      spins={numericSpins}
+                      groupNumbers={[ALT2_AA, ALT2_BB]}
+                    />
+
+                    <EnhancedRaceCard
+                      result={alt3Groups}
+                      title="🟢 3rd Alternate Streets"
+                      payout="AAA vs BBB"
+                      spins={numericSpins}
+                      groupNumbers={[ALT3_AAA, ALT3_BBB]}
+                    />
+
+                    <EnhancedRaceCard
+                      result={sixLines}
+                      title="🌸 Six Lines (1-36)"
+                      payout="5:1"
+                      spins={numericSpins}
+                      groupNumbers={[SIXLINE1, SIXLINE2, SIXLINE3, SIXLINE4, SIXLINE5, SIXLINE6]}
+                    />
                   </div>
-                </div>
+                </>
               )}
 
               {toppersTab === 'wheel-common' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Major Wheel Sections */}
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-red-500/30 p-5 shadow-xl lg:col-span-2">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-red-400" />
-                      <h2 className="text-lg font-bold text-white">Major Wheel Sections</h2>
-                      <div className="ml-auto text-xs text-gray-400">French Bets</div>
+                <>
+                  {/* Quick Navigation */}
+                  <div className="sticky top-4 z-10 bg-gray-900/95 backdrop-blur-sm rounded-lg border border-gray-700/50 p-3 shadow-lg">
+                    <div className="text-xs font-semibold text-gray-400 mb-2">QUICK JUMP:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { id: 'major-wheel-sections', label: 'Major Sections' },
+                        { id: 'voisins-vs-non-voisins', label: 'Voisins/Non-Voisins' },
+                        { id: 'wheel-halves', label: 'Wheel Halves' },
+                        { id: 'wheel-quadrants-9-s', label: 'Quadrants (9s)' }
+                      ].map(link => (
+                        <a
+                          key={link.id}
+                          href={`#${link.id}`}
+                          className="px-3 py-1 bg-gray-800 hover:bg-cyan-600 text-gray-300 hover:text-white rounded text-xs font-medium transition-all"
+                        >
+                          {link.label}
+                        </a>
+                      ))}
                     </div>
-                    <RaceTrack result={wheelMajor} />
-                    <div className="mt-4 grid grid-cols-3 gap-4 text-xs">
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-6">
+                    <EnhancedRaceCard
+                      result={wheelMajor}
+                      title="🔴 Major Wheel Sections"
+                      payout="French Bets"
+                      spins={numericSpins}
+                      groupNumbers={[VOISINS, TIERS, ORPHELINS]}
+                    />
+                    <div className="grid grid-cols-3 gap-4 text-xs mb-4">
                       <div className="bg-red-900/20 rounded p-2 border border-red-500/30">
                         <div className="font-bold text-red-400 mb-1">Voisins du Zero</div>
                         <p className="text-gray-400">17 numbers around 0</p>
@@ -779,91 +894,98 @@ export default function BetAdvisor() {
                         <p className="text-gray-300 text-[10px] mt-1">17,34,6,1,20,14,31,9</p>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Voisins Split */}
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-purple-500/30 p-5 shadow-xl">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-purple-400" />
-                      <h2 className="text-lg font-bold text-white">Voisins vs Non-Voisins</h2>
-                      <div className="ml-auto text-xs text-gray-400">17 vs 20</div>
-                    </div>
-                    <RaceTrack result={voisinSplit} />
-                  </div>
+                    <EnhancedRaceCard
+                      result={voisinSplit}
+                      title="🟣 Voisins vs Non-Voisins"
+                      payout="17 vs 20"
+                      spins={numericSpins}
+                      groupNumbers={[VOISINS, NON_VOISINS]}
+                    />
 
-                  {/* Wheel Halves */}
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-blue-500/30 p-5 shadow-xl">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-blue-400" />
-                      <h2 className="text-lg font-bold text-white">Wheel Halves</h2>
-                      <div className="ml-auto text-xs text-gray-400">Right vs Left</div>
-                    </div>
-                    <RaceTrack result={wheelHalves} />
-                  </div>
+                    <EnhancedRaceCard
+                      result={wheelHalves}
+                      title="🔵 Wheel Halves"
+                      payout="Right vs Left"
+                      spins={numericSpins}
+                      groupNumbers={[WHEEL_RIGHT, WHEEL_LEFT]}
+                    />
 
-                  {/* Wheel 9's */}
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-green-500/30 p-5 shadow-xl lg:col-span-2">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-green-400" />
-                      <h2 className="text-lg font-bold text-white">Wheel Quadrants (9's)</h2>
-                      <div className="ml-auto text-xs text-gray-400">Four Sectors</div>
-                    </div>
-                    <RaceTrack result={wheelNines} />
+                    <EnhancedRaceCard
+                      result={wheelNines}
+                      title="🟢 Wheel Quadrants (9's)"
+                      payout="Four Sectors"
+                      spins={numericSpins}
+                      groupNumbers={[WHEEL_9_1ST, WHEEL_9_2ND, WHEEL_9_3RD, WHEEL_9_4TH]}
+                    />
                   </div>
-                </div>
+                </>
               )}
 
               {toppersTab === 'wheel-special' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* A/B Pattern */}
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-red-500/30 p-5 shadow-xl">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-red-400" />
-                      <h2 className="text-lg font-bold text-white">A/B Pattern</h2>
-                      <div className="ml-auto text-xs text-gray-400">Alternating</div>
+                <>
+                  {/* Quick Navigation */}
+                  <div className="sticky top-4 z-10 bg-gray-900/95 backdrop-blur-sm rounded-lg border border-gray-700/50 p-3 shadow-lg">
+                    <div className="text-xs font-semibold text-gray-400 mb-2">QUICK JUMP:</div>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { id: 'a-b-pattern', label: 'A/B Pattern' },
+                        { id: 'aa-bb-pattern', label: 'AA/BB Pattern' },
+                        { id: 'aaa-bbb-pattern', label: 'AAA/BBB Pattern' },
+                        { id: 'a6-b6-pattern', label: 'A6/B6 Pattern' },
+                        { id: 'a9-b9-pattern', label: 'A9/B9 Pattern' }
+                      ].map(link => (
+                        <a
+                          key={link.id}
+                          href={`#${link.id}`}
+                          className="px-3 py-1 bg-gray-800 hover:bg-cyan-600 text-gray-300 hover:text-white rounded text-xs font-medium transition-all"
+                        >
+                          {link.label}
+                        </a>
+                      ))}
                     </div>
-                    <RaceTrack result={wheelAB} />
                   </div>
 
-                  {/* AA/BB Pattern */}
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-orange-500/30 p-5 shadow-xl">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-orange-400" />
-                      <h2 className="text-lg font-bold text-white">AA/BB Pattern</h2>
-                      <div className="ml-auto text-xs text-gray-400">Double Alt</div>
-                    </div>
-                    <RaceTrack result={wheelAABB} />
-                  </div>
+                  <div className="grid grid-cols-1 gap-6">
+                    <EnhancedRaceCard
+                      result={wheelAB}
+                      title="🔴 A/B Pattern"
+                      payout="Alternating"
+                      spins={numericSpins}
+                      groupNumbers={[WHEEL_A, WHEEL_B]}
+                    />
 
-                  {/* AAA/BBB Pattern */}
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-green-500/30 p-5 shadow-xl">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-green-400" />
-                      <h2 className="text-lg font-bold text-white">AAA/BBB Pattern</h2>
-                      <div className="ml-auto text-xs text-gray-400">Triple Alt</div>
-                    </div>
-                    <RaceTrack result={wheelAAABBB} />
-                  </div>
+                  <EnhancedRaceCard
+                    result={wheelAABB}
+                    title="🟠 AA/BB Pattern"
+                    payout="Double Alt"
+                    spins={numericSpins}
+                    groupNumbers={[WHEEL_AA, WHEEL_BB]}
+                  />
 
-                  {/* A6/B6 Pattern */}
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-cyan-500/30 p-5 shadow-xl">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-cyan-400" />
-                      <h2 className="text-lg font-bold text-white">A6/B6 Pattern</h2>
-                      <div className="ml-auto text-xs text-gray-400">Six-Based</div>
-                    </div>
-                    <RaceTrack result={wheelA6B6} />
-                  </div>
+                  <EnhancedRaceCard
+                    result={wheelAAABBB}
+                    title="🟢 AAA/BBB Pattern"
+                    payout="Triple Alt"
+                    spins={numericSpins}
+                    groupNumbers={[WHEEL_AAA, WHEEL_BBB]}
+                  />
 
-                  {/* A9/B9 Pattern */}
-                  <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border-2 border-purple-500/30 p-5 shadow-xl">
-                    <div className="flex items-center gap-2 mb-4">
-                      <Activity className="w-5 h-5 text-purple-400" />
-                      <h2 className="text-lg font-bold text-white">A9/B9 Pattern</h2>
-                      <div className="ml-auto text-xs text-gray-400">Nine-Based</div>
-                    </div>
-                    <RaceTrack result={wheelA9B9} />
-                  </div>
+                  <EnhancedRaceCard
+                    result={wheelA6B6}
+                    title="🔵 A6/B6 Pattern"
+                    payout="Six-Based"
+                    spins={numericSpins}
+                    groupNumbers={[WHEEL_A6, WHEEL_B6]}
+                  />
+
+                  <EnhancedRaceCard
+                    result={wheelA9B9}
+                    title="🟣 A9/B9 Pattern"
+                    payout="Nine-Based"
+                    spins={numericSpins}
+                    groupNumbers={[WHEEL_A9, WHEEL_B9]}
+                  />
 
                   {/* Info Panel */}
                   <div className="lg:col-span-2 bg-blue-900/20 rounded-xl border border-blue-500/30 p-4">
@@ -882,7 +1004,8 @@ export default function BetAdvisor() {
                     </div>
                   </div>
                 </div>
-              )}
+              </>
+            )}
             </div>
             
             {/* Legend */}

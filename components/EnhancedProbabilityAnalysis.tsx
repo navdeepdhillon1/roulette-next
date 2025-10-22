@@ -433,6 +433,19 @@ export default function EnhancedProbabilityAnalysis({ history }: EnhancedProbabi
 
   return (
     <div className="space-y-6 p-4">
+      {/* Live Data Indicator */}
+      <div className="bg-green-800/30 border border-green-400/30 rounded-xl p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-green-400 text-lg">✓</span>
+            <h3 className="text-sm font-bold text-green-400">Using Live Session Data</h3>
+          </div>
+          <div className="text-sm text-green-300">
+            {analysis.totalSpins} spins analyzed from your session
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-xl border border-blue-500/30 p-6">
         <div className="flex items-center justify-between">

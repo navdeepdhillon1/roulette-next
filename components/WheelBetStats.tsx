@@ -38,7 +38,6 @@ export default function WheelBetStats({ spinHistory }: WheelBetStatsProps) {
     { id: 'voisins', name: 'Voisins', type: 'special' },
     { id: 'orphelins', name: 'Orphelins', type: 'special' },
     { id: 'tiers', name: 'Tiers', type: 'special' },
-    { id: 'jeu-zero', name: 'Jeu Zero', type: 'special' },
     { id: 'non-voisin', name: 'Non-Voisin', type: 'special' },
     
     // 18's (1:1) Groups
@@ -69,7 +68,6 @@ export default function WheelBetStats({ spinHistory }: WheelBetStatsProps) {
       case 'voisins': return [0,2,3,4,7,12,15,18,19,21,22,25,26,28,29,32,35].includes(num);
       case 'orphelins': return [1,6,9,14,17,20,31,34].includes(num);
       case 'tiers': return [5,8,10,11,13,16,23,24,27,30,33,36].includes(num);
-      case 'jeu-zero': return [0,3,12,15,26,32,35].includes(num);
       case 'non-voisin': return [1,5,6,8,9,10,11,13,14,16,17,20,23,24,27,30,31,33,34,36].includes(num);
       
       // 18's Groups
@@ -188,7 +186,6 @@ export default function WheelBetStats({ spinHistory }: WheelBetStatsProps) {
       'voisins': 45.9,
       'orphelins': 21.6,
       'tiers': 32.4,
-      'jeu-zero': 18.9,
       'non-voisin': 54.1,
       'a': 48.6, 'b': 48.6,
       'aa': 48.6, 'bb': 48.6,
@@ -201,10 +198,31 @@ export default function WheelBetStats({ spinHistory }: WheelBetStatsProps) {
     return expectations[groupId] || 0;
   };
 
-  const getRowColor = (type: string) => {
+  const getRowColor = (groupId: string, type: string) => {
+    // Pair-specific colors for the 18's groups
+    const pairColors: Record<string, string> = {
+      'a': 'bg-emerald-900/20',
+      'b': 'bg-emerald-900/20',
+      'aa': 'bg-teal-900/20',
+      'bb': 'bg-teal-900/20',
+      'aaa': 'bg-sky-900/20',
+      'bbb': 'bg-sky-900/20',
+      'a6': 'bg-indigo-900/20',
+      'b6': 'bg-indigo-900/20',
+      'a9': 'bg-violet-900/20',
+      'b9': 'bg-violet-900/20',
+      'right': 'bg-fuchsia-900/20',
+      'left': 'bg-fuchsia-900/20',
+    };
+
+    // If group has a pair color, use it
+    if (pairColors[groupId]) {
+      return pairColors[groupId];
+    }
+
+    // Otherwise use type-based color
     switch(type) {
       case 'special': return 'bg-purple-900/10';
-      case 'eighteen': return 'bg-green-900/10';
       case 'sectors': return 'bg-cyan-900/10';
       default: return '';
     }
@@ -245,9 +263,9 @@ export default function WheelBetStats({ spinHistory }: WheelBetStatsProps) {
               </th>
             </tr>
             <tr className="bg-gray-800">
-              <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">Now</th>
+              <th className="px-1 py-1 text-center border-r border-gray-700 text-xs bg-blue-900/50">Now</th>
               <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">Max</th>
-              <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">Now</th>
+              <th className="px-1 py-1 text-center border-r border-gray-700 text-xs bg-blue-900/50">Now</th>
               <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">Max</th>
               <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">L9</th>
               <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">L18</th>
@@ -289,11 +307,11 @@ export default function WheelBetStats({ spinHistory }: WheelBetStatsProps) {
               };
 
               return (
-                <tr 
-                  key={group.id} 
+                <tr
+                  key={group.id}
                   className={`
                     hover:bg-gray-800/50
-                    ${getRowColor(group.type)}
+                    ${getRowColor(group.id, group.type)}
                     ${flashingRows.has(group.id) ? 'animate-pulse' : ''}
                     ${isLastInGroup ? 'border-b-2' : 'border-b'}
                     ${isLastInGroup ? groupColors[group.type] : 'border-gray-800'}
@@ -308,7 +326,7 @@ export default function WheelBetStats({ spinHistory }: WheelBetStatsProps) {
                     {group.name}
                   </td>
                   
-                  <td className={`px-1 py-2 text-center border-r border-gray-700 ${
+                  <td className={`px-1 py-2 text-center border-r border-gray-700 bg-blue-900/20 ${
   streak.current >= 5 ? 'pulse-green' : ''
 }`}>
   <span className={streak.current >= 5 ? 'text-green-400 font-bold text-lg' : ''}>
@@ -317,7 +335,7 @@ export default function WheelBetStats({ spinHistory }: WheelBetStatsProps) {
   </span>
 </td>
                   <td className="px-1 py-2 text-center border-r border-gray-700">{streak.max}</td>
-                  <td className={`px-1 py-2 text-center border-r border-gray-700 ${
+                  <td className={`px-1 py-2 text-center border-r border-gray-700 bg-blue-900/20 ${
   absence.current >= 8 ? 'pulse-red animate-pulse bg-red-900/20' :
   absence.current >= 4 ? 'pulse-yellow' : ''
 }`}>

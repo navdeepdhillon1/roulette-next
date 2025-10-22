@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react'
 import { ArrowRight, AlertTriangle } from 'lucide-react'
-import type { SessionConfig, BettingSystemConfig, CustomSystemRules, BetAction } from '../types/bettingAssistant'
+import type { SessionConfig, BettingSystemConfig, CustomSystemRules, BetAction, SequentialProgressionRules } from '../types/bettingAssistant'
 
 interface SessionSetupProps {
   onStartSession: (config: SessionConfig) => void
@@ -67,12 +67,15 @@ const BETTING_SYSTEMS = [
 ]
 
 // Custom System Builder Component
-function CustomSystemBuilder({ baseBet, onComplete, onCancel }: { 
-  baseBet: number; 
-  onComplete: (config: BettingSystemConfig) => void; 
+function CustomSystemBuilder({ baseBet, onComplete, onCancel }: {
+  baseBet: number;
+  onComplete: (config: BettingSystemConfig) => void;
   onCancel: () => void;
 }) {
   const [step, setStep] = useState(1)
+  const [systemType, setSystemType] = useState<'outcome' | 'sequential' | null>(null)
+
+  // OLD: Outcome-based system state
   const [customRules, setCustomRules] = useState<CustomSystemRules>({
     onWin: 'same',
     onFirstLoss: 'same',
@@ -81,6 +84,16 @@ function CustomSystemBuilder({ baseBet, onComplete, onCancel }: {
     maxMultiplier: 8,
     resetAfterWin: false,
     pauseAfterLosses: null
+  })
+
+  // NEW: Sequential progression system state
+  const [sequentialRules, setSequentialRules] = useState<SequentialProgressionRules>({
+    sequence: [1, 1, 2, 2, 4, 4, 8, 8],
+    onWin: 'reset',
+    onLoss: 'moveForward1',
+    resetAfterConsecutiveWins: 2,
+    atSequenceEnd: 'stay',
+    currentPosition: 0
   })
 
   const applyAction = (action: BetAction, currentBet: number, baseAmount: number): number => {
@@ -140,28 +153,115 @@ function CustomSystemBuilder({ baseBet, onComplete, onCancel }: {
   }
 
   const handleComplete = () => {
-    const config: BettingSystemConfig = {
-      id: 'custom',
-      name: generateSystemName(),
-      description: 'Your custom betting system',
-      riskLevel: calculateRiskLevel(),
-      emoji: '✨',
-      baseBet: baseBet,
-      currentBet: baseBet,
-      consecutiveWins: 0,
-      consecutiveLosses: 0,
-      isCustom: true,
-      customRules
+    if (systemType === 'outcome') {
+      // OLD: Outcome-based system
+      const config: BettingSystemConfig = {
+        id: 'custom',
+        name: generateSystemName(),
+        description: 'Your custom betting system',
+        riskLevel: calculateRiskLevel(),
+        emoji: '✨',
+        baseBet: baseBet,
+        currentBet: baseBet,
+        consecutiveWins: 0,
+        consecutiveLosses: 0,
+        isCustom: true,
+        customRules
+      }
+      onComplete(config)
+    } else if (systemType === 'sequential') {
+      // NEW: Sequential progression system
+      const config: BettingSystemConfig = {
+        id: 'custom-sequential',
+        name: 'Custom Sequential',
+        description: 'Your custom sequential progression',
+        riskLevel: 'medium', // Will calculate based on sequence
+        emoji: '🔢',
+        baseBet: baseBet,
+        currentBet: baseBet,
+        consecutiveWins: 0,
+        consecutiveLosses: 0,
+        isCustom: true,
+        sequentialRules
+      }
+      onComplete(config)
     }
-    onComplete(config)
   }
 
   const renderQuestion = () => {
-    switch(step) {
-      case 1:
-        return (
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold text-white mb-4">Question 1: What happens after a WIN? 🎉</h3>
+    // Step 1: Choose system type
+    if (step === 1) {
+      return (
+        <div className="space-y-4">
+          <h3 className="text-2xl font-bold text-white mb-2 text-center">Choose Your System Type</h3>
+          <p className="text-gray-300 text-center mb-6">Select how you want to build your custom betting system</p>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                setSystemType('outcome')
+                setStep(2)
+              }}
+              className={`w-full p-6 rounded-xl border-2 text-left transition-all hover:scale-[1.02] ${
+                systemType === 'outcome'
+                  ? 'bg-blue-600 border-blue-400'
+                  : 'bg-gray-700/50 border-gray-600 hover:bg-gray-700'
+              }`}
+            >
+              <div className="flex items-start gap-4">
+                <div className="text-4xl">🎯</div>
+                <div className="flex-1">
+                  <h4 className="text-xl font-bold text-white mb-2">Outcome-Based System</h4>
+                  <p className="text-sm text-gray-300 mb-2">
+                    Define actions based on consecutive wins and losses
+                  </p>
+                  <div className="text-xs text-gray-400">
+                    • What to do after 1st, 2nd, 3rd win/loss<br/>
+                    • Good for traditional systems (Martingale, Paroli, etc.)<br/>
+                    • Safety limits and auto-pause options
+                  </div>
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                setSystemType('sequential')
+                setStep(2)
+              }}
+              className={`w-full p-6 rounded-xl border-2 text-left transition-all hover:scale-[1.02] ${
+                systemType === 'sequential'
+                  ? 'bg-purple-600 border-purple-400'
+                  : 'bg-gray-700/50 border-gray-600 hover:bg-gray-700'
+              }`}
+            >
+              <div className="flex items-start gap-4">
+                <div className="text-4xl">🔢</div>
+                <div className="flex-1">
+                  <h4 className="text-xl font-bold text-white mb-2">Sequential Progression System</h4>
+                  <p className="text-sm text-gray-300 mb-2">
+                    Create a custom sequence of bet multipliers
+                  </p>
+                  <div className="text-xs text-gray-400">
+                    • Define your own progression sequence (e.g., 1, 1, 2, 2, 4, 4, 8, 8)<br/>
+                    • Set movement rules (what happens on win/loss)<br/>
+                    • Perfect for modified Martingale strategies
+                  </div>
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    // Outcome-based system steps (old system - unchanged)
+    if (systemType === 'outcome') {
+      switch(step) {
+        case 2:
+          return (
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-white mb-4">Question 1: What happens after a WIN? 🎉</h3>
             <div className="space-y-3">
               {[
                 { value: 'same', label: 'Keep same bet', desc: 'Consistent - stay at current amount' },
@@ -184,8 +284,8 @@ function CustomSystemBuilder({ baseBet, onComplete, onCancel }: {
             </div>
           </div>
         )
-      
-      case 2:
+
+      case 3:
         return (
           <div className="space-y-4">
             <h3 className="text-xl font-bold text-white mb-4">Question 2: What happens after 1st LOSS? ❌</h3>
@@ -214,8 +314,8 @@ function CustomSystemBuilder({ baseBet, onComplete, onCancel }: {
             </div>
           </div>
         )
-      
-      case 3:
+
+      case 4:
         return (
           <div className="space-y-4">
             <h3 className="text-xl font-bold text-white mb-4">Question 3: What happens after 2nd CONSECUTIVE LOSS? ❌❌</h3>
@@ -246,8 +346,8 @@ function CustomSystemBuilder({ baseBet, onComplete, onCancel }: {
             </div>
           </div>
         )
-      
-      case 4:
+
+      case 5:
         return (
           <div className="space-y-4">
             <h3 className="text-xl font-bold text-white mb-4">Question 4: What happens after 3rd CONSECUTIVE LOSS? ❌❌❌</h3>
@@ -279,8 +379,8 @@ function CustomSystemBuilder({ baseBet, onComplete, onCancel }: {
             </div>
           </div>
         )
-      
-      case 5:
+
+      case 6:
         return (
           <div className="space-y-4">
             <h3 className="text-xl font-bold text-white mb-4">Question 5: Safety Settings 🛡️</h3>
@@ -351,12 +451,12 @@ function CustomSystemBuilder({ baseBet, onComplete, onCancel }: {
             </div>
           </div>
         )
-      
-      case 6:
+
+      case 7:
         const riskLevel = calculateRiskLevel()
         const systemName = generateSystemName()
         const progression = previewProgression()
-        
+
         return (
           <div className="space-y-4">
             <h3 className="text-2xl font-bold text-white mb-4">📋 Your Custom System</h3>
@@ -443,6 +543,222 @@ function CustomSystemBuilder({ baseBet, onComplete, onCancel }: {
             )}
           </div>
         )
+      }
+    }
+
+    // NEW: Sequential progression system steps
+    if (systemType === 'sequential') {
+      switch(step) {
+        case 2:
+          return (
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-white mb-4">Step 1: Choose or Create Your Sequence 🔢</h3>
+              <p className="text-gray-300 text-sm mb-4">Select a preset sequence or create your own</p>
+
+              <div className="space-y-3">
+                {[
+                  { name: 'Slow Martingale', seq: [1, 1, 2, 2, 4, 4, 8, 8], desc: 'Stay twice at each level' },
+                  { name: 'Classic Martingale', seq: [1, 2, 4, 8, 16, 32], desc: 'Traditional doubling' },
+                  { name: 'Fibonacci', seq: [1, 1, 2, 3, 5, 8, 13], desc: 'Mathematical sequence' },
+                  { name: 'Conservative', seq: [1, 1, 1, 2, 2, 3], desc: 'Minimal risk progression' },
+                ].map((preset) => (
+                  <button
+                    key={preset.name}
+                    onClick={() => setSequentialRules({...sequentialRules, sequence: preset.seq})}
+                    className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
+                      JSON.stringify(sequentialRules.sequence) === JSON.stringify(preset.seq)
+                        ? 'bg-purple-600 border-purple-400 scale-[1.02]'
+                        : 'bg-gray-700 border-gray-600 hover:bg-gray-600'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-bold text-white mb-1">{preset.name}</div>
+                        <div className="text-xs text-gray-300 mb-2">{preset.desc}</div>
+                        <div className="text-xs text-gray-400">
+                          Sequence: {preset.seq.join(' → ')}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
+
+        case 3:
+          return (
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-white mb-4">Step 2: What Happens on a WIN? 🎉</h3>
+
+              <div className="space-y-3">
+                {[
+                  { value: 'reset', label: 'Reset to start', desc: 'Go back to position 1 (safest)' },
+                  { value: 'moveBack1', label: 'Move back 1 position', desc: 'Step back in sequence' },
+                  { value: 'moveBack2', label: 'Move back 2 positions', desc: 'Jump back 2 steps' },
+                  { value: 'stay', label: 'Stay at current position', desc: 'Don\'t change position' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setSequentialRules({...sequentialRules, onWin: option.value as any})}
+                    className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
+                      sequentialRules.onWin === option.value
+                        ? 'bg-green-600 border-green-400 scale-[1.02]'
+                        : 'bg-gray-700 border-gray-600 hover:bg-gray-600'
+                    }`}
+                  >
+                    <div className="font-bold text-white mb-1">{option.label}</div>
+                    <div className="text-sm text-gray-300">{option.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
+
+        case 4:
+          return (
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-white mb-4">Step 3: What Happens on a LOSS? ❌</h3>
+
+              <div className="space-y-3">
+                {[
+                  { value: 'moveForward1', label: 'Move forward 1 position', desc: 'Advance to next step (standard)' },
+                  { value: 'moveForward2', label: 'Move forward 2 positions', desc: 'Skip ahead 2 steps (aggressive)' },
+                  { value: 'stay', label: 'Stay at current position', desc: 'Don\'t advance' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setSequentialRules({...sequentialRules, onLoss: option.value as any})}
+                    className={`w-full p-4 rounded-xl border-2 text-left transition-all ${
+                      sequentialRules.onLoss === option.value
+                        ? 'bg-red-600 border-red-400 scale-[1.02]'
+                        : 'bg-gray-700 border-gray-600 hover:bg-gray-600'
+                    }`}
+                  >
+                    <div className="font-bold text-white mb-1">{option.label}</div>
+                    <div className="text-sm text-gray-300">{option.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )
+
+        case 5:
+          return (
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-white mb-4">Step 4: Safety Rules 🛡️</h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-gray-300 mb-2 block font-semibold">Auto-reset after consecutive wins?</label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {[null, 2, 3, 5, 7].map((wins) => (
+                      <button
+                        key={wins || 'never'}
+                        onClick={() => setSequentialRules({...sequentialRules, resetAfterConsecutiveWins: wins || undefined})}
+                        className={`p-3 rounded-lg font-bold ${
+                          sequentialRules.resetAfterConsecutiveWins === wins
+                            ? 'bg-green-600 text-white'
+                            : 'bg-gray-700 text-gray-300'
+                        }`}
+                      >
+                        {wins ? `${wins} wins` : 'Never'}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    Reset to start after this many consecutive wins
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-sm text-gray-300 mb-2 block font-semibold">What to do at end of sequence?</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { value: 'stay', label: 'Stay at Last', desc: 'Cap the risk' },
+                      { value: 'reset', label: 'Reset to Start', desc: 'Start over' },
+                      { value: 'pause', label: 'Pause Betting', desc: 'Stop automatically' },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => setSequentialRules({...sequentialRules, atSequenceEnd: option.value as any})}
+                        className={`p-3 rounded-lg text-left ${
+                          sequentialRules.atSequenceEnd === option.value
+                            ? 'bg-purple-600 text-white'
+                            : 'bg-gray-700 text-gray-300'
+                        }`}
+                      >
+                        <div className="font-bold text-sm">{option.label}</div>
+                        <div className="text-xs opacity-80">{option.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+
+        case 6:
+          return (
+            <div className="space-y-4">
+              <h3 className="text-2xl font-bold text-white mb-4">📋 Your Sequential System</h3>
+
+              <div className="bg-purple-900/30 border-2 border-purple-500 rounded-xl p-4">
+                <h4 className="text-xl font-bold text-white mb-3">Sequence Preview</h4>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {sequentialRules.sequence.map((mult, idx) => (
+                    <div key={idx} className="bg-purple-600 px-3 py-2 rounded-lg">
+                      <div className="text-xs text-purple-200">Pos {idx + 1}</div>
+                      <div className="text-lg font-bold text-white">{mult}x</div>
+                      <div className="text-xs text-purple-200">${baseBet * mult}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">On Win:</span>
+                    <span className="text-white font-bold">
+                      {sequentialRules.onWin === 'reset' ? 'Reset to start' :
+                       sequentialRules.onWin === 'moveBack1' ? 'Move back 1' :
+                       sequentialRules.onWin === 'moveBack2' ? 'Move back 2' : 'Stay'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">On Loss:</span>
+                    <span className="text-white font-bold">
+                      {sequentialRules.onLoss === 'moveForward1' ? 'Move forward 1' :
+                       sequentialRules.onLoss === 'moveForward2' ? 'Move forward 2' : 'Stay'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">Auto-reset:</span>
+                    <span className="text-white font-bold">
+                      {sequentialRules.resetAfterConsecutiveWins ? `After ${sequentialRules.resetAfterConsecutiveWins} wins` : 'Never'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-300">At sequence end:</span>
+                    <span className="text-white font-bold">
+                      {sequentialRules.atSequenceEnd === 'stay' ? 'Stay at last' :
+                       sequentialRules.atSequenceEnd === 'reset' ? 'Reset to start' : 'Pause betting'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-black/40 rounded-xl p-4">
+                <h4 className="font-bold text-white mb-3">Example Progression</h4>
+                <div className="text-xs text-gray-300 space-y-1">
+                  <div>Start: ${baseBet} ({sequentialRules.sequence[0]}x)</div>
+                  <div>Loss → ${baseBet * sequentialRules.sequence[1]} ({sequentialRules.sequence[1]}x)</div>
+                  <div>Loss → ${baseBet * sequentialRules.sequence[2]} ({sequentialRules.sequence[2]}x)</div>
+                  <div>Win → {sequentialRules.onWin === 'reset' ? `${baseBet} (reset)` : `Move back in sequence`}</div>
+                </div>
+              </div>
+            </div>
+          )
+      }
     }
   }
 
@@ -452,13 +768,18 @@ function CustomSystemBuilder({ baseBet, onComplete, onCancel }: {
         <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6">
           <h2 className="text-3xl font-bold text-white mb-2">🛠️ Build Your System</h2>
           <div className="flex gap-2">
-            {[1, 2, 3, 4, 5, 6].map(s => (
-              <div key={s} className={`flex-1 h-2 rounded-full ${
-                s < step ? 'bg-white' : s === step ? 'bg-white/70' : 'bg-white/20'
-              }`} />
-            ))}
+            {Array.from({ length: systemType === 'outcome' ? 7 : systemType === 'sequential' ? 6 : 1 }).map((_, i) => {
+              const s = i + 1
+              return (
+                <div key={s} className={`flex-1 h-2 rounded-full ${
+                  s < step ? 'bg-white' : s === step ? 'bg-white/70' : 'bg-white/20'
+                }`} />
+              )
+            })}
           </div>
-          <p className="text-white/80 text-sm mt-2">Step {step} of 6</p>
+          <p className="text-white/80 text-sm mt-2">
+            Step {step} of {systemType === 'outcome' ? 7 : systemType === 'sequential' ? 6 : 1}
+          </p>
         </div>
 
         <div className="p-6">
@@ -480,19 +801,29 @@ function CustomSystemBuilder({ baseBet, onComplete, onCancel }: {
               ← Back
             </button>
           )}
-          {step < 6 ? (
+          {(() => {
+            const maxStep = systemType === 'outcome' ? 7 : systemType === 'sequential' ? 6 : 1
+            const isLastStep = step >= maxStep
+
+            if (step === 1 || !isLastStep) {
+              return null // On step 1, clicking a choice advances automatically
+            }
+
+            return (
+              <button
+                onClick={handleComplete}
+                className="flex-1 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg font-bold"
+              >
+                ✅ Use This System
+              </button>
+            )
+          })()}
+          {step > 1 && step < (systemType === 'outcome' ? 7 : systemType === 'sequential' ? 6 : 1) && (
             <button
               onClick={() => setStep(step + 1)}
               className="flex-1 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-bold flex items-center justify-center gap-2"
             >
               Next <ArrowRight size={20} />
-            </button>
-          ) : (
-            <button
-              onClick={handleComplete}
-              className="flex-1 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-lg font-bold"
-            >
-              ✅ Use This System
             </button>
           )}
         </div>
@@ -568,89 +899,79 @@ export default function SessionSetup({ onStartSession }: SessionSetupProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-center mb-4">
-          <div className="bg-purple-600/20 border border-purple-500/40 rounded-full px-4 py-1 text-xs font-bold text-purple-300">
+        <div className="flex justify-center mb-2">
+          <div className="bg-purple-600/20 border border-purple-500/40 rounded-full px-3 py-0.5 text-xs font-bold text-purple-300">
             v1.2.1 🔒 Feature Locked
           </div>
         </div>
-        
-        <h1 className="text-4xl font-bold text-yellow-400 mb-4 text-center">🎯 Session Setup</h1>
-        
-        <div className="bg-black/40 backdrop-blur rounded-xl border border-yellow-400/30 p-4 mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-gray-400 font-semibold">Setup Progress</span>
-            <span className="text-sm text-yellow-400 font-bold">4 Steps to Complete</span>
+
+        <h1 className="text-3xl font-bold text-yellow-400 mb-3 text-center">🎯 Session Setup</h1>
+
+        <div className="bg-black/40 backdrop-blur rounded-lg border border-yellow-400/30 p-2 mb-3">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-gray-400 font-semibold">Setup Progress</span>
+            <span className="text-xs text-yellow-400 font-bold">4 Steps to Complete</span>
           </div>
-          <div className="flex gap-2">
-            <div className="flex-1 h-2 bg-blue-500 rounded-full"></div>
-            <div className="flex-1 h-2 bg-orange-500 rounded-full"></div>
-            <div className="flex-1 h-2 bg-green-500 rounded-full"></div>
-            <div className="flex-1 h-2 bg-yellow-500 rounded-full"></div>
+          <div className="flex gap-1">
+            <div className="flex-1 h-1.5 bg-blue-500 rounded-full"></div>
+            <div className="flex-1 h-1.5 bg-orange-500 rounded-full"></div>
+            <div className="flex-1 h-1.5 bg-green-500 rounded-full"></div>
+            <div className="flex-1 h-1.5 bg-yellow-500 rounded-full"></div>
           </div>
         </div>
 
-        <div className="bg-black/40 backdrop-blur rounded-xl border border-yellow-400/30 p-8 space-y-8">
+        <div className="bg-black/40 backdrop-blur rounded-lg border border-yellow-400/30 p-4 space-y-4">
           
           {/* STEP 1: BET TYPE */}
-          <div className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 rounded-xl p-6 border-2 border-blue-500/40">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center font-bold text-xl">1</div>
-              <h2 className="text-2xl font-bold text-blue-300">Choose Bet Type</h2>
+          <div className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 rounded-lg p-3 border border-blue-500/40">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center font-bold text-sm">1</div>
+              <h2 className="text-lg font-bold text-blue-300">Choose Bet Type</h2>
             </div>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <button onClick={() => setBetMode('table')} className={`p-6 rounded-xl border-2 ${betMode === 'table' ? 'bg-blue-600 border-blue-400' : 'bg-gray-700 border-gray-600'}`}>
-                <div className="text-4xl mb-2">🎰</div>
-                <div className="text-xl font-bold text-white">Table</div>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <button onClick={() => setBetMode('table')} className={`p-3 rounded-lg border ${betMode === 'table' ? 'bg-blue-600 border-blue-400' : 'bg-gray-700 border-gray-600'}`}>
+                <div className="text-2xl mb-1">🎰</div>
+                <div className="text-sm font-bold text-white">Table</div>
               </button>
-              <button onClick={() => setBetMode('wheel')} className={`p-6 rounded-xl border-2 ${betMode === 'wheel' ? 'bg-purple-600 border-purple-400' : 'bg-gray-700 border-gray-600'}`}>
-                <div className="text-4xl mb-2">⚙️</div>
-                <div className="text-xl font-bold text-white">Wheel</div>
+              <button onClick={() => setBetMode('wheel')} className={`p-3 rounded-lg border ${betMode === 'wheel' ? 'bg-purple-600 border-purple-400' : 'bg-gray-700 border-gray-600'}`}>
+                <div className="text-2xl mb-1">⚙️</div>
+                <div className="text-sm font-bold text-white">Wheel</div>
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <button onClick={() => setBetCategory('common')} className={`p-5 rounded-xl border-2 ${betCategory === 'common' ? 'bg-green-600 border-green-400' : 'bg-gray-700 border-gray-600'}`}>
-                <div className="text-3xl mb-2">✅</div>
-                <div className="text-lg font-bold text-white">Common</div>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => setBetCategory('common')} className={`p-2.5 rounded-lg border ${betCategory === 'common' ? 'bg-green-600 border-green-400' : 'bg-gray-700 border-gray-600'}`}>
+                <div className="text-xl mb-1">✅</div>
+                <div className="text-sm font-bold text-white">Common</div>
               </button>
-              <button onClick={() => setBetCategory('special')} className={`p-5 rounded-xl border-2 ${betCategory === 'special' ? 'bg-orange-600 border-orange-400' : 'bg-gray-700 border-gray-600'}`}>
-                <div className="text-3xl mb-2">⭐</div>
-                <div className="text-lg font-bold text-white">Special</div>
+              <button onClick={() => setBetCategory('special')} className={`p-2.5 rounded-lg border ${betCategory === 'special' ? 'bg-orange-600 border-orange-400' : 'bg-gray-700 border-gray-600'}`}>
+                <div className="text-xl mb-1">⭐</div>
+                <div className="text-sm font-bold text-white">Special</div>
               </button>
             </div>
           </div>
 
           {/* STEP 2: BETTING SYSTEM */}
-          <div className="bg-gradient-to-br from-orange-900/30 to-red-900/30 rounded-xl p-6 border-2 border-orange-500/40">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center font-bold text-xl">2</div>
-              <h2 className="text-2xl font-bold text-orange-300">Select Betting System</h2>
-            </div>
-            
-            <div className="mb-4">
-              <label className="text-sm text-gray-300 mb-2 block font-semibold">Base Bet Amount</label>
-              <input
-                type="number"
-                value={baseBet}
-                onChange={(e) => setBaseBet(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-full px-4 py-3 bg-gray-700 text-white rounded-lg text-xl font-bold text-center"
-              />
+          <div className="bg-gradient-to-br from-orange-900/30 to-red-900/30 rounded-lg p-3 border border-orange-500/40">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded-full bg-orange-500 flex items-center justify-center font-bold text-sm">2</div>
+              <h2 className="text-lg font-bold text-orange-300">Select Betting System</h2>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {BETTING_SYSTEMS.map((system) => (
                 <div key={system.id}>
                   <button
                     onClick={() => setSelectedSystem(system.id)}
-                    className={`w-full p-4 rounded-xl border-2 text-left ${selectedSystem === system.id ? 'bg-orange-600 border-orange-400 scale-[1.02]' : 'bg-gray-700 border-gray-600'}`}
+                    className={`w-full p-2 rounded-lg border text-left ${selectedSystem === system.id ? 'bg-orange-600 border-orange-400' : 'bg-gray-700 border-gray-600'}`}
                   >
                     <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3 flex-1">
-                        <span className="text-3xl">{system.emoji}</span>
+                      <div className="flex items-start gap-2 flex-1">
+                        <span className="text-xl">{system.emoji}</span>
                         <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-bold text-white">{system.name}</h3>
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <h3 className="text-sm font-bold text-white">{system.name}</h3>
                             <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
                               system.riskLevel === 'low' ? 'bg-green-600' :
                               system.riskLevel === 'medium' ? 'bg-yellow-600' : 'bg-red-600'
@@ -658,7 +979,7 @@ export default function SessionSetup({ onStartSession }: SessionSetupProps) {
                               {system.riskLevel.toUpperCase()}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-300">{system.description}</p>
+                          <p className="text-xs text-gray-300">{system.description}</p>
                         </div>
                       </div>
                       <span
@@ -758,55 +1079,67 @@ export default function SessionSetup({ onStartSession }: SessionSetupProps) {
           </div>
 
           {/* STEP 3: SESSION SETTINGS */}
-          <div className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 rounded-xl p-6 border-2 border-green-500/40">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center font-bold text-xl">3</div>
-              <h2 className="text-2xl font-bold text-green-300">Configure Session</h2>
+          <div className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 rounded-lg p-3 border border-green-500/40">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center font-bold text-sm">3</div>
+              <h2 className="text-lg font-bold text-green-300">Configure Session</h2>
             </div>
             
-            <div className="bg-black/30 rounded-lg p-4 mb-4">
-              <h3 className="text-sm font-bold text-green-300 mb-3 flex items-center gap-2">
+            <div className="bg-black/30 rounded-lg p-2 mb-2">
+              <h3 className="text-xs font-bold text-green-300 mb-2 flex items-center gap-1.5">
                 💰 Bankroll & Limits
               </h3>
-              <div className="grid grid-cols-3 gap-3">
+
+              <div className="mb-2">
+                <label className="text-xs text-gray-400 mb-1 block">Base Bet Amount</label>
+                <input
+                  type="number"
+                  value={baseBet}
+                  onChange={(e) => setBaseBet(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg text-center font-bold"
+                />
+                <p className="text-[10px] text-gray-400 mt-1">Amount per bet (used by betting system)</p>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Starting Bankroll</label>
-                  <input 
-                    type="number" 
-                    value={bankroll} 
+                  <input
+                    type="number"
+                    value={bankroll}
                     onChange={(e) => setBankroll(Math.max(0, Number(e.target.value)))}
-                    className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg text-center font-bold" 
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg text-center font-bold"
                   />
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Stop Loss Limit</label>
-                  <input 
-                    type="number" 
-                    value={stopLoss} 
+                  <input
+                    type="number"
+                    value={stopLoss}
                     onChange={(e) => setStopLoss(Math.max(0, Number(e.target.value)))}
-                    className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg text-center font-bold" 
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg text-center font-bold"
                   />
                   <p className="text-[10px] text-red-400 mt-1">End if down by this</p>
                 </div>
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Profit Target</label>
-                  <input 
-                    type="number" 
-                    value={stopProfit} 
+                  <input
+                    type="number"
+                    value={stopProfit}
                     onChange={(e) => setStopProfit(Math.max(0, Number(e.target.value)))}
-                    className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg text-center font-bold" 
+                    className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg text-center font-bold"
                   />
                   <p className="text-[10px] text-green-400 mt-1">End if up by this</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-black/30 rounded-lg p-4">
-              <h3 className="text-sm font-bold text-green-300 mb-3 flex items-center gap-2">
+            <div className="bg-black/30 rounded-lg p-2">
+              <h3 className="text-xs font-bold text-green-300 mb-2 flex items-center gap-1.5">
                 🎴 Card Configuration
               </h3>
               
-              <div className="grid grid-cols-2 gap-3 mb-3">
+              <div className="grid grid-cols-2 gap-2 mb-2">
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Card Value (% of Bankroll)</label>
                   <div className="flex gap-2 items-center">
@@ -890,12 +1223,12 @@ export default function SessionSetup({ onStartSession }: SessionSetupProps) {
 
           {/* STEP 4: START SESSION */}
           <div className="text-center">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-yellow-500 flex items-center justify-center font-bold text-xl">4</div>
-              <h2 className="text-2xl font-bold text-yellow-300">Ready to Begin</h2>
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded-full bg-yellow-500 flex items-center justify-center font-bold text-sm">4</div>
+              <h2 className="text-lg font-bold text-yellow-300">Ready to Begin</h2>
             </div>
             <button onClick={handleStart}
-              className="w-full py-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-black rounded-lg font-bold text-xl hover:scale-105 transition-transform shadow-2xl">
+              className="w-full py-3 bg-gradient-to-r from-yellow-400 to-orange-500 text-black rounded-lg font-bold text-lg hover:scale-105 transition-transform shadow-2xl">
               🚀 Start Session
             </button>
           </div>

@@ -149,6 +149,7 @@ export default function CompactBettingCard(props: any) {
         <FloatingBettingCard
           card={cardData}
           bettingSystem={props.bettingSystem}
+          sessionConfig={props.sessionConfig} 
 onPlaceBet={props.onPlaceBet}
           onClose={props.onBack}
           onCardComplete={props.onCardComplete || ((pnl) => {
@@ -283,6 +284,7 @@ function FloatingCardsPortal() {
 function FloatingBettingCard({ 
   card, 
   bettingSystem,
+  sessionConfig,
   onPlaceBet,
   onClose, 
   onCardComplete,
@@ -290,11 +292,35 @@ function FloatingBettingCard({
 }: {
   card: CardData
   bettingSystem?: any
-  onPlaceBet?: (betType: string, betAmount: number, outcome: 'win' | 'loss', winAmount: number, numberHit: number) => void 
+  sessionConfig?: any
+  onPlaceBet?: (
+    betType: string, 
+    betAmount: number, 
+    outcome: 'win' | 'loss', 
+    winAmount: number, 
+    numberHit: number,
+    bettingMatrix: Record<string, number>,
+    groupResults: Record<string, number>
+  ) => void
   onClose: () => void
   onCardComplete: (pnl: number) => void
   onNumberAdded: (number: number) => void
 }) {
+// ✅ ADD THESE 3 LINES HERE (between line 308 and 309)
+console.log('🔍 SESSION CONFIG:', sessionConfig)
+console.log('🔍 betMode:', sessionConfig?.betMode)
+console.log('🔍 betCategory:', sessionConfig?.betCategory)
+
+const [bettingTab, setBettingTab] = useState<'table-common' | 'table-special' | 'wheel-common' | 'wheel-special'>('table-common')
+
+// Update tab when sessionConfig changes
+useEffect(() => {
+  if (sessionConfig?.betMode && sessionConfig?.betCategory) {
+    const tab = `${sessionConfig.betMode}-${sessionConfig.betCategory}` as 'table-common' | 'table-special' | 'wheel-common' | 'wheel-special'
+    setBettingTab(tab)
+  }
+}, [sessionConfig])
+
   const [position, setPosition] = useState({ 
     x: typeof window !== 'undefined' ? window.innerWidth / 2 : 800, 
     y: 0 
@@ -325,7 +351,6 @@ const baseUnit = systemState.currentBet
   const [useSystemAmount, setUseSystemAmount] = useState(true)
   const [showMatrix, setShowMatrix] = useState(true)
   const [showBettingGroups, setShowBettingGroups] = useState(true)
-  const [bettingTab, setBettingTab] = useState<'table-common' | 'table-special' | 'wheel-common' | 'wheel-special'>('table-common')
   const [betOrder, setBetOrder] = useState<Array<{key: BetKey, amount: number}>>([])
   // Initialize from card props (source of truth)
 const [cardProgress, setCardProgress] = useState({ 
@@ -342,6 +367,13 @@ useEffect(() => {
 }, [card.betsUsed, card.currentTotal])
   const [lastBets, setLastBets] = useState<Record<BetKey, number>>({} as any)
   const [matrixTab, setMatrixTab] = useState<'table-common' | 'table-special' | 'wheel-common' | 'wheel-special'>('table-common')
+  // Sync matrix tab with sessionConfig
+useEffect(() => {
+  if (sessionConfig?.betMode && sessionConfig?.betCategory) {
+    const tab = `${sessionConfig.betMode}-${sessionConfig.betCategory}` as 'table-common' | 'table-special' | 'wheel-common' | 'wheel-special'
+    setMatrixTab(tab)
+  }
+}, [sessionConfig])
   const { openCard } = useCardManager()
   const betLabels: Record<BetKey, string> = {
     red: 'Red', black: 'Black', even: 'Even', odd: 'Odd',
@@ -524,18 +556,18 @@ const newBetsUsed = cardProgress.betsUsed + 1
 const newPnL = cardProgress.currentPnL + totalPnL
 setCardProgress({ betsUsed: newBetsUsed, currentPnL: newPnL })
 
-// Sync to BettingAssistant - ONE CALL PER SPIN (not per bet type)
+// ✅ NEW CODE - Pass complete betting matrix:
 if (onPlaceBet) {
-  // Calculate total wagered this spin
   const totalWagered = Object.values(currentBets).reduce((sum, val) => sum + (val || 0), 0)
   
-  // One call with the net result of this entire spin
   onPlaceBet(
-    `Spin #${newBetsUsed}`,            // Label it as a spin, not individual bets
-    totalWagered,                       // Total amount wagered this spin
-    totalPnL >= 0 ? 'win' : 'loss',    // Net outcome
-    totalPnL >= 0 ? totalWagered + totalPnL : 0,  // Total returned
-    num                                 // Number that hit
+    `Spin #${newBetsUsed}`,
+    totalWagered,
+    totalPnL >= 0 ? 'win' : 'loss',
+    totalPnL >= 0 ? totalWagered + totalPnL : 0,
+    num,
+    currentBets,  // ✅ ADD THIS: Complete betting matrix
+    results       // ✅ ADD THIS: Results per group
   )
 }
 
@@ -815,7 +847,7 @@ if (newPnL >= card.target) {
                           : 'bg-gray-800/50 text-cyan-300/70 hover:bg-gray-700/50'
                       }`}
                     >
-                      📊 Table Common (12)
+                      📊 Table Common
                     </button>
                     <button
                       onClick={() => setMatrixTab('table-special')}
@@ -825,7 +857,7 @@ if (newPnL >= card.target) {
                           : 'bg-gray-800/50 text-purple-300/70 hover:bg-gray-700/50'
                       }`}
                     >
-                      ⭐ Table Special (14)
+                      ⭐ Table Special
                     </button>
                     <button
                       onClick={() => setMatrixTab('wheel-common')}
@@ -835,7 +867,7 @@ if (newPnL >= card.target) {
                           : 'bg-gray-800/50 text-orange-300/70 hover:bg-gray-700/50'
                       }`}
                     >
-                      🎡 Wheel Common (12)
+                      🎡 Wheel Common
                     </button>
                     <button
                       onClick={() => setMatrixTab('wheel-special')}
@@ -845,7 +877,7 @@ if (newPnL >= card.target) {
                           : 'bg-gray-800/50 text-emerald-300/70 hover:bg-gray-700/50'
                       }`}
                     >
-                      🎯 Wheel Special (9)
+                      🎯 Wheel Special
                     </button>
                   </div>
                 </div>
@@ -1299,50 +1331,50 @@ if (newPnL >= card.target) {
               <div className="p-3">
                 {/* TABLE COMMON TAB */}
                 {bettingTab === 'table-common' && (
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     {/* Colors */}
-                    <div className="bg-gray-800/50 rounded-lg border border-red-500/30 p-2">
-                      <h4 className="text-xs font-bold text-red-400 mb-2">Colors (1:1)</h4>
+                    <div className="bg-gray-800/50 rounded border border-red-500/30 p-1.5">
+                      <h4 className="text-xs font-bold text-red-400 mb-1">Colors (1:1)</h4>
                       <div className="grid grid-cols-2 gap-1">
-                        <button onClick={() => placeBet('red')} className="bg-red-600 text-white px-2 py-1.5 rounded text-xs font-bold relative">
+                        <button onClick={() => placeBet('red')} className="bg-red-600 text-white px-2 py-1 rounded text-xs font-bold relative">
                           Red {currentBets['red'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['red']}</span>}
                         </button>
-                        <button onClick={() => placeBet('black')} className="bg-gray-900 border border-gray-600 text-white px-2 py-1.5 rounded text-xs font-bold relative">
+                        <button onClick={() => placeBet('black')} className="bg-gray-900 border border-gray-600 text-white px-2 py-1 rounded text-xs font-bold relative">
                           Black {currentBets['black'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['black']}</span>}
                         </button>
                       </div>
                     </div>
 
                     {/* Even/Odd */}
-                    <div className="bg-gray-800/50 rounded-lg border border-blue-500/30 p-2">
-                      <h4 className="text-xs font-bold text-blue-400 mb-2">Even/Odd (1:1)</h4>
+                    <div className="bg-gray-800/50 rounded border border-blue-500/30 p-1.5">
+                      <h4 className="text-xs font-bold text-blue-400 mb-1">Even/Odd (1:1)</h4>
                       <div className="grid grid-cols-2 gap-1">
-                        <button onClick={() => placeBet('even')} className="bg-blue-600 text-white px-2 py-1.5 rounded text-xs font-bold relative">
+                        <button onClick={() => placeBet('even')} className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold relative">
                           Even {currentBets['even'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['even']}</span>}
                         </button>
-                        <button onClick={() => placeBet('odd')} className="bg-orange-600 text-white px-2 py-1.5 rounded text-xs font-bold relative">
+                        <button onClick={() => placeBet('odd')} className="bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold relative">
                           Odd {currentBets['odd'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['odd']}</span>}
                         </button>
                       </div>
                     </div>
 
                     {/* Low/High */}
-                    <div className="bg-gray-800/50 rounded-lg border border-purple-500/30 p-2">
-                      <h4 className="text-xs font-bold text-purple-400 mb-2">Low/High (1:1)</h4>
+                    <div className="bg-gray-800/50 rounded border border-purple-500/30 p-1.5">
+                      <h4 className="text-xs font-bold text-purple-400 mb-1">Low/High (1:1)</h4>
                       <div className="grid grid-cols-2 gap-1">
-                        <button onClick={() => placeBet('low')} className="bg-purple-600 text-white px-2 py-1.5 rounded text-xs font-bold relative">
+                        <button onClick={() => placeBet('low')} className="bg-purple-600 text-white px-2 py-1 rounded text-xs font-bold relative">
                           Low (1-18) {currentBets['low'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['low']}</span>}
                         </button>
-                        <button onClick={() => placeBet('high')} className="bg-pink-600 text-white px-2 py-1.5 rounded text-xs font-bold relative">
+                        <button onClick={() => placeBet('high')} className="bg-pink-600 text-white px-2 py-1 rounded text-xs font-bold relative">
                           High (19-36) {currentBets['high'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['high']}</span>}
                         </button>
                       </div>
                     </div>
 
                     {/* Dozens & Columns */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-gray-800/50 rounded-lg border border-amber-500/30 p-2">
-                        <h4 className="text-xs font-bold text-amber-400 mb-2">Dozens (2:1)</h4>
+                    <div className="grid grid-cols-2 gap-1">
+                      <div className="bg-gray-800/50 rounded border border-amber-500/30 p-1.5">
+                        <h4 className="text-xs font-bold text-amber-400 mb-1">Dozens (2:1)</h4>
                         <div className="grid grid-cols-3 gap-1">
                           {['dozen1', 'dozen2', 'dozen3'].map((bet, i) => (
                             <button key={bet} onClick={() => placeBet(bet as BetKey)} className="bg-amber-600 text-white px-1 py-1 rounded text-[9px] font-bold relative">
@@ -1353,8 +1385,8 @@ if (newPnL >= card.target) {
                         </div>
                       </div>
 
-                      <div className="bg-gray-800/50 rounded-lg border border-emerald-500/30 p-2">
-                        <h4 className="text-xs font-bold text-emerald-400 mb-2">Columns (2:1)</h4>
+                      <div className="bg-gray-800/50 rounded border border-emerald-500/30 p-1.5">
+                        <h4 className="text-xs font-bold text-emerald-400 mb-1">Columns (2:1)</h4>
                         <div className="grid grid-cols-3 gap-1">
                           {['col1', 'col2', 'col3'].map((bet, i) => (
                             <button key={bet} onClick={() => placeBet(bet as BetKey)} className="bg-emerald-600 text-white px-1 py-1 rounded text-[9px] font-bold relative">

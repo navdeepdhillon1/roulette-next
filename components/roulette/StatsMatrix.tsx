@@ -28,8 +28,8 @@ export default function StatsMatrix({ groupStats, spinsCount }: StatsMatrixProps
   if (!groupStats) return null
   return (
     <div className="bg-gray-700 rounded-lg overflow-hidden">
-      <div className="bg-gradient-to-r from-green-700 to-green-900 text-white p-4">
-        <h3 className="text-xl font-bold">Complete Statistical Analysis & Tracking</h3>
+      <div className="bg-gradient-to-r from-green-700 to-green-900 text-white p-2">
+        <h3 className="text-base font-bold">Complete Statistical Analysis & Tracking</h3>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
@@ -64,9 +64,9 @@ export default function StatsMatrix({ groupStats, spinsCount }: StatsMatrixProps
                 <td className="text-center py-1 px-1">{group.l18}</td>
                 <td className="text-center py-1 px-1">{group.l27}</td>
                 <td className="text-center py-1 px-1 border-r border-gray-600">{group.l36}</td>
-                <td className={`text-center py-1 px-1 ${group.absenceNow > 10 ? 'text-orange-400' : group.absenceNow > 5 ? 'text-yellow-400' : 'text-gray-300'}`}>{group.absenceNow}</td>
+                <td className={`text-center py-1 px-1 ${group.absenceNow > 3 ? 'text-orange-400 animate-pulse font-bold' : 'text-gray-300'}`}>{group.absenceNow}</td>
                 <td className="text-center py-1 px-1 border-r border-gray-600">{group.absenceMax}</td>
-                <td className={`text-center py-1 px-1 ${group.consecutiveNow > 0 ? 'text-green-400' : 'text-gray-400'}`}>{group.consecutiveNow}</td>
+                <td className={`text-center py-1 px-1 ${group.consecutiveNow > 3 ? 'text-green-400 animate-pulse font-bold' : group.consecutiveNow > 0 ? 'text-green-400' : 'text-gray-400'}`}>{group.consecutiveNow}</td>
                 <td className="text-center py-1 px-1 border-r border-gray-600">{group.consecutiveMax}</td>
                 <td className="text-center py-1 px-1 text-blue-400 font-bold border-r border-gray-600">{group.lastSpin}</td>
                 <td className="text-center py-1 px-2 font-semibold border-r border-gray-600">{group.percentage.toFixed(1)}</td>

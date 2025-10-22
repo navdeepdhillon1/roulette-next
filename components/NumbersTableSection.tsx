@@ -30,7 +30,7 @@ const NumbersTableSection: React.FC<NumbersTableSectionProps> = ({
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
-          <tr className="border-b border-gray-700">
+          <tr className="border-b border-gray-700 text-gray-300">
             <th className="text-left p-1">Num</th>
             <th className="text-center p-1" colSpan={2}>Streak</th>
             <th className="text-center p-1" colSpan={2}>Absence</th>
@@ -68,32 +68,32 @@ const NumbersTableSection: React.FC<NumbersTableSectionProps> = ({
             >
               <td className="p-1 font-bold">
                 <span className={`
-                  ${stat.number === 0 ? 'text-green-400' : ''}
+                  ${stat.number === 0 ? 'text-green-400' : 'text-gray-200'}
                 `}>
                   {stat.number}
                 </span>
               </td>
-              <td className="p-1 text-center">{stat.streak}</td>
+              <td className="p-1 text-center text-gray-200">{stat.streak}</td>
               <td className="p-1 text-center text-gray-400">{stat.maxStreak}</td>
               <td className="p-1 text-center">
-                <span className={stat.absence > 40 ? 'text-yellow-400' : ''}>
+                <span className={stat.absence > 40 ? 'text-yellow-400' : 'text-gray-200'}>
                   {stat.absence}
                   {stat.absence > 50 && ' ⚠️'}
                 </span>
               </td>
               <td className="p-1 text-center text-gray-400">{stat.maxAbsence}</td>
-              <td className="p-1 text-center">{stat.L9}</td>
-              <td className="p-1 text-center">{stat.L18}</td>
-              <td className="p-1 text-center">{stat.L27}</td>
-              <td className="p-1 text-center">{stat.L36}</td>
-              <td className="p-1 text-center">{stat.actualPercent.toFixed(1)}</td>
+              <td className="p-1 text-center text-gray-200">{stat.L9}</td>
+              <td className="p-1 text-center text-gray-200">{stat.L18}</td>
+              <td className="p-1 text-center text-gray-200">{stat.L27}</td>
+              <td className="p-1 text-center text-gray-200">{stat.L36}</td>
+              <td className="p-1 text-center text-gray-200">{stat.actualPercent.toFixed(1)}</td>
               <td className="p-1 text-center text-gray-400">2.7</td>
               <td className={`p-1 text-center ${
                 stat.deviation > 10 ? 'text-red-400' :
                 stat.deviation > 5 ? 'text-yellow-400' :
                 stat.deviation < -10 ? 'text-blue-400' :
                 stat.deviation < -5 ? 'text-cyan-400' :
-                ''
+                'text-gray-200'
               }`}>
                 {stat.deviation > 0 ? '+' : ''}{stat.deviation.toFixed(1)}
               </td>
@@ -102,7 +102,7 @@ const NumbersTableSection: React.FC<NumbersTableSectionProps> = ({
                 stat.temperature === 'HOT' ? 'text-red-400' :
                 stat.temperature === 'COLD' ? 'text-blue-400' :
                 stat.temperature === 'VERY COLD' ? 'text-blue-500' :
-                ''
+                'text-gray-300'
               }`}>
                 {stat.temperature}
               </td>

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, Target, Zap, Award, AlertTriangle, BarChart3 } from 'lucide-react';
+import CompletePerformanceTab from './CompletePerformanceTab';
+import DealerStats from './DealerStats';
 
 interface BetCard {
   id: string;
@@ -42,7 +44,7 @@ interface Props {
 }
 
 export default function BettingAssistantPerformance({ session }: Props) {
-  const [selectedView, setSelectedView] = useState<'overview' | 'cards' | 'system'>('overview');
+  const [selectedView, setSelectedView] = useState<'overview' | 'cards' | 'system' | 'dealers'>('overview');
 
   // Safety check
   if (!session || !session.cards || !session.config) {
@@ -122,6 +124,16 @@ export default function BettingAssistantPerformance({ session }: Props) {
             }`}
           >
             ⚙️ System Stats
+          </button>
+          <button
+            onClick={() => setSelectedView('dealers')}
+            className={`flex-1 px-4 py-3 rounded-lg font-bold transition-all ${
+              selectedView === 'dealers'
+                ? 'bg-cyan-600 text-white shadow-lg'
+                : 'text-gray-400 hover:bg-gray-700'
+            }`}
+          >
+            🎰 Dealer Stats
           </button>
         </div>
 
@@ -285,74 +297,11 @@ export default function BettingAssistantPerformance({ session }: Props) {
             )}
           </div>
         )}
-
-        {/* CARDS TAB */}
-        {selectedView === 'cards' && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white mb-4">Individual Card Performance</h2>
-            
-            {session.cards?.filter(c => c.status !== 'locked').map((card) => {
-              const cardProfit = card.currentTotal || 0;
-              const cardSpins = card.bets?.length || 0;
-              const cardWins = card.bets?.filter(b => b.totalPnL > 0)?.length || 0;
-              const cardWinRate = cardSpins > 0 ? (cardWins / cardSpins * 100) : 0;
-
-              return (
-                <div
-                  key={card.id}
-                  className={`rounded-xl border-2 p-6 ${
-                    card.status === 'completed' ? 'bg-green-900/20 border-green-500' :
-                    card.status === 'failed' ? 'bg-red-900/20 border-red-500' :
-                    'bg-blue-900/20 border-blue-500'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-white">
-                        Card #{card.cardNumber}
-                      </h3>
-                      <span className={`text-xs px-2 py-1 rounded font-bold ${
-                        card.status === 'completed' ? 'bg-green-600' :
-                        card.status === 'failed' ? 'bg-red-600' :
-                        'bg-blue-600'
-                      }`}>
-                        {card.status.toUpperCase()}
-                      </span>
-                    </div>
-                    
-                    <div className="text-right">
-                      <div className="text-sm text-gray-400">Card P/L</div>
-                      <div className={`text-3xl font-bold ${cardProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {cardProfit >= 0 ? '+' : ''}${cardProfit.toFixed(2)}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-4 gap-4">
-                    <div className="bg-black/30 rounded-lg p-3">
-                      <div className="text-xs text-gray-400">Target</div>
-                      <div className="text-lg font-bold text-white">${card.target}</div>
-                    </div>
-                    <div className="bg-black/30 rounded-lg p-3">
-                      <div className="text-xs text-gray-400">Bets Used</div>
-                      <div className="text-lg font-bold text-white">{card.betsUsed}/{card.maxBets}</div>
-                    </div>
-                    <div className="bg-black/30 rounded-lg p-3">
-                      <div className="text-xs text-gray-400">Win Rate</div>
-                      <div className="text-lg font-bold text-purple-400">{cardWinRate.toFixed(0)}%</div>
-                    </div>
-                    <div className="bg-black/30 rounded-lg p-3">
-                      <div className="text-xs text-gray-400">Efficiency</div>
-                      <div className="text-lg font-bold text-cyan-400">
-                        {card.status === 'completed' ? `${((card.target / card.currentTotal) * 100).toFixed(0)}%` : 'N/A'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+       {/* CARDS TAB - NEW ANALYTICS */}
+{selectedView === 'cards' && (
+  <CompletePerformanceTab session={session} />
+)}
+    
 
         {/* SYSTEM STATS TAB */}
         {selectedView === 'system' && (
@@ -434,6 +383,11 @@ export default function BettingAssistantPerformance({ session }: Props) {
               </div>
             )}
           </div>
+        )}
+
+        {/* DEALER STATS TAB */}
+        {selectedView === 'dealers' && (
+          <DealerStats />
         )}
       </div>
     </div>

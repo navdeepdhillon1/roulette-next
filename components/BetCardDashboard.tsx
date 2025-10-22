@@ -19,8 +19,7 @@ interface BetCardDashboardProps {
   session: SessionState
   onSelectCard: (index: number) => void
   onEndSession: () => void
-  onOpenAdvisor: () => void    // ✅ ADD THIS
-  onOpenPerformance: () => void // ✅ ADD THIS
+  onOpenPerformance: () => void
 }
 
 // ✅ EXPANDED CARD DETAIL VIEW
@@ -405,7 +404,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
   )
 }
 
-export default function BetCardDashboard({ session, onSelectCard, onEndSession, onOpenAdvisor, onOpenPerformance }: BetCardDashboardProps) {
+export default function BetCardDashboard({ session, onSelectCard, onEndSession, onOpenPerformance }: BetCardDashboardProps) {
   const completedCards = session.cards.filter(c => c.status === 'completed').length
   const failedCards = session.cards.filter(c => c.status === 'failed').length
   const totalProfit = session.currentBankroll - session.config.bankroll
@@ -424,24 +423,17 @@ export default function BetCardDashboard({ session, onSelectCard, onEndSession, 
     </p>
   </div>
   
-  {/* ✅ THREE BUTTONS IN A ROW */}
+  {/* TWO BUTTONS IN A ROW */}
   <div className="flex gap-3">
-    <button 
-      onClick={onOpenAdvisor} 
-      className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-bold text-white transition-all"
-    >
-      🎯 Bet Advisor
-    </button>
-    
-    <button 
-      onClick={onOpenPerformance} 
+    <button
+      onClick={onOpenPerformance}
       className="px-6 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 rounded-lg font-bold text-white transition-all"
     >
       📊 Performance
     </button>
-    
-    <button 
-      onClick={onEndSession} 
+
+    <button
+      onClick={onEndSession}
       className="px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-bold text-white transition-colors"
     >
       End Session
@@ -557,15 +549,16 @@ export default function BetCardDashboard({ session, onSelectCard, onEndSession, 
       : null
     
     return (
-      <button 
-  key={card.id} 
+      <button
+  key={card.id}
   onClick={(e) => {
-    e.stopPropagation()
     if (isClickable) {
-      // If clicking on metrics, expand detail view instead
+      // If clicking on metrics section, expand detail view
       if ((e.target as HTMLElement).closest('.enhanced-metrics')) {
+        e.stopPropagation()
         setExpandedCardId(expandedCardId === card.id ? null : card.id)
       } else {
+        // Otherwise, select the card for betting
         onSelectCard(index)
       }
     }

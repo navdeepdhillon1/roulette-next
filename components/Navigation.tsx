@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { trackNavigationClick } from '@/lib/analytics';
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -13,21 +14,21 @@ export default function Navigation() {
   const linksByTier: Record<'free' | 'pro' | 'elite', Array<{ href: string; label: string; icon: string }>> = {
     free: [
       { href: '/', label: 'Home', icon: '🏠' },
-      { href: '/simulator', label: 'Practice Simulator', icon: '🎰' },
       { href: '/tracker', label: 'Basic Tracker', icon: '📋' },
+      { href: '/learn', label: 'Learning', icon: '📚' },
     ],
     pro: [
       { href: '/', label: 'Home', icon: '🏠' },
-      { href: '/simulator', label: 'Practice Simulator', icon: '🎰' },
       { href: '/tracker', label: 'Basic Tracker', icon: '📋' },
-      { href: '/analysis', label: 'Advanced Analysis', icon: '📊' },
+      { href: '/analysis', label: 'Advanced Tracker', icon: '📊' },
+      { href: '/learn', label: 'Learning', icon: '📚' },
     ],
     elite: [
       { href: '/', label: 'Home', icon: '🏠' },
-      { href: '/simulator', label: 'Practice Simulator', icon: '🎰' },
       { href: '/tracker', label: 'Basic Tracker', icon: '📋' },
-      { href: '/analysis', label: 'Advanced Analysis', icon: '📊' },
+      { href: '/analysis', label: 'Advanced Tracker', icon: '📊' },
       { href: '/assistant', label: 'Betting Assistant', icon: '🎯' },
+      { href: '/learn', label: 'Learning', icon: '📚' },
     ],
   };
   const links = linksByTier[userTier];
@@ -55,6 +56,7 @@ export default function Navigation() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  onClick={() => trackNavigationClick(link.label)}
                   className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 ${
                     isActive
                       ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg shadow-yellow-400/50'

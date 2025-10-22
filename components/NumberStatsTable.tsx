@@ -46,7 +46,7 @@ const NumberStatsTable: React.FC<NumberStatsTableProps> = ({ history }) => {
         <div className="bg-gray-800 rounded-lg p-3">
           <button
             onClick={() => setShowAll(!showAll)}
-            className="flex items-center justify-between w-full text-sm font-semibold mb-2"
+            className="flex items-center justify-between w-full text-sm font-semibold mb-2 text-gray-300 hover:text-white transition-colors"
           >
             <span>📊 All Numbers (Complete Table)</span>
             <span>{showAll ? '▼' : '▶'}</span>

@@ -67,11 +67,6 @@ export default function CommonGroupsTable({ spinHistory }: CommonGroupsTableProp
     { id: 'col1', name: 'Column 1', type: 'column' },
     { id: 'col2', name: 'Column 2', type: 'column' },
     { id: 'col3', name: 'Column 3', type: 'column' },
-    // Quarters
-    { id: 'q1', name: 'Q1 (1-9)', type: 'quarter' },
-    { id: 'q2', name: 'Q2 (10-18)', type: 'quarter' },
-    { id: 'q3', name: 'Q3 (19-27)', type: 'quarter' },
-    { id: 'q4', name: 'Q4 (28-36)', type: 'quarter' },
     // Wheel Sectors
     { id: 'voisins', name: 'Voisins', type: 'sector' },
     { id: 'tiers', name: 'Tiers', type: 'sector' },
@@ -266,10 +261,10 @@ export default function CommonGroupsTable({ spinHistory }: CommonGroupsTableProp
         {/* Sub-header row */}
         <tr className="bg-gray-800">
     {/* Streak sub-headers */}
-    <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">Now</th>
+    <th className="px-1 py-1 text-center border-r border-gray-700 text-xs bg-blue-900/50">Now</th>
     <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">Max</th>
     {/* Absence sub-headers */}
-    <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">Now</th>
+    <th className="px-1 py-1 text-center border-r border-gray-700 text-xs bg-blue-900/50">Now</th>
     <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">Max</th>
     {/* NO Last Seen sub-header because it has rowSpan=2 */}
     {/* Hit Count sub-headers */}
@@ -345,7 +340,7 @@ export default function CommonGroupsTable({ spinHistory }: CommonGroupsTableProp
               </td>
               
               {/* STREAKS - FIRST */}
-              <td className={`px-1 py-2 text-center border-r border-gray-700 ${
+              <td className={`px-1 py-2 text-center border-r border-gray-700 bg-blue-900/20 ${
                 streak.current >= 5 ? 'pulse-green' : ''
               }`}>
                 <span className={streak.current >= 5 ? 'text-green-400 font-bold text-lg' : ''}>
@@ -354,9 +349,9 @@ export default function CommonGroupsTable({ spinHistory }: CommonGroupsTableProp
                 </span>
               </td>
               <td className="px-1 py-2 text-center border-r border-gray-700">{streak.max}</td>
-              
+
               {/* ABSENCES - SECOND */}
-              <td className={`px-1 py-2 text-center border-r border-gray-700 ${
+              <td className={`px-1 py-2 text-center border-r border-gray-700 bg-blue-900/20 ${
                 absence.current >= 8 ? 'pulse-red animate-pulse bg-red-900/20' :
                 absence.current >= 4 ? 'pulse-yellow' : ''
               }`}>

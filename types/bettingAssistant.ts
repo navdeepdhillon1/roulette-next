@@ -40,7 +40,8 @@ export interface BettingSystemConfig {
   consecutiveLosses: number
   sequenceIndex?: number
   isCustom?: boolean
-  customRules?: CustomSystemRules
+  customRules?: CustomSystemRules  // OLD: Outcome-based rules (keep for backward compatibility)
+  sequentialRules?: SequentialProgressionRules  // NEW: Sequential progression system
 }
 
 export interface CustomSystemRules {
@@ -53,11 +54,22 @@ export interface CustomSystemRules {
   pauseAfterLosses: number | null
 }
 
-export type BetAction = 
-  | 'same' 
-  | 'double' 
-  | 'reset' 
-  | { type: 'increase', amount: number } 
+// NEW: Sequential Progression System
+export interface SequentialProgressionRules {
+  sequence: number[]  // Array of multipliers, e.g., [1, 1, 2, 2, 4, 4, 8, 8]
+  onWin: 'reset' | 'moveBack1' | 'moveBack2' | 'stay'
+  onLoss: 'moveForward1' | 'moveForward2' | 'stay'
+  resetAfterConsecutiveWins?: number  // Auto-reset after X consecutive wins
+  resetAfterConsecutiveLosses?: number  // Auto-reset after X consecutive losses
+  atSequenceEnd: 'stay' | 'reset' | 'pause'  // What to do at end of sequence
+  currentPosition: number  // Current position in sequence (0-indexed)
+}
+
+export type BetAction =
+  | 'same'
+  | 'double'
+  | 'reset'
+  | { type: 'increase', amount: number }
   | { type: 'multiply', factor: number }
   | 'pause'
 

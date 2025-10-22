@@ -1,3 +1,18 @@
+/**
+ * ARCHIVED FEATURE - Simulator Page
+ *
+ * This feature has been removed from navigation as of Jan 2025 because:
+ * 1. Visual quality issues (elliptical wheel, asymmetrical layout)
+ * 2. Doesn't align with core value proposition (real-time tracking/analysis)
+ * 3. Attracts wrong audience (casual players vs. serious strategists)
+ * 4. Commodity feature that doesn't differentiate the product
+ *
+ * The page still exists at /simulator but is not linked anywhere.
+ * Code preserved in case we want to repurpose as "Strategy Testing Lab" later.
+ *
+ * Strategic pivot: Focus on Learning Center (blog) as traffic driver instead.
+ */
+
 'use client';
 
 import Navigation from '@/components/Navigation';

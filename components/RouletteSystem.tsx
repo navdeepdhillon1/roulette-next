@@ -20,6 +20,7 @@ import HistoryTable from '@/components/roulette/HistoryTable'
 import StatsMatrix from '@/components/roulette/StatsMatrix'
 import WheelView from '@/components/WheelView'
 import WheelDisplay from '@/components/WheelDisplay'
+import WheelLayout from '@/components/roulette/WheelLayout'
 import WheelHistory from '@/components/WheelHistory'
 import WheelStats from '@/components/WheelStats'
 import PatternDetectionEngine from '@/components/PatternDetectionEngine';
@@ -33,10 +34,9 @@ import NumbersStatsTab from './NumbersStatsTab';
 import PredictionOracle from './PredictionOracle';
 import SequenceTracker from './SequenceTracker';
 import GroupPredictions from './GroupPredictions';
-import EnhancedProbabilityAnalysis from '@/components/EnhancedProbabilityAnalysis'
 // Type definitions
-type MainTab = 'table-view' | 'table-bets' | 'table-stats'
-type AssistantSubTab = 'setup' | 'action' | 'performance' | 'analysis'| 'gamified'
+type MainTab = 'table-view'
+type AssistantSubTab = 'setup' | 'action' | 'analysis' | 'performance'
 type StorageMode = 'local' | 'cloud'
 
 // Typed bet keys used across performance matrix
@@ -75,7 +75,7 @@ export default function RouletteSystem() {
   const [localSpins, setLocalSpins] = useState<Spin[]>([])
   const gameState = useGameState()
   const [analysisSection, setAnalysisSection] = useState<'patterns' | 'time' | 'streaks'>('patterns')
-  const [analysisView, setAnalysisView] = useState<'common' | 'special' | 'wheel' | 'numbers' | 'oracle'>('common');
+  const [analysisView, setAnalysisView] = useState<'common' | 'special' | 'wheel' | 'numbers'>('common');
   // Call hook unconditionally to follow Rules of Hooks
   const { 
     session: cloudSession, 
@@ -137,6 +137,15 @@ export default function RouletteSystem() {
     totalPnL: number
     timestamp: Date
   }>>([])
+
+  // Historical bets for HistoryTable - keyed by spin timestamp
+  const [historicalBets, setHistoricalBets] = useState<Record<string, any>>({})
+
+  // Pending bets state - tracks which bets are waiting for a number
+  const [pendingBets, setPendingBets] = useState<Record<string, boolean>>({})
+
+  // Bet results state - tracks win/loss AND amount temporarily for visual feedback
+  const [betResults, setBetResults] = useState<Record<string, { status: 'win' | 'loss', amount: string } | null>>({})
 
   // Check user authentication on mount
   useEffect(() => {
@@ -207,11 +216,17 @@ const openSessionSetup = () => {
     return counts
   }
   
-  const addNumber = async () => {
-    const num = parseInt(inputNumber)
+  const addNumber = async (directNumber?: number) => {
+    const num = directNumber !== undefined ? directNumber : parseInt(inputNumber)
     if (isNaN(num) || num < 0 || num > 36) return
+
+    console.log('=== ADD NUMBER CALLED ===')
+    console.log('Number:', num)
+    console.log('Current manualBets:', manualBets)
+    console.log('Has pending bets:', Object.values(manualBets).some(val => val !== ''))
+
     setLoading(true)
-    
+
     // Add to appropriate storage
     if (storageMode === 'cloud' && session) {
       await addCloudSpin(num)
@@ -242,48 +257,116 @@ const openSessionSetup = () => {
     if (gameState.cardsModeOn) {
     gameState.addSpin(num)  // <-- Add this line
   }
-    // Process bets if any
-    if (betHistory.length > 0 && betHistory[0].spin === null) {
-      const updatedHistory = [...betHistory]
-      updatedHistory[0].spin = num
-      
+
+    // Check if there are any pending bets
+    const hasPendingBets = Object.values(manualBets).some(val => val !== '')
+
+    if (hasPendingBets) {
+      // Calculate results for each bet
       const results: { [key: string]: number } = {}
+      const resultStates: { [key: string]: { status: 'win' | 'loss', amount: string } | null } = {}
       let totalPnL = 0
-      
-      Object.entries(updatedHistory[0].bets).forEach(([key, value]) => {
+      let totalWagered = 0
+
+      Object.entries(manualBets).forEach(([key, value]) => {
         if (value) {
           const betAmount = parseFloat(value as string)
+          totalWagered += betAmount
           const won = checkIfGroupWon(num, key as GroupKey)
           if (won) {
             const payout = getGroupPayout(key as GroupKey)
             results[key] = betAmount * payout
+            resultStates[key] = { status: 'win', amount: value }
             totalPnL += betAmount * payout
           } else {
             results[key] = -betAmount
+            resultStates[key] = { status: 'loss', amount: value }
             totalPnL -= betAmount
           }
         }
       })
-      
-      updatedHistory[0].results = results
-      updatedHistory[0].totalPnL = totalPnL
-      setBetHistory(updatedHistory)
-      setSessionPnL(prev => prev + totalPnL)
-      setCurrentBankroll(prev => prev + totalPnL)
-      
-      // Clear bets for next round
-      setManualBets({
-        red: '', black: '', even: '', odd: '', low: '', high: '',
-        alt1_1: '', alt1_2: '', alt2_1: '', alt2_2: '', alt3_1: '', alt3_2: '',
-        edge: '', center: '', dozen1: '', dozen2: '', dozen3: '',
-        col1: '', col2: '', col3: '', six1: '', six2: '', six3: '',
-        six4: '', six5: '', six6: ''
+
+      // Show results on buttons (green/red) - now includes amount
+      setBetResults(resultStates)
+
+      // Update financial tracking IMMEDIATELY
+      setSessionPnL(prev => {
+        const newPnL = prev + totalPnL
+        console.log('Updated session P/L:', prev, '+', totalPnL, '=', newPnL)
+        return newPnL
       })
+      setCurrentBankroll(prev => {
+        const newBankroll = prev + totalPnL
+        console.log('Updated bankroll:', prev, '+', totalPnL, '=', newBankroll)
+        return newBankroll
+      })
+
+      // Add to bet history IMMEDIATELY so it shows in the matrix
+      setBetHistory(prev => [{
+        spin: num,
+        bets: { ...manualBets },
+        results,
+        totalPnL,
+        timestamp: new Date()
+      }, ...prev])
+
+      console.log('Added to bet history:', { spin: num, totalPnL, totalWagered, results })
+
+      // Wait 1.5 seconds before clearing the bets
+      setTimeout(() => {
+        // Clear bets, pending state, and results
+        setManualBets({
+          red: '', black: '', even: '', odd: '', low: '', high: '',
+          alt1_1: '', alt1_2: '', alt2_1: '', alt2_2: '', alt3_1: '', alt3_2: '',
+          edge: '', center: '', dozen1: '', dozen2: '', dozen3: '',
+          col1: '', col2: '', col3: '', six1: '', six2: '', six3: '',
+          six4: '', six5: '', six6: ''
+        })
+        setPendingBets({})
+        setBetResults({})
+      }, 1500)
     }
-    
+
     setInputNumber('')
-    setSelectedNumber(null) 
+    setSelectedNumber(null)
     setLoading(false)
+  }
+
+  // Undo last spin
+  const undoLastSpin = () => {
+    if (spins.length === 0) return
+
+    const lastSpin = spins[0]
+    console.log('Undoing last spin:', lastSpin.number)
+
+    if (storageMode === 'cloud' && session) {
+      // For cloud mode, would need API endpoint to delete
+      alert('Undo not available for cloud sessions yet')
+    } else {
+      // Local mode - remove last spin
+      const updatedSpins = localSpins.slice(1)
+      setLocalSpins(updatedSpins)
+
+      // Update local session
+      if (localSession) {
+        const updatedSession = {
+          ...localSession,
+          total_spins: Math.max(0, localSession.total_spins - 1),
+          updated_at: new Date().toISOString()
+        }
+        setLocalSession(updatedSession)
+        localStorage.setItem('currentSession', JSON.stringify(updatedSession))
+        localStorage.setItem('currentSpins', JSON.stringify(updatedSpins))
+      }
+    }
+
+    // Also remove from gameState if cards mode is on
+    if (gameState.cardsModeOn && gameState.spinHistory.length > 0) {
+      // Remove last spin from gameState
+      const updatedGameSpins = gameState.spinHistory.slice(1)
+      // Note: There's no removeLastSpin in gameState, so this is a limitation
+      // We'd need to add that method to the gameState store
+    }
   }
 
   const calculateGroupStats = () => {
@@ -291,7 +374,7 @@ const openSessionSetup = () => {
     
     const matchesGroup = (spin: Spin, group: string): boolean => {
       const num = spin.number
-      
+
       switch(group) {
         case 'red': return spin.color === 'red'
         case 'black': return spin.color === 'black'
@@ -306,6 +389,14 @@ const openSessionSetup = () => {
         case '1st_column': return spin.column_num === 1
         case '2nd_column': return spin.column_num === 2
         case '3rd_column': return spin.column_num === 3
+        case 'alt1_1': return num > 0 && [1,2,3,7,8,9,13,14,15,19,20,21,25,26,27,31,32,33].includes(num)
+        case 'alt1_2': return num > 0 && [4,5,6,10,11,12,16,17,18,22,23,24,28,29,30,34,35,36].includes(num)
+        case 'alt2_1': return num > 0 && [1,2,3,4,5,6,13,14,15,16,17,18,25,26,27,28,29,30].includes(num)
+        case 'alt2_2': return num > 0 && [7,8,9,10,11,12,19,20,21,22,23,24,31,32,33,34,35,36].includes(num)
+        case 'alt3_1': return num > 0 && [1,2,3,4,5,6,7,8,9,19,20,21,22,23,24,25,26,27].includes(num)
+        case 'alt3_2': return num > 0 && [10,11,12,13,14,15,16,17,18,28,29,30,31,32,33,34,35,36].includes(num)
+        case 'edge': return num > 0 && [1,2,3,4,5,6,7,8,9,28,29,30,31,32,33,34,35,36].includes(num)
+        case 'center': return num > 0 && [10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27].includes(num)
         default: return false
       }
     }
@@ -323,34 +414,180 @@ const openSessionSetup = () => {
       { id: '3rd_dozen', name: '3rd Doz', color: 'text-green-500' },
       { id: '1st_column', name: '1st Col', color: 'text-orange-400' },
       { id: '2nd_column', name: '2nd Col', color: 'text-teal-400' },
-      { id: '3rd_column', name: '3rd Col', color: 'text-lime-400' }
+      { id: '3rd_column', name: '3rd Col', color: 'text-lime-400' },
+      { id: 'alt1_1', name: 'A', color: 'text-pink-400' },
+      { id: 'alt1_2', name: 'B', color: 'text-indigo-400' },
+      { id: 'alt2_1', name: 'AA', color: 'text-violet-400' },
+      { id: 'alt2_2', name: 'BB', color: 'text-fuchsia-400' },
+      { id: 'alt3_1', name: 'AAA', color: 'text-rose-400' },
+      { id: 'alt3_2', name: 'BBB', color: 'text-sky-400' },
+      { id: 'edge', name: 'Edge', color: 'text-emerald-400' },
+      { id: 'center', name: 'Center', color: 'text-blue-400' }
     ]
     
     return groups.map(group => {
+      // Calculate hits for different windows
+      const l9 = spins.slice(0, Math.min(9, spins.length)).filter(spin => matchesGroup(spin, group.id)).length
+      const l18 = spins.slice(0, Math.min(18, spins.length)).filter(spin => matchesGroup(spin, group.id)).length
+      const l27 = spins.slice(0, Math.min(27, spins.length)).filter(spin => matchesGroup(spin, group.id)).length
+      const l36 = spins.slice(0, Math.min(36, spins.length)).filter(spin => matchesGroup(spin, group.id)).length
+
       const hits = spins.filter(spin => matchesGroup(spin, group.id)).length
       const percentage = (hits / spins.length) * 100
       const expected = expectedPercentageFor(group.id)
-      
+
+      // Calculate absence (spins since last hit)
+      let absenceNow = 0
+      let absenceMax = 0
+      let currentAbsence = 0
+
+      for (let i = 0; i < spins.length; i++) {
+        if (matchesGroup(spins[i], group.id)) {
+          if (i === 0) absenceNow = 0 // Just hit
+          currentAbsence = 0
+        } else {
+          currentAbsence++
+          if (i === 0) absenceNow = currentAbsence
+          absenceMax = Math.max(absenceMax, currentAbsence)
+        }
+      }
+      if (absenceNow === 0 && spins.length > 0 && !matchesGroup(spins[0], group.id)) {
+        // Find how many spins since last hit
+        for (let i = 0; i < spins.length; i++) {
+          if (matchesGroup(spins[i], group.id)) break
+          absenceNow++
+        }
+      }
+
+      // Calculate consecutive hits
+      let consecutiveNow = 0
+      let consecutiveMax = 0
+      let currentConsecutive = 0
+
+      for (let i = spins.length - 1; i >= 0; i--) {
+        if (matchesGroup(spins[i], group.id)) {
+          currentConsecutive++
+          consecutiveMax = Math.max(consecutiveMax, currentConsecutive)
+          if (i === 0) consecutiveNow = currentConsecutive
+        } else {
+          if (i === 0 && currentConsecutive > 0) consecutiveNow = currentConsecutive
+          currentConsecutive = 0
+        }
+      }
+
+      // Find last spin where this group hit
+      let lastSpin = 0
+      for (let i = 0; i < spins.length; i++) {
+        if (matchesGroup(spins[i], group.id)) {
+          lastSpin = i
+          break
+        }
+      }
+
+      // Calculate status
+      const deviation = percentage - expected
+      let status: 'HOT' | 'COLD' | 'ALERT' | 'NORM' = 'NORM'
+      if (absenceNow > 10) status = 'ALERT'
+      else if (deviation > 10) status = 'HOT'
+      else if (deviation < -10) status = 'COLD'
+
       return {
         ...group,
-        l9: hits,
-        l18: hits,
-        l27: hits,
-        l36: hits,
-        absenceNow: 0,
-        absenceMax: 0,
-        consecutiveNow: 0,
-        consecutiveMax: 0,
-        lastSpin: 0,
+        l9,
+        l18,
+        l27,
+        l36,
+        absenceNow,
+        absenceMax,
+        consecutiveNow,
+        consecutiveMax,
+        lastSpin,
         percentage,
         expected,
-        deviation: percentage - expected,
-        status: 'NORM' as const
+        deviation,
+        status
       }
     })
   }
 
   const groupStats = calculateGroupStats()
+
+  // Handle bet results from HistoryTable
+  const handleBetPlaced = (
+    totalWagered: number,
+    totalReturned: number,
+    pnl: number,
+    bettingMatrix?: Record<string, number>,
+    groupResults?: Record<string, number>,
+    spinNumber?: number,
+    spinTimestamp?: number
+  ) => {
+    console.log('Bet placed callback:', { totalWagered, totalReturned, pnl, spinNumber })
+
+    // Update financial tracking
+    setSessionPnL(prev => prev + pnl)
+    setCurrentBankroll(prev => prev + pnl)
+
+    // Update bet history for the old system (if still needed)
+    if (spinNumber !== null && spinNumber !== undefined) {
+      setBetHistory(prev => [{
+        spin: spinNumber,
+        bets: bettingMatrix || {},
+        results: groupResults || {},
+        totalPnL: pnl,
+        timestamp: spinTimestamp ? new Date(spinTimestamp) : new Date()
+      }, ...prev])
+    }
+  }
+
+  // CSV Download function
+  const downloadSessionCSV = () => {
+    if (!session) return;
+
+    // Prepare CSV data with comprehensive session info
+    const csvRows = [];
+
+    // Session metadata header
+    csvRows.push('SESSION INFORMATION');
+    csvRows.push(`Session ID,${session.id}`);
+    csvRows.push(`Created,${new Date(session.created_at).toLocaleString()}`);
+    csvRows.push(`Total Spins,${session.total_spins}`);
+    csvRows.push(`Starting Bankroll,${playerSetup.bankroll}`);
+    csvRows.push(`Current Bankroll,${currentBankroll.toFixed(2)}`);
+    csvRows.push(`P/L,${sessionPnL.toFixed(2)}`);
+    csvRows.push(`ROI,${startingBankroll > 0 ? ((sessionPnL / startingBankroll) * 100).toFixed(1) : 0}%`);
+    csvRows.push('');
+
+    // Spins data
+    csvRows.push('SPIN HISTORY');
+    csvRows.push('Spin #,Number,Color,Even/Odd,Low/High,Dozen,Column,Timestamp');
+
+    spins.forEach((spin, index) => {
+      const row = [
+        spins.length - index,
+        spin.number,
+        spin.color,
+        spin.even_odd || 'N/A',
+        spin.low_high || 'N/A',
+        spin.dozen || 'N/A',
+        spin.column_num || 'N/A',
+        new Date(spin.created_at).toLocaleString()
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    // Create blob and download
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `roulette-session-${session.id.slice(0,12)}-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="text-white">
@@ -366,22 +603,75 @@ const openSessionSetup = () => {
           <p className="text-yellow-400/60 mt-2 text-sm tracking-widest">PROFESSIONAL EDITION</p>
         </div>
 
-        {/* Main Header - Only show when session exists */}
+        {/* OPTIMIZED: Combined Session + Financial Bar - Only show when session exists */}
 {session && (
-  <HeaderBar
-    session={session}
-    spinsCount={session.total_spins}
-    onStartSession={openSessionSetup}
-    onAssistantClick={() => setShowAssistant(!showAssistant)}
-    isAssistantActive={showAssistant}
-    userProfile={userProfile}
-    storageMode={storageMode}
-  />
+  <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border border-yellow-400/30 rounded-lg p-3 mb-4">
+    <div className="flex items-center justify-between">
+      {/* LEFT: Session Info */}
+      <div className="flex items-center gap-6">
+        <div>
+          <span className="text-yellow-400/60 text-[10px] uppercase tracking-wider">Session</span>
+          <p className="text-sm font-bold text-yellow-400">{session.id.slice(0, 12)}...</p>
+        </div>
+        <div>
+          <span className="text-yellow-400/60 text-[10px] uppercase tracking-wider">Spins</span>
+          <p className="text-lg font-bold text-white">{session.total_spins}</p>
+        </div>
+        <div className="h-8 w-px bg-yellow-400/30"></div>
+        <div>
+          <span className="text-yellow-400/60 text-[10px] uppercase tracking-wider">Bankroll</span>
+          <p className="text-lg font-bold text-white">${currentBankroll.toFixed(2)}</p>
+        </div>
+        <div>
+          <span className="text-yellow-400/60 text-[10px] uppercase tracking-wider">P/L</span>
+          <p className={`text-lg font-bold ${sessionPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            {sessionPnL >= 0 ? '+' : ''}${sessionPnL.toFixed(2)}
+          </p>
+        </div>
+        <div>
+          <span className="text-yellow-400/60 text-[10px] uppercase tracking-wider">ROI</span>
+          <p className={`text-sm font-semibold ${sessionPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            {startingBankroll > 0 ? ((sessionPnL / startingBankroll) * 100).toFixed(1) : 0}%
+          </p>
+        </div>
+        <div className="h-8 w-px bg-yellow-400/30"></div>
+        <div>
+          <span className="text-yellow-400/60 text-[10px] uppercase tracking-wider">Target</span>
+          <p className="text-sm text-green-400">${playerSetup.targetProfit}</p>
+        </div>
+        <div>
+          <span className="text-yellow-400/60 text-[10px] uppercase tracking-wider">Stop Loss</span>
+          <p className="text-sm text-red-400">-${playerSetup.stopLoss}</p>
+        </div>
+        {sessionStartTime && (
+          <div>
+            <span className="text-yellow-400/60 text-[10px] uppercase tracking-wider">Time</span>
+            <p className="text-sm text-white">
+              {Math.floor((new Date().getTime() - sessionStartTime.getTime()) / 60000)}m
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT: CSV Download Button */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={downloadSessionCSV}
+          className="px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+          title="Download session data as CSV"
+        >
+          📊 Export CSV
+        </button>
+      </div>
+    </div>
+  </div>
 )}
-{/* ADD THIS NEW PERSISTENT INPUT BAR */}
-{session && (
+
+        {/* OPTIMIZED: Combined Input Bar + View Toggle - Only show when session exists */}
+{session && assistantSubTab === 'action' && (
   <Card className="mb-4 p-3 bg-gray-900 border-gray-700">
     <div className="flex items-center justify-between">
+      {/* LEFT: Last 20 Spins */}
       <div className="flex items-center gap-2">
         <span className="text-yellow-400 font-bold text-sm">Last 20:</span>
         <div className="flex gap-1">
@@ -392,83 +682,76 @@ const openSessionSetup = () => {
                 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
                 ${idx === 0 ? 'ring-2 ring-yellow-400 animate-pulse' : ''}
                 ${spin.number === 0 ? 'bg-green-600' :
-                  [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(spin.number) 
+                  [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(spin.number)
                     ? 'bg-red-600' : 'bg-black border border-gray-600'}
                 text-white cursor-pointer hover:scale-110 transition-all
               `}
-              onClick={() => setInputNumber(spin.number.toString())}
+              onClick={() => addNumber(spin.number)}
             >
               {spin.number}
             </div>
           ))}
         </div>
       </div>
-      
+
+      {/* MIDDLE: Input Controls */}
       <div className="flex items-center gap-2">
-      <input
-  type="number"
-  min="0"
-  max="36"
-  value={inputNumber}
-  onChange={(e) => setInputNumber(e.target.value)}
-  onKeyPress={(e) => e.key === 'Enter' && addNumber()}
-  className="w-14 px-2 py-1 bg-black border border-gray-600 rounded text-center text-sm text-white"  // Add text-white here
-  placeholder="0-36"
-/>
+        <input
+          type="number"
+          min="0"
+          max="36"
+          value={inputNumber}
+          onChange={(e) => setInputNumber(e.target.value)}
+          onKeyPress={(e) => e.key === 'Enter' && addNumber()}
+          className="w-14 px-2 py-1 bg-black border border-gray-600 rounded text-center text-sm text-white"
+          placeholder="0-36"
+        />
         <button
-          onClick={addNumber}
+          onClick={() => addNumber()}
           className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm font-bold"
         >
           ADD
+        </button>
+        <button
+          onClick={undoLastSpin}
+          disabled={spins.length === 0}
+          className={`px-3 py-1 rounded text-sm font-bold transition-all ${
+            spins.length === 0
+              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+              : 'bg-orange-600 hover:bg-orange-700 text-white'
+          }`}
+          title="Undo last spin"
+        >
+          ↩ UNDO
+        </button>
+      </div>
+
+      {/* RIGHT: Table/Wheel Toggle */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setActionView(actionView.startsWith('wheel') ? 'table-view' : actionView)}
+          className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+            !actionView.startsWith('wheel')
+              ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+          }`}
+        >
+          📊 Table
+        </button>
+        <button
+          onClick={() => setActionView(actionView.startsWith('table') ? 'wheel-view' : actionView)}
+          className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+            actionView.startsWith('wheel')
+              ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+          }`}
+        >
+          🎰 Wheel
         </button>
       </div>
     </div>
   </Card>
 )}
-
-        {/* Financial Bar - Only shows when Assistant is active AND session exists */}
-        {showAssistant && session && (
-          <div className="bg-black/60 backdrop-blur border-y border-yellow-400/30 px-6 py-3 mb-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-8">
-                <div>
-                  <span className="text-yellow-400/60 text-xs uppercase tracking-wider">Bankroll</span>
-                  <p className="text-2xl font-bold text-white">${currentBankroll.toFixed(2)}</p>
-                </div>
-                <div>
-                  <span className="text-yellow-400/60 text-xs uppercase tracking-wider">P/L</span>
-                  <p className={`text-xl font-bold ${sessionPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {sessionPnL >= 0 ? '+' : ''}${sessionPnL.toFixed(2)}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-yellow-400/60 text-xs uppercase tracking-wider">ROI</span>
-                  <p className={`text-lg ${sessionPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {startingBankroll > 0 ? ((sessionPnL / startingBankroll) * 100).toFixed(1) : 0}%
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <span className="text-yellow-400/60 text-xs uppercase tracking-wider">Target</span>
-                  <p className="text-lg text-green-400">${playerSetup.targetProfit}</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-yellow-400/60 text-xs uppercase tracking-wider">Stop Loss</span>
-                  <p className="text-lg text-red-400">-${playerSetup.stopLoss}</p>
-                </div>
-                {sessionStartTime && (
-                  <div className="text-right">
-                    <span className="text-yellow-400/60 text-xs uppercase tracking-wider">Time</span>
-                    <p className="text-lg text-white">
-                      {Math.floor((new Date().getTime() - sessionStartTime.getTime()) / 60000)}m
-                    </p>
-                  </div>
-                )}
-            </div>
-          </div>
-          </div>
-        )}
 {/* Main Content Area */}
 {!session && !showAssistant ? (
           // Landing Page - No Active Session, No Setup showing
@@ -522,11 +805,12 @@ const openSessionSetup = () => {
                       type="number"
                       value={playerSetup.bankroll}
                       onChange={(e) => {
-                        const value = Number(e.target.value)
+                        const value = e.target.value === '' ? 0 : Number(e.target.value)
                         setPlayerSetup({...playerSetup, bankroll: value})
                         setStartingBankroll(value)
                         setCurrentBankroll(value)
                       }}
+                      onFocus={(e) => e.target.select()}
                       className="w-full px-4 py-3 bg-black/50 border border-yellow-400/30 rounded-lg text-white text-xl focus:border-yellow-400 focus:outline-none"
                       placeholder="100"
                     />
@@ -537,7 +821,8 @@ const openSessionSetup = () => {
                     <input
                       type="number"
                       value={playerSetup.targetProfit}
-                      onChange={(e) => setPlayerSetup({...playerSetup, targetProfit: Number(e.target.value)})}
+                      onChange={(e) => setPlayerSetup({...playerSetup, targetProfit: e.target.value === '' ? 0 : Number(e.target.value)})}
+                      onFocus={(e) => e.target.select()}
                       className="w-full px-4 py-3 bg-black/50 border border-yellow-400/30 rounded-lg text-white text-xl focus:border-yellow-400 focus:outline-none"
                       placeholder="50"
                     />
@@ -548,7 +833,8 @@ const openSessionSetup = () => {
                     <input
                       type="number"
                       value={playerSetup.stopLoss}
-                      onChange={(e) => setPlayerSetup({...playerSetup, stopLoss: Number(e.target.value)})}
+                      onChange={(e) => setPlayerSetup({...playerSetup, stopLoss: e.target.value === '' ? 0 : Number(e.target.value)})}
+                      onFocus={(e) => e.target.select()}
                       className="w-full px-4 py-3 bg-black/50 border border-yellow-400/30 rounded-lg text-white text-xl focus:border-yellow-400 focus:outline-none"
                       placeholder="50"
                     />
@@ -559,7 +845,8 @@ const openSessionSetup = () => {
                     <input
                       type="number"
                       value={playerSetup.betUnit}
-                      onChange={(e) => setPlayerSetup({...playerSetup, betUnit: Number(e.target.value)})}
+                      onChange={(e) => setPlayerSetup({...playerSetup, betUnit: e.target.value === '' ? 0 : Number(e.target.value)})}
+                      onFocus={(e) => e.target.select()}
                       className="w-full px-4 py-3 bg-black/50 border border-yellow-400/30 rounded-lg text-white text-xl focus:border-yellow-400 focus:outline-none"
                       placeholder="5"
                     />
@@ -614,19 +901,8 @@ const openSessionSetup = () => {
                       Game Action
                     </button>
                     <button
-                      onClick={() => setAssistantSubTab('performance')}
-                      className={`px-6 py-3 font-semibold transition-all border-r border-yellow-400/20 ${
-                        assistantSubTab === 'performance'
-                          ? 'bg-gradient-to-b from-yellow-400/20 to-transparent text-yellow-400'
-                          : 'text-gray-400 hover:text-white'
-                      } ${!session ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      disabled={!session}
-                    >
-                      Performance
-                    </button>
-                    <button
                       onClick={() => setAssistantSubTab('analysis')}
-                      className={`px-6 py-3 font-semibold transition-all ${
+                      className={`px-6 py-3 font-semibold transition-all border-r border-yellow-400/20 ${
                         assistantSubTab === 'analysis'
                           ? 'bg-gradient-to-b from-yellow-400/20 to-transparent text-yellow-400'
                           : 'text-gray-400 hover:text-white'
@@ -635,18 +911,17 @@ const openSessionSetup = () => {
                     >
                       Analysis
                     </button>
-
-                   <button
-                    onClick={() => setAssistantSubTab('gamified')}
-                    className={`px-6 py-3 font-semibold transition-all ${
-                     assistantSubTab === 'gamified'
-                     ? 'bg-gradient-to-b from-yellow-400/20 to-transparent text-yellow-400'
-                    : 'text-gray-400 hover:text-white'
-                    } ${!session ? 'opacity-50 cursor-not-allowed' : ''}`}
-                   disabled={!session}
+                    <button
+                      onClick={() => setAssistantSubTab('performance')}
+                      className={`px-6 py-3 font-semibold transition-all ${
+                        assistantSubTab === 'performance'
+                          ? 'bg-gradient-to-b from-yellow-400/20 to-transparent text-yellow-400'
+                          : 'text-gray-400 hover:text-white'
+                      } ${!session ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      disabled={!session}
                     >
-                 🎯 Gamified
-                      </button>
+                      Performance
+                    </button>
 
 
 
@@ -666,46 +941,50 @@ const openSessionSetup = () => {
                               type="number"
                               value={playerSetup.bankroll}
                               onChange={(e) => {
-                                const value = Number(e.target.value)
+                                const value = e.target.value === '' ? 0 : Number(e.target.value)
                                 setPlayerSetup({...playerSetup, bankroll: value})
                                 if (!session) {
                                   setStartingBankroll(value)
                                   setCurrentBankroll(value)
                                 }
                               }}
+                              onFocus={(e) => e.target.select()}
                               className="w-full px-4 py-3 bg-black/50 border border-yellow-400/30 rounded-lg text-white text-xl focus:border-yellow-400 focus:outline-none"
                               placeholder="100"
                             />
                           </div>
-                          
+
                           <div>
                             <label className="block text-yellow-400/80 text-sm mb-2">Target Profit</label>
                             <input
                               type="number"
                               value={playerSetup.targetProfit}
-                              onChange={(e) => setPlayerSetup({...playerSetup, targetProfit: Number(e.target.value)})}
+                              onChange={(e) => setPlayerSetup({...playerSetup, targetProfit: e.target.value === '' ? 0 : Number(e.target.value)})}
+                              onFocus={(e) => e.target.select()}
                               className="w-full px-4 py-3 bg-black/50 border border-yellow-400/30 rounded-lg text-white text-xl focus:border-yellow-400 focus:outline-none"
                               placeholder="50"
                             />
                           </div>
-                          
+
                           <div>
                             <label className="block text-yellow-400/80 text-sm mb-2">Stop Loss</label>
                             <input
                               type="number"
                               value={playerSetup.stopLoss}
-                              onChange={(e) => setPlayerSetup({...playerSetup, stopLoss: Number(e.target.value)})}
+                              onChange={(e) => setPlayerSetup({...playerSetup, stopLoss: e.target.value === '' ? 0 : Number(e.target.value)})}
+                              onFocus={(e) => e.target.select()}
                               className="w-full px-4 py-3 bg-black/50 border border-yellow-400/30 rounded-lg text-white text-xl focus:border-yellow-400 focus:outline-none"
                               placeholder="50"
                             />
                           </div>
-                          
+
                           <div>
                             <label className="block text-yellow-400/80 text-sm mb-2">Unit Size</label>
                             <input
                               type="number"
                               value={playerSetup.betUnit}
-                              onChange={(e) => setPlayerSetup({...playerSetup, betUnit: Number(e.target.value)})}
+                              onChange={(e) => setPlayerSetup({...playerSetup, betUnit: e.target.value === '' ? 0 : Number(e.target.value)})}
+                              onFocus={(e) => e.target.select()}
                               className="w-full px-4 py-3 bg-black/50 border border-yellow-400/30 rounded-lg text-white text-xl focus:border-yellow-400 focus:outline-none"
                               placeholder="5"
                             />
@@ -730,469 +1009,274 @@ const openSessionSetup = () => {
                           </button>
                         )}
                       </div>
-                    )}{assistantSubTab === 'action' && session && (
-                      <div className="space-y-6">
-                        {/* Main Game Action toggle: Table vs Wheel */}
-                        <div className="flex gap-2 mb-4 bg-black/30 p-2 rounded-lg">
-                          <button
-                            onClick={() => setActionView(actionView.startsWith('wheel') ? 'table-view' : actionView)}
-                            className={`px-6 py-2 rounded-lg font-bold transition-all ${
-                              !actionView.startsWith('wheel')
-                                ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg' 
-                                : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
-                            }`}
-                          >
-                            📊 Table
-                          </button>
-                          <button
-                            onClick={() => setActionView(actionView.startsWith('table') ? 'wheel-view' : actionView)}
-                            className={`px-6 py-2 rounded-lg font-bold transition-all ${
-                              actionView.startsWith('wheel')
-                                ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg' 
-                                : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
-                            }`}
-                          >
-                            🎰 Wheel
-                          </button>
-                        </div>
-                    
-                        {/* Sub-tabs based on Table or Wheel selection */}
-                        <div className="flex gap-2 mb-4">
-                          {!actionView.startsWith('wheel') ? (
-                            <>
-                              <button
-                                onClick={() => setActionView('table-view')}
-                                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                                  actionView === 'table-view' 
-                                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
-                                    : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
-                                }`}
-                              >
-                                Table View
-                              </button>
-                              <button
-                                onClick={() => setActionView('table-bets')}
-                                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                                  actionView === 'table-bets' 
-                                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
-                                    : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
-                                }`}
-                              >
-                                Table Bets
-                              </button>
-                              <button
-                                onClick={() => setActionView('table-stats')}
-                                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                                  actionView === 'table-stats' 
-                                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
-                                    : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
-                                }`}
-                              >
-                                Table Stats
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => setActionView('wheel-view')}
-                                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                                  actionView === 'wheel-view' 
-                                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
-                                    : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
-                                }`}
-                              >
-                                Wheel View
-                              </button>
-                              <button
-                                onClick={() => setActionView('wheel-bets')}
-                                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                                  actionView === 'wheel-bets' 
-                                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
-                                    : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
-                                }`}
-                              >
-                                Wheel Bets
-                              </button>
-                              <button
-                                onClick={() => setActionView('wheel-stats')}
-                                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                                  actionView === 'wheel-stats' 
-                                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
-                                    : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
-                                }`}
-                              >
-                                Wheel Stats
-                              </button>
-                            </>
-                          )}
-                        </div>
-                    
-                        {/* CONTENT SECTIONS */}
-                        {actionView === 'table-view' && (
-<div className="space-y-1">
-  {/* Zero with hit count */}
-  <div className="relative">
-    <button
-      onClick={() => setInputNumber('0')}
-      className="w-full py-3 bg-green-600 hover:bg-green-700 rounded font-bold text-white transition"
-    >
-      0
-      {/* Hit count badge */}
-      {spins.filter(s => s.number === 0).length > 0 && (
-        <span className="absolute top-0 right-0 bg-yellow-400 text-black text-xs rounded-full px-1">
-          {spins.filter(s => s.number === 0).length}
-        </span>
-      )}
-    </button>
-  </div>
-  
-  {/* Main number grid with heat map */}
-  <div className="grid grid-cols-12 gap-1">
-    {/* Top row */}
-    {[3,6,9,12,15,18,21,24,27,30,33,36].map(num => {
-      const hitCount = spins.slice(0, 36).filter(s => s.number === num).length;
-      const isHot = hitCount >= 3;
-      const isCold = hitCount === 0;
-      
-      return (
-        <button
-          key={num}
-          onClick={() => setInputNumber(num.toString())}
-          className={`relative py-3 rounded font-bold text-white transition ${
-            isHot ? 'ring-2 ring-yellow-400 animate-pulse' : ''
-          } ${
-            [3,9,12,18,21,27,30,36].includes(num) 
-              ? 'bg-red-600 hover:bg-red-700' 
-              : 'bg-black hover:bg-gray-800 border border-gray-600'
-          } ${isCold ? 'opacity-50' : ''}`}
-        >
-          {num}
-          {hitCount > 0 && (
-            <span className={`absolute -top-1 -right-1 text-xs rounded-full px-1 ${
-              isHot ? 'bg-yellow-400 text-black font-bold' : 'bg-gray-600 text-white'
-            }`}>
-              {hitCount}
-            </span>
-          )}
-        </button>
-      );
-    })}
-    
-    {/* Middle row */}
-    {[2,5,8,11,14,17,20,23,26,29,32,35].map(num => {
-      const hitCount = spins.slice(0, 36).filter(s => s.number === num).length;
-      const isHot = hitCount >= 3;
-      const isCold = hitCount === 0;
-      
-      return (
-        <button
-          key={num}
-          onClick={() => setInputNumber(num.toString())}
-          className={`relative py-3 rounded font-bold text-white transition ${
-            isHot ? 'ring-2 ring-yellow-400 animate-pulse' : ''
-          } ${
-            [5,14,23,32].includes(num) 
-              ? 'bg-red-600 hover:bg-red-700' 
-              : 'bg-black hover:bg-gray-800 border border-gray-600'
-          } ${isCold ? 'opacity-50' : ''}`}
-        >
-          {num}
-          {hitCount > 0 && (
-            <span className={`absolute -top-1 -right-1 text-xs rounded-full px-1 ${
-              isHot ? 'bg-yellow-400 text-black font-bold' : 'bg-gray-600 text-white'
-            }`}>
-              {hitCount}
-            </span>
-          )}
-        </button>
-      );
-    })}
-    
-    {/* Bottom row */}
-    {[1,4,7,10,13,16,19,22,25,28,31,34].map(num => {
-      const hitCount = spins.slice(0, 36).filter(s => s.number === num).length;
-      const isHot = hitCount >= 3;
-      const isCold = hitCount === 0;
-      
-      return (
-        <button
-          key={num}
-          onClick={() => setInputNumber(num.toString())}
-          className={`relative py-3 rounded font-bold text-white transition ${
-            isHot ? 'ring-2 ring-yellow-400 animate-pulse' : ''
-          } ${
-            [1,7,16,19,25,34].includes(num) 
-              ? 'bg-red-600 hover:bg-red-700' 
-              : 'bg-black hover:bg-gray-800 border border-gray-600'
-          } ${isCold ? 'opacity-50' : ''}`}
-        >
-          {num}
-          {hitCount > 0 && (
-            <span className={`absolute -top-1 -right-1 text-xs rounded-full px-1 ${
-              isHot ? 'bg-yellow-400 text-black font-bold' : 'bg-gray-600 text-white'
-            }`}>
-              {hitCount}
-            </span>
-          )}
-        </button>
-      );
-    })}
-  </div>
-                    
-                            {/* HISTORY SECTION */}
-                            <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
-                              <h3 className="text-xl font-bold text-yellow-400 mb-4">History</h3>
-                              <HistoryTable spins={spins} />
+                    )}
+
+                    {/* EDGE-TO-EDGE LAYOUT FOR TABLE VIEW */}
+                    {assistantSubTab === 'action' && session && actionView === 'table-view' && (
+                      <div className="flex gap-2 min-h-screen -m-6">
+                        {/* LEFT SIDE: Table View - Takes up left half */}
+                        <div className="w-1/2 p-2 pb-2 overflow-y-auto sticky top-0 self-start max-h-screen">
+                          <div className="space-y-1">
+                              {/* Zero with hit count */}
+                              <div className="relative">
+                                <button
+                                  onClick={() => addNumber(0)}
+                                  className="w-full py-3 bg-green-600 hover:bg-green-700 rounded font-bold text-white transition"
+                                >
+                                  0
+                                  {/* Hit count badge */}
+                                  {spins.filter(s => s.number === 0).length > 0 && (
+                                    <span className="absolute top-0 right-0 bg-yellow-400 text-black text-xs rounded-full px-1">
+                                      {spins.filter(s => s.number === 0).length}
+                                    </span>
+                                  )}
+                                </button>
+                              </div>
+
+                              {/* Main number grid with heat map */}
+                              <div className="grid grid-cols-12 gap-1">
+                                {/* Top row */}
+                                {[3,6,9,12,15,18,21,24,27,30,33,36].map(num => {
+                                  const hitCount = spins.slice(0, 36).filter(s => s.number === num).length;
+                                  const isHot = hitCount >= 3;
+                                  const isCold = hitCount === 0;
+
+                                  return (
+                                    <button
+                                      key={num}
+                                      onClick={() => addNumber(num)}
+                                      className={`relative py-3 rounded font-bold text-white transition ${
+                                        isHot ? 'ring-2 ring-yellow-400 animate-pulse' : ''
+                                      } ${
+                                        [3,9,12,18,21,27,30,36].includes(num)
+                                          ? 'bg-red-600 hover:bg-red-700'
+                                          : 'bg-black hover:bg-gray-800 border border-gray-600'
+                                      } ${isCold ? 'opacity-50' : ''}`}
+                                    >
+                                      {num}
+                                      {hitCount > 0 && (
+                                        <span className={`absolute -top-1 -right-1 text-xs rounded-full px-1 ${
+                                          isHot ? 'bg-yellow-400 text-black font-bold' : 'bg-gray-600 text-white'
+                                        }`}>
+                                          {hitCount}
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+
+                                {/* Middle row */}
+                                {[2,5,8,11,14,17,20,23,26,29,32,35].map(num => {
+                                  const hitCount = spins.slice(0, 36).filter(s => s.number === num).length;
+                                  const isHot = hitCount >= 3;
+                                  const isCold = hitCount === 0;
+
+                                  return (
+                                    <button
+                                      key={num}
+                                      onClick={() => addNumber(num)}
+                                      className={`relative py-3 rounded font-bold text-white transition ${
+                                        isHot ? 'ring-2 ring-yellow-400 animate-pulse' : ''
+                                      } ${
+                                        [5,14,23,32].includes(num)
+                                          ? 'bg-red-600 hover:bg-red-700'
+                                          : 'bg-black hover:bg-gray-800 border border-gray-600'
+                                      } ${isCold ? 'opacity-50' : ''}`}
+                                    >
+                                      {num}
+                                      {hitCount > 0 && (
+                                        <span className={`absolute -top-1 -right-1 text-xs rounded-full px-1 ${
+                                          isHot ? 'bg-yellow-400 text-black font-bold' : 'bg-gray-600 text-white'
+                                        }`}>
+                                          {hitCount}
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+
+                                {/* Bottom row */}
+                                {[1,4,7,10,13,16,19,22,25,28,31,34].map(num => {
+                                  const hitCount = spins.slice(0, 36).filter(s => s.number === num).length;
+                                  const isHot = hitCount >= 3;
+                                  const isCold = hitCount === 0;
+
+                                  return (
+                                    <button
+                                      key={num}
+                                      onClick={() => addNumber(num)}
+                                      className={`relative py-3 rounded font-bold text-white transition ${
+                                        isHot ? 'ring-2 ring-yellow-400 animate-pulse' : ''
+                                      } ${
+                                        [1,7,16,19,25,34].includes(num)
+                                          ? 'bg-red-600 hover:bg-red-700'
+                                          : 'bg-black hover:bg-gray-800 border border-gray-600'
+                                      } ${isCold ? 'opacity-50' : ''}`}
+                                    >
+                                      {num}
+                                      {hitCount > 0 && (
+                                        <span className={`absolute -top-1 -right-1 text-xs rounded-full px-1 ${
+                                          isHot ? 'bg-yellow-400 text-black font-bold' : 'bg-gray-600 text-white'
+                                        }`}>
+                                          {hitCount}
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+
+                              {/* HISTORY SECTION */}
+                              <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
+                                <h3 className="text-xl font-bold text-yellow-400 mb-4">History</h3>
+                                <HistoryTable
+                                  spins={spins}
+                                  historicalBets={historicalBets}
+                                  onHistoricalBetsUpdate={setHistoricalBets}
+                                  onBetPlaced={handleBetPlaced}
+                                />
+                              </div>
                             </div>
                           </div>
-                        )}
-                        
-                        {/* TABLE BETS CONTENT */}{/* TABLE BETS CONTENT */}
-{actionView === 'table-bets' && (
-  <div className="space-y-4">
-    {/* BETTING CARDS */}
-    <div className="grid grid-cols-3 gap-4">
-      <BettingCards18
-        manualBets={manualBets}
-        setManualBets={setManualBets}
-        playerUnit={playerContext.unitSize}
-        betHistory={betHistory}
-        setBetHistory={setBetHistory}
+
+                        {/* RIGHT SIDE: Analysis Tables - Takes up right half */}
+                        <div className="w-1/2 p-2 overflow-y-auto">
+                          {/* Analysis View Tabs */}
+                          <div className="flex gap-1 mb-2 bg-gray-900/50 p-1 rounded-lg">
+                            <button
+                              onClick={() => setAnalysisView('common')}
+                              className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
+                                analysisView === 'common'
+                                  ? 'bg-cyan-600 text-white'
+                                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                              }`}
+                            >
+                              Common
+                            </button>
+                            <button
+                              onClick={() => setAnalysisView('special')}
+                              className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
+                                analysisView === 'special'
+                                  ? 'bg-cyan-600 text-white'
+                                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                              }`}
+                            >
+                              Special
+                            </button>
+                            <button
+                              onClick={() => setAnalysisView('wheel')}
+                              className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
+                                analysisView === 'wheel'
+                                  ? 'bg-cyan-600 text-white'
+                                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                              }`}
+                            >
+                              Wheel
+                            </button>
+                            <button
+                              onClick={() => setAnalysisView('numbers')}
+                              className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
+                                analysisView === 'numbers'
+                                  ? 'bg-cyan-600 text-white'
+                                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                              }`}
+                            >
+                              Numbers
+                            </button>
+                          </div>
+
+                          {/* Analysis Table Content */}
+                          {analysisView === 'common' && (
+                            <CommonGroupsTable spinHistory={spins.map(s => s.number)} />
+                          )}
+                          {analysisView === 'special' && (
+                            <SpecialBetsTable spinHistory={spins.map(s => s.number)} />
+                          )}
+                          {analysisView === 'wheel' && (
+                            <WheelBetStats spinHistory={spins.map(s => s.number)} />
+                          )}
+                          {analysisView === 'numbers' && (
+                            <NumbersStatsTab history={spins.map(s => s.number)} />
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* WHEEL VIEWS */}
+                    {assistantSubTab === 'action' && session && actionView.startsWith('wheel') && (
+  <div className="flex gap-2 min-h-screen -m-6">
+    {/* Left Side: Wheel Train + History */}
+    <div className="w-1/2 p-2 overflow-y-auto sticky top-0 self-start max-h-screen space-y-2">
+      <WheelLayout
+        spinHistory={spins}
+        onNumberAdded={(num) => addNumber(num)}
       />
-      <BettingCards12
-        manualBets={manualBets}
-        setManualBets={setManualBets}
-        playerUnit={playerContext.unitSize}
-        betHistory={betHistory}
-        setBetHistory={setBetHistory}
-      />
-      <BettingCards6
-        manualBets={manualBets}
-        setManualBets={setManualBets}
-        playerUnit={playerContext.unitSize}
-        betHistory={betHistory}
-        setBetHistory={setBetHistory}
+      <WheelHistory
+        spins={spins}
+        selectedNumber={selectedNumber}
       />
     </div>
-    
-    {/* CURRENT BETS SUMMARY */}
-    <CurrentBetsSummary manualBets={manualBets} />
-    
-    {/* HOT/COLD HEATMAP */}
-    <div className="bg-gray-800 rounded-lg border border-gray-700 p-3">
-      <div className="flex justify-between items-center mb-2">
-        <h4 className="font-bold text-green-400 text-sm">🔥 Hot/Cold Analysis - Last 36 Spins</h4>
-        <button 
-          onClick={() => setShowHeatMap(!showHeatMap)}
-          className="text-xs text-gray-400 hover:text-white"
+    {/* Right Side: Analysis Tables */}
+    <div className="w-1/2 p-2 overflow-y-auto">
+      {/* Analysis View Tabs */}
+      <div className="flex gap-1 mb-2 bg-gray-900/50 p-1 rounded-lg">
+        <button
+          onClick={() => setAnalysisView('common')}
+          className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
+            analysisView === 'common'
+              ? 'bg-cyan-600 text-white'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+          }`}
         >
-          {showHeatMap ? 'Hide' : 'Show'}
+          Common
+        </button>
+        <button
+          onClick={() => setAnalysisView('special')}
+          className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
+            analysisView === 'special'
+              ? 'bg-cyan-600 text-white'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+          }`}
+        >
+          Special
+        </button>
+        <button
+          onClick={() => setAnalysisView('wheel')}
+          className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
+            analysisView === 'wheel'
+              ? 'bg-cyan-600 text-white'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+          }`}
+        >
+          Wheel
+        </button>
+        <button
+          onClick={() => setAnalysisView('numbers')}
+          className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
+            analysisView === 'numbers'
+              ? 'bg-cyan-600 text-white'
+              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+          }`}
+        >
+          Numbers
         </button>
       </div>
-      {showHeatMap && (
-        <HeatmapGrid spins={spins} setInputNumber={setInputNumber} />
+
+      {/* Analysis Table Content */}
+      {analysisView === 'common' && (
+        <CommonGroupsTable spinHistory={spins.map(s => s.number)} />
+      )}
+      {analysisView === 'special' && (
+        <SpecialBetsTable spinHistory={spins.map(s => s.number)} />
+      )}
+      {analysisView === 'wheel' && (
+        <WheelBetStats spinHistory={spins.map(s => s.number)} />
+      )}
+      {analysisView === 'numbers' && (
+        <NumbersStatsTab history={spins.map(s => s.number)} />
       )}
     </div>
-
-
-   {/* BETTING PERFORMANCE MATRIX */}
-<div className="bg-gray-900 rounded-lg border border-gray-700 p-3">
-  <h3 className="text-base font-bold mb-2 text-blue-300">Betting Performance Matrix</h3>
-  <div className="overflow-x-auto">
-    <div className="max-h-64 overflow-y-auto">
-      <table className="min-w-full text-xs">
-        <thead className="sticky top-0 bg-gray-800 z-10">
-          {/* Group headers row */}
-          <tr className="bg-gray-900">
-            <th rowSpan={2} className="px-1 py-1 text-center border border-gray-700 bg-gray-800 text-xs">Num</th>
-            <th colSpan={2} className="px-1 py-1 text-center border border-gray-700 bg-red-900/50 text-xs font-semibold">Colors</th>
-            <th colSpan={2} className="px-1 py-1 text-center border border-gray-700 bg-green-900/50 text-xs font-semibold">Even/Odd</th>
-            <th colSpan={2} className="px-1 py-1 text-center border border-gray-700 bg-blue-900/50 text-xs font-semibold">Low/High</th>
-            <th colSpan={3} className="px-1 py-1 text-center border border-gray-700 bg-orange-900/50 text-xs font-semibold">Dozens</th>
-            <th colSpan={3} className="px-1 py-1 text-center border border-gray-700 bg-purple-900/50 text-xs font-semibold">Columns</th>
-            <th colSpan={6} className="px-1 py-1 text-center border border-gray-700 bg-teal-900/50 text-xs font-semibold">Six Groups</th>
-            <th colSpan={6} className="px-1 py-1 text-center border border-gray-700 bg-yellow-900/50 text-xs font-semibold">Alternative Groups</th>
-            <th colSpan={2} className="px-1 py-1 text-center border border-gray-700 bg-pink-900/50 text-xs font-semibold">Position</th>
-          </tr>
-          {/* Individual column headers */}
-          <tr className="bg-gray-800">
-            {/* Colors */}
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Red">R</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Black">B</th>
-            {/* Even/Odd */}
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Even">E</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Odd">O</th>
-            {/* Low/High */}
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Low (1-18)">L</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="High (19-36)">H</th>
-            {/* Dozens */}
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="1st Dozen (1-12)">D1</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="2nd Dozen (13-24)">D2</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="3rd Dozen (25-36)">D3</th>
-            {/* Columns */}
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Column 1">C1</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Column 2">C2</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Column 3">C3</th>
-            {/* Six Groups */}
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Six 1-6">S1</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Six 7-12">S2</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Six 13-18">S3</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Six 19-24">S4</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Six 25-30">S5</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Six 31-36">S6</th>
-            {/* Alternative Groups */}
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Alt1 Group A">A1A</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Alt1 Group B">A1B</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Alt2 Group AA">A2A</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Alt2 Group BB">A2B</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Alt3 Group AAA">A3A</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Alt3 Group BBB">A3B</th>
-            {/* Position */}
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Edge Numbers">EDG</th>
-            <th className="px-1 py-1 text-center border border-gray-700 text-xs" title="Center Numbers">CTR</th>
-          </tr>
-        </thead>
-        <tbody>
-          {/* Show ALL spins, not just ones with bets */}
-          {spins.slice(0, 10).map((spin, index) => {
-            const num = spin.number;
-            // Find if there was a bet for this spin
-            const betRow = betHistory.find(b => b.spin === num);
-            
-            // Determine which groups won - using exact key names
-            const winningGroups: Record<string, boolean> = {
-              'red': spin.color === 'red',
-              'black': spin.color === 'black',
-              'even': spin.even_odd === 'even',
-              'odd': spin.even_odd === 'odd',
-              'low': spin.low_high === 'low',
-              'high': spin.low_high === 'high',
-              'dozen1': spin.dozen === 'first',
-              'dozen2': spin.dozen === 'second',
-              'dozen3': spin.dozen === 'third',
-              'col1': spin.column_num === 1,
-              'col2': spin.column_num === 2,
-              'col3': spin.column_num === 3,
-              'six1': num >= 1 && num <= 6,
-              'six2': num >= 7 && num <= 12,
-              'six3': num >= 13 && num <= 18,
-              'six4': num >= 19 && num <= 24,
-              'six5': num >= 25 && num <= 30,
-              'six6': num >= 31 && num <= 36,
-              'alt1_1': num > 0 && [1,2,3,7,8,9,13,14,15,19,20,21,25,26,27,31,32,33].includes(num),
-              'alt1_2': num > 0 && [4,5,6,10,11,12,16,17,18,22,23,24,28,29,30,34,35,36].includes(num),
-              'alt2_1': num > 0 && [1,2,3,4,5,6,13,14,15,16,17,18,25,26,27,28,29,30].includes(num),
-              'alt2_2': num > 0 && [7,8,9,10,11,12,19,20,21,22,23,24,31,32,33,34,35,36].includes(num),
-              'alt3_1': num > 0 && [1,2,3,4,5,6,7,8,9,19,20,21,22,23,24,25,26,27].includes(num),
-              'alt3_2': num > 0 && [10,11,12,13,14,15,16,17,18,28,29,30,31,32,33,34,35,36].includes(num),
-              'edge': num > 0 && [1,2,3,4,5,6,7,8,9,28,29,30,31,32,33,34,35,36].includes(num),
-              'center': num > 0 && [10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27].includes(num)
-            };
-
-            return (
-              <tr key={index} className="hover:bg-gray-800/50">
-                <td className="px-1 py-1 text-center border border-gray-700 text-xs font-bold">
-                  {num}
-                </td>
-                {['red', 'black', 'even', 'odd', 'low', 'high', 'dozen1', 'dozen2', 'dozen3',
-                  'col1', 'col2', 'col3', 'six1', 'six2', 'six3', 'six4', 'six5', 'six6',
-                  'alt1_1', 'alt1_2', 'alt2_1', 'alt2_2', 'alt3_1', 'alt3_2', 'edge', 'center'].map(betKey => {
-                  
-                  const won = winningGroups[betKey];
-                  const hasBet = betRow?.bets?.[betKey];
-                  const result = betRow?.results?.[betKey];
-                  
-                  return (
-                    <td 
-                      key={betKey} 
-                      className={`px-1 py-1 text-center border border-gray-700 text-xs ${
-                        won ? 'bg-green-900/30' : ''  // Highlight winning cells
-                      }`}
-                    >
-                      {hasBet && result !== undefined ? (
-                        <span className={result > 0 ? 'text-green-400 font-bold' : 'text-red-400'}>
-                          {result > 0 ? '+' : ''}{result}
-                        </span>
-                      ) : (
-                        won ? '✓' : ''  // Show checkmark for winning groups even without bets
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
   </div>
-</div>
-    
-    {/* Session totals */}
-    <div className="mt-2 p-2 bg-gray-800 rounded text-xs">
-      <div className="flex justify-between">
-        <span>P/L: <span className={sessionPnL >= 0 ? 'text-green-400' : 'text-red-400'}>
-          ${Math.abs(sessionPnL).toFixed(2)}
-        </span></span>
-        <span>Spins: {spins.length}</span>
-        <span>Win Rate: {betHistory.filter(b => b.spin !== null && b.totalPnL > 0).length > 0 ? 
-          Math.round((betHistory.filter(b => b.totalPnL > 0).length / betHistory.filter(b => b.spin !== null).length) * 100) : 0}%
-        </span>
-      </div>
-    </div>
-  </div>
-)}
-                        {/* TABLE STATS CONTENT */}
-                        {actionView === 'table-stats' && (
-                          <div className="space-y-6">
-                            <h2 className="text-2xl font-bold text-yellow-400">Table Statistics</h2>
-                            <StatsMatrix groupStats={groupStats || []} spinsCount={spins.length} />
-                          </div>
-                        )}
-                        
-                        {/* WHEEL VIEW CONTENT */}
-                        {actionView === 'wheel-view' && (
-  <div className="space-y-4">
-    <WheelDisplay
-      spins={spins.map(s => s.number)}
-      selectedNumber={selectedNumber}
-      setSelectedNumber={setSelectedNumber}
-      inputNumber={inputNumber}
-      setInputNumber={setInputNumber}
-      addNumber={addNumber}
-      hitCounts={calculateHitCounts(spins, 36)}
-    />
-    <WheelHistory
-      spins={spins}
-      selectedNumber={selectedNumber}
-    />
-  </div>
-)}
-                        
-                        {/* WHEEL BETS CONTENT */}
-                        {actionView === 'wheel-bets' && (
-                          <WheelView
-                            manualBets={manualBets}
-                            setManualBets={setManualBets}
-                            betHistory={betHistory}
-                            setBetHistory={setBetHistory}
-                            spins={spins.map(s => s.number)}
-                            inputNumber={inputNumber}
-                            setInputNumber={setInputNumber}
-                            addNumber={addNumber}
-                            playerContext={playerContext}
-                            sessionPnL={sessionPnL}
-                            showHeatMap={showHeatMap}
-                            setShowHeatMap={setShowHeatMap}
-                          />
-                        )}
-                        
-                        {/* WHEEL STATS CONTENT */}
-                        {actionView === 'wheel-stats' && (
-  <WheelStats spins={spins} />
-)}
-                        
-                      </div>
                     )}
                     {assistantSubTab === 'performance' && session && (
                       <div className="space-y-6">
@@ -1255,30 +1339,18 @@ Special Bets Stats
    
    Wheel Bets Stats
   </button>
-  {/* Add this button after "Wheel Bets Stats" button */}
-<button
-  onClick={() => setAnalysisView('numbers')}
-  className={`
-    px-3 py-1.5 text-xs font-medium rounded transition-colors
-    ${analysisView === 'numbers' 
-      ? 'bg-purple-600 text-white' 
-      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}
-  `}
->
-  Numbers Stats
-</button>
+  <button
+    onClick={() => setAnalysisView('numbers')}
+    className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+      analysisView === 'numbers'
+        ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50'
+        : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+    }`}
+  >
+    Numbers Stats
+  </button>
 </div>
 </div>
-
- {/* Oracle button on the right */}
- <button
-  onClick={() => setAnalysisView('oracle')}
-  className={`...`}
->
-  <span>📊</span>
-  Enhanced Probability Analysis
-  <span className="text-xs bg-white/20 rounded px-1">NEW</span>
-</button>
     {/* Conditional rendering based on selection */}
 {analysisView === 'common' ? (
   <CommonGroupsTable 
@@ -1296,10 +1368,8 @@ Special Bets Stats
 ) : analysisView === 'numbers' ? (
   <NumbersStatsTab
     history={spins.map(s => s.number)}
-
-  />) : analysisView === 'oracle' ? (
-    <EnhancedProbabilityAnalysis history={spins.map(s => s.number)} />
-  ) : null}
+  />
+) : null}
     
     {/* 2. Section Selector Tabs */}
     <div className="flex flex-wrap gap-2">
@@ -1350,52 +1420,6 @@ Special Bets Stats
   </div>
 )}
                       
-                    {assistantSubTab === 'gamified' && session && (
-  <div className="space-y-6">
-    <h2 className="text-2xl font-bold text-yellow-400">Gamified Betting Cards</h2>
-    
-    {/* Check if cards mode is active */}
-    {!gameState.cardsModeOn ? (
-      <div className="bg-gray-800/50 rounded-lg p-6 text-center">
-        <p className="text-gray-400 mb-4">Ready to start structured betting?</p>
-        <button
-          onClick={() => {
-            // Start cards mode with current player setup
-            gameState.startCardsMode(
-              {
-                bankrollStart: currentBankroll,
-                targetProfit: playerSetup.targetProfit,
-                stopLoss: playerSetup.stopLoss,
-                maxMinutes: playerSetup.timeAvailable
-              },
-              {
-                group: "red/black",
-                perCardTarget: 3,
-                maxBetsPerCard: 10,
-                maxStepsPerCard: 15,
-                progression: [1, 1, 2, 2, 3, 3, 4, 4],
-                baseUnit: playerSetup.betUnit,
-                adaptiveRule: "adaptive9",
-                skipPenalty: false
-              }
-            )
-          }}
-          className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold rounded-lg"
-        >
-          Start Cards Mode
-        </button>
-      </div>
-    ) : (
-      <div>
-{gameState.activeCard ? (
-  <ActiveRedBlackCard />
-) : (
-  <div className="text-yellow-400">Loading card component...</div>
-)}
-      </div>
-    )}
-  </div>
-)}
                   </div>
                 </div>
               </div>
