@@ -38,9 +38,8 @@ export default function PricingPage() {
       description: 'For serious players',
       features: [
         'Unlimited spins',
-        'All 57 betting groups tracked',
+        'All 47 betting groups tracked',
         'Advanced analytics dashboard',
-        'Cloud storage & sync',
         'CSV/JSON export',
         'Pattern detection engine',
         'Time correlation analysis',
@@ -60,9 +59,11 @@ export default function PricingPage() {
       description: 'For professional strategists',
       features: [
         'Everything in Pro, plus:',
+        'Cloud storage & sync',
         'AI Betting Assistant',
         'Real-time recommendations',
         'Probability chamber predictions',
+        'Dealer tracking',
         'Group performance matrix',
         'Session comparison',
         'Advanced wheel analysis',
@@ -182,11 +183,12 @@ export default function PricingPage() {
               <tbody className="text-sm">
                 {[
                   { feature: 'Spins per session', free: '50', pro: 'Unlimited', elite: 'Unlimited' },
-                  { feature: 'Betting groups tracked', free: '6 basic', pro: 'All 57', elite: 'All 57' },
-                  { feature: 'Cloud storage', free: '✗', pro: '✓', elite: '✓' },
+                  { feature: 'Betting groups tracked', free: '6 basic', pro: 'All 47', elite: 'All 47' },
                   { feature: 'Data export (CSV/JSON)', free: '✗', pro: '✓', elite: '✓' },
+                  { feature: 'Cloud storage & sync', free: '✗', pro: '✗', elite: '✓' },
                   { feature: 'Pattern detection', free: '✗', pro: '✓', elite: '✓' },
                   { feature: 'AI Betting Assistant', free: '✗', pro: '✗', elite: '✓' },
+                  { feature: 'Dealer tracking', free: '✗', pro: '✗', elite: '✓' },
                   { feature: 'Real-time recommendations', free: '✗', pro: '✗', elite: '✓' },
                   { feature: 'Probability predictions', free: '✗', pro: '✗', elite: '✓' },
                   { feature: 'Support', free: 'Community', pro: 'Email', elite: 'Priority' },
