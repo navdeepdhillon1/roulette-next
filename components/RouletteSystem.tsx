@@ -759,11 +759,6 @@ const openSessionSetup = () => {
             <div className="text-center space-y-6">
               <div className="text-6xl mb-4">🎰</div>
               <h2 className="text-3xl font-bold text-yellow-400">Ready to Track?</h2>
-              <p className="text-gray-400">
-                {storageMode === 'local' 
-                  ? 'Start a practice session (data saved locally)'
-                  : 'Start a professional session (data saved to cloud)'}
-              </p>
               <button
                 onClick={() => {
                   console.log('Center button clicked - opening session setup')
@@ -776,7 +771,7 @@ const openSessionSetup = () => {
               </button>
               {storageMode === 'local' && (
                 <p className="text-sm text-yellow-400/60">
-                  <a href="#" className="underline">Sign in</a> to save sessions permanently
+                  <a href="#" className="underline">Sign in</a> to download sessions
                 </p>
               )}
             </div>
