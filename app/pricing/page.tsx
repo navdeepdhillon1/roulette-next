@@ -100,14 +100,18 @@ export default function PricingPage() {
     try {
       // Check if user is authenticated
       const user = await getCurrentUser()
+      console.log('Current user:', user) // Debug log
 
       if (!user) {
         // User not logged in - show auth modal
+        console.log('No user found, showing auth modal') // Debug log
         setSelectedPlan(planId)
         setShowAuthModal(true)
         setIsLoading(false)
         return
       }
+
+      console.log('User authenticated, creating checkout session') // Debug log
 
       // User is authenticated - get the correct price ID
       const priceId = STRIPE_PRICE_IDS[planId][billingInterval]
