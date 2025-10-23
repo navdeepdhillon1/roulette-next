@@ -138,7 +138,7 @@ const getArticleBySlug = (slug: string) => {
           <li>Treat it as entertainment cost</li>
         </ul>
 
-        <p>Use our simulator to test any system risk-free and see how it performs over time.</p>
+        <p>Use our tracking tools to test any system and see how it performs over time.</p>
       `,
     },
     'gamblers-fallacy-explained': {
@@ -448,13 +448,7 @@ export default function ArticlePage() {
           <p className="text-gray-400 mb-6">
             Use our tools to track real games, test strategies, and see probability in action.
           </p>
-          <div className="flex gap-4">
-            <Link
-              href="/simulator"
-              className="px-6 py-3 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-medium transition-all"
-            >
-              Try Simulator
-            </Link>
+          <div className="flex gap-4 justify-center">
             <Link
               href="/assistant"
               className="px-6 py-3 rounded-lg bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold transition-all hover:shadow-lg hover:shadow-yellow-400/50"

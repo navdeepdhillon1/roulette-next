@@ -175,12 +175,6 @@ export default function HomePage() {
         {/* CTA BUTTONS */}
         <div className="text-center mb-6 space-y-4">
           <div className="flex gap-4 justify-center">
-            <Link 
-              href="/simulator"
-              className="px-12 py-5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-xl text-xl shadow-2xl hover:shadow-blue-400/50 transition-all transform hover:scale-105"
-            >
-              🎰 Practice Simulator
-            </Link>
             <Link
               href="/analysis"
               className="px-12 py-5 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold rounded-xl text-xl shadow-2xl hover:shadow-yellow-400/50 transition-all transform hover:scale-105"
@@ -188,7 +182,7 @@ export default function HomePage() {
               📊 Start Analysis
             </Link>
           </div>
-          
+
           <p className="text-gray-400 text-sm">
             🔓 Practice Mode - All data saved locally in your browser
           </p>

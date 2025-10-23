@@ -174,12 +174,6 @@ export default function LearnPage() {
           </p>
           <div className="flex gap-4 justify-center">
             <Link
-              href="/simulator"
-              className="px-6 py-3 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-medium transition-all border border-gray-700"
-            >
-              Try Simulator
-            </Link>
-            <Link
               href="/assistant"
               className="px-6 py-3 rounded-lg bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold transition-all hover:shadow-lg hover:shadow-yellow-400/50"
             >
