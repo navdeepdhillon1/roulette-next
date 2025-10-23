@@ -37,14 +37,12 @@ export default function Navigation() {
       { href: '/', label: 'Home', icon: '🏠' },
       { href: '/tracker', label: 'Basic Tracker', icon: '📋' },
       { href: '/learn', label: 'Learning', icon: '📚' },
-      { href: '/pricing', label: 'Pricing', icon: '💎' },
     ],
     pro: [
       { href: '/', label: 'Home', icon: '🏠' },
       { href: '/tracker', label: 'Basic Tracker', icon: '📋' },
       { href: '/analysis', label: 'Advanced Tracker', icon: '📊' },
       { href: '/learn', label: 'Learning', icon: '📚' },
-      { href: '/pricing', label: 'Pricing', icon: '💎' },
     ],
     elite: [
       { href: '/', label: 'Home', icon: '🏠' },
@@ -52,7 +50,6 @@ export default function Navigation() {
       { href: '/analysis', label: 'Advanced Tracker', icon: '📊' },
       { href: '/assistant', label: 'Betting Assistant', icon: '🎯' },
       { href: '/learn', label: 'Learning', icon: '📚' },
-      { href: '/pricing', label: 'Pricing', icon: '💎' },
     ],
   };
   const links = linksByTier[userTier];
