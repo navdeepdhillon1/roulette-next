@@ -78,8 +78,10 @@ export async function signOut(): Promise<AuthResult> {
  * Get current user
  */
 export async function getCurrentUser() {
-  const { data: { user } } = await supabase.auth.getUser()
-  return user
+  // Use getSession() instead of getUser() for browser contexts
+  // getSession() checks local session first, getUser() makes a server call
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.user ?? null
 }
 
 /**
