@@ -32,6 +32,15 @@ const articles = [
     readTime: '6 min read',
     featured: false,
   },
+  {
+    slug: 'bankroll-management-guide',
+    title: 'Smart Bankroll Management: Never Bet More Than You Can Afford',
+    excerpt: 'Learn professional bankroll management strategies to protect your funds and play responsibly. Essential reading for serious players.',
+    category: 'Strategy',
+    date: '2025-01-20',
+    readTime: '10 min read',
+    featured: false,
+  },
 ]
 
 export default function LearnPage() {

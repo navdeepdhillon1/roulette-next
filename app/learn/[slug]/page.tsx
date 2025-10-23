@@ -200,6 +200,80 @@ const getArticleBySlug = (slug: string) => {
         <p>Track your sessions and see how the law of large numbers actually works over time, not over 10 spins.</p>
       `,
     },
+    'bankroll-management-guide': {
+      title: 'Smart Bankroll Management: Never Bet More Than You Can Afford',
+      category: 'Strategy',
+      date: '2025-01-20',
+      readTime: '10 min read',
+      author: 'Roulette Tracker Team',
+      content: `
+        <p>The most important skill in gambling isn't picking numbers—it's managing your money. Professional players know that bankroll management is the difference between entertainment and financial disaster.</p>
+
+        <h2>What Is a Bankroll?</h2>
+        <p>Your bankroll is money set aside specifically for gambling. It should be money you can afford to lose without impacting your finances, bills, or quality of life.</p>
+
+        <p><strong>Golden Rule:</strong> If you can't afford to lose it, don't bring it to the casino.</p>
+
+        <h2>The 1-5% Rule</h2>
+        <p>Never bet more than 1-5% of your total bankroll on a single spin.</p>
+
+        <h3>Example:</h3>
+        <ul>
+          <li><strong>Bankroll:</strong> $500</li>
+          <li><strong>Maximum single bet:</strong> $5-$25</li>
+          <li><strong>Recommended bet:</strong> $10 (2% of bankroll)</li>
+        </ul>
+
+        <p>This ensures you can survive losing streaks without going bust.</p>
+
+        <h2>Session Limits</h2>
+        <p>Divide your bankroll into sessions. Never risk more than 20-30% of your total bankroll in one session.</p>
+
+        <h3>Example with $1,000 bankroll:</h3>
+        <ul>
+          <li><strong>Session budget:</strong> $200</li>
+          <li><strong>Base bet:</strong> $10</li>
+          <li><strong>Number of sessions:</strong> 5 maximum</li>
+        </ul>
+
+        <p><strong>Stop Rule:</strong> If you lose your session budget, stop. Come back another day.</p>
+
+        <h2>Win Goals</h2>
+        <p>Set a win target for each session. Many players use 50% of their session budget.</p>
+
+        <p><strong>Example:</strong> Start with $200. If you're up $100 (50% profit), consider stopping.</p>
+
+        <p>Why? Because variance works both ways. What goes up often comes back down.</p>
+
+        <h2>The Reality Check</h2>
+        <p>Remember: The house edge means you lose 2.7% of every dollar bet over time. Bankroll management doesn't overcome this—it extends your playing time and reduces the risk of catastrophic losses.</p>
+
+        <h2>Warning Signs You're in Trouble</h2>
+        <ul>
+          <li>Betting with money intended for bills</li>
+          <li>Chasing losses by increasing bet sizes</li>
+          <li>Borrowing money to gamble</li>
+          <li>Hiding your gambling from family/friends</li>
+          <li>Feeling you "need" to gamble</li>
+        </ul>
+
+        <p>If any of these apply, please seek help. Gambling should be entertainment, not a necessity.</p>
+
+        <h2>Using Our Tracker for Bankroll Management</h2>
+        <p>Our tool helps you:</p>
+        <ul>
+          <li>Set and track session budgets</li>
+          <li>Monitor your spending over time</li>
+          <li>See how bet sizing affects your bankroll</li>
+          <li>Identify patterns in your behavior</li>
+        </ul>
+
+        <h2>The Takeaway</h2>
+        <p>Smart bankroll management won't make you a winner, but it will keep you in control. Treat gambling as entertainment with a cost, not an investment with a return.</p>
+
+        <p>Set limits. Stick to them. Enjoy the game. Never chase losses.</p>
+      `,
+    },
   }
 
   return articles[slug] || null
