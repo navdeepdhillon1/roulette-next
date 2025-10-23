@@ -34,10 +34,17 @@ export default function ProtectedRoute({ children, requiredTier, featureName }: 
 
     setIsAuthenticated(true)
 
-    // TODO: Get user's subscription tier from Supabase
-    // For now, we'll check user metadata or a subscriptions table
-    // This will be connected to Stripe later
-    const tier = (user.user_metadata?.subscription_tier || 'free') as SubscriptionTier
+    // Get user's subscription tier from Supabase
+    const { supabase } = await import('@/lib/supabase')
+
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('tier, status')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .single()
+
+    const tier = (subscription?.tier || 'free') as SubscriptionTier
     setUserTier(tier)
   }
 

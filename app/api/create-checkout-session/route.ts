@@ -1,0 +1,87 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { stripe } from '@/lib/stripe'
+import { getCurrentUser } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
+
+export async function POST(request: NextRequest) {
+  try {
+    // Get authenticated user
+    const user = await getCurrentUser()
+
+    if (!user || !user.email) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Get price_id from request body
+    const { price_id } = await request.json()
+
+    if (!price_id) {
+      return NextResponse.json(
+        { error: 'price_id is required' },
+        { status: 400 }
+      )
+    }
+
+    // Check if user already has a Stripe customer ID
+    const { data: existingSubscription } = await supabase
+      .from('subscriptions')
+      .select('stripe_customer_id')
+      .eq('user_id', user.id)
+      .single()
+
+    let customerId = existingSubscription?.stripe_customer_id
+
+    // Create Stripe customer if doesn't exist
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: user.email,
+        metadata: {
+          supabase_user_id: user.id,
+        },
+      })
+      customerId = customer.id
+
+      // Store customer ID in database
+      await supabase.from('subscriptions').upsert({
+        user_id: user.id,
+        stripe_customer_id: customerId,
+        tier: 'free',
+        status: 'incomplete',
+      })
+    }
+
+    // Create Checkout Session
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      line_items: [
+        {
+          price: price_id,
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: `${request.headers.get('origin')}/analysis?success=true`,
+      cancel_url: `${request.headers.get('origin')}/pricing?canceled=true`,
+      metadata: {
+        user_id: user.id,
+        price_id: price_id,
+      },
+      subscription_data: {
+        metadata: {
+          user_id: user.id,
+        },
+      },
+    })
+
+    return NextResponse.json({ url: session.url })
+  } catch (error) {
+    console.error('Stripe checkout error:', error)
+    return NextResponse.json(
+      { error: 'Failed to create checkout session' },
+      { status: 500 }
+    )
+  }
+}

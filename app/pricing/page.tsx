@@ -3,16 +3,23 @@
 import { useState } from 'react'
 import Navigation from '@/components/Navigation'
 import AuthModal from '@/components/AuthModal'
+import { STRIPE_PRICE_IDS } from '@/lib/stripe-config'
+import { getCurrentUser } from '@/lib/auth'
+
+type BillingInterval = 'monthly' | 'annual'
 
 export default function PricingPage() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<'free' | 'pro' | 'elite'>('free')
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>('monthly')
+  const [isLoading, setIsLoading] = useState(false)
 
   const plans = [
     {
       id: 'free' as const,
       name: 'Free',
-      price: '$0',
+      monthlyPrice: '$0',
+      annualPrice: '$0',
       period: 'forever',
       description: 'Perfect for casual players',
       features: [
@@ -33,8 +40,9 @@ export default function PricingPage() {
     {
       id: 'pro' as const,
       name: 'Pro',
-      price: '$9.99',
-      period: '/month',
+      monthlyPrice: '$9.99',
+      annualPrice: '$99.99',
+      period: billingInterval === 'monthly' ? '/month' : '/year',
       description: 'For serious players',
       features: [
         'Unlimited spins',
@@ -54,8 +62,9 @@ export default function PricingPage() {
     {
       id: 'elite' as const,
       name: 'Elite',
-      price: '$19.99',
-      period: '/month',
+      monthlyPrice: '$19.99',
+      annualPrice: '$199.99',
+      period: billingInterval === 'monthly' ? '/month' : '/year',
       description: 'For professional strategists',
       features: [
         'Everything in Pro, plus:',
@@ -77,9 +86,54 @@ export default function PricingPage() {
     },
   ]
 
-  const handleSelectPlan = (planId: 'free' | 'pro' | 'elite') => {
-    setSelectedPlan(planId)
-    setShowAuthModal(true)
+  const handleSelectPlan = async (planId: 'free' | 'pro' | 'elite') => {
+    // Free plan - just show auth modal
+    if (planId === 'free') {
+      setSelectedPlan(planId)
+      setShowAuthModal(true)
+      return
+    }
+
+    // Paid plans - check auth then redirect to Stripe
+    setIsLoading(true)
+
+    try {
+      // Check if user is authenticated
+      const user = await getCurrentUser()
+
+      if (!user) {
+        // User not logged in - show auth modal
+        setSelectedPlan(planId)
+        setShowAuthModal(true)
+        setIsLoading(false)
+        return
+      }
+
+      // User is authenticated - get the correct price ID
+      const priceId = STRIPE_PRICE_IDS[planId][billingInterval]
+
+      // Call our checkout API
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ price_id: priceId }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create checkout session')
+      }
+
+      // Redirect to Stripe Checkout
+      window.location.href = data.url
+    } catch (error) {
+      console.error('Checkout error:', error)
+      alert('Failed to start checkout. Please try again.')
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -92,9 +146,36 @@ export default function PricingPage() {
           <h1 className="text-5xl font-bold bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 bg-clip-text text-transparent mb-4">
             Choose Your Plan
           </h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-8">
             Start tracking smarter. Upgrade anytime. Cancel anytime.
           </p>
+
+          {/* Billing Interval Toggle */}
+          <div className="inline-flex items-center gap-3 bg-gray-800/50 border border-gray-700 rounded-full p-1">
+            <button
+              onClick={() => setBillingInterval('monthly')}
+              className={`px-6 py-2 rounded-full font-semibold transition-all ${
+                billingInterval === 'monthly'
+                  ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingInterval('annual')}
+              className={`px-6 py-2 rounded-full font-semibold transition-all ${
+                billingInterval === 'annual'
+                  ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Annual
+              <span className="ml-2 text-xs bg-green-500 text-white px-2 py-0.5 rounded-full">
+                Save 17%
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Pricing Cards */}
@@ -121,7 +202,9 @@ export default function PricingPage() {
               <div className="text-center mb-6">
                 <h3 className="text-2xl font-bold text-white mb-2">{plan.name}</h3>
                 <div className="flex items-baseline justify-center gap-1 mb-2">
-                  <span className="text-5xl font-bold text-yellow-400">{plan.price}</span>
+                  <span className="text-5xl font-bold text-yellow-400">
+                    {billingInterval === 'monthly' ? plan.monthlyPrice : plan.annualPrice}
+                  </span>
                   <span className="text-gray-400">{plan.period}</span>
                 </div>
                 <p className="text-gray-400 text-sm">{plan.description}</p>
@@ -146,13 +229,14 @@ export default function PricingPage() {
               {/* CTA Button */}
               <button
                 onClick={() => handleSelectPlan(plan.id)}
-                className={`w-full py-4 rounded-lg font-bold text-lg transition-all transform hover:scale-105 ${
+                disabled={isLoading}
+                className={`w-full py-4 rounded-lg font-bold text-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
                   plan.highlight
                     ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg hover:shadow-yellow-400/50'
                     : 'bg-gray-700 hover:bg-gray-600 text-white'
                 }`}
               >
-                {plan.cta}
+                {isLoading ? 'Loading...' : plan.cta}
               </button>
 
               {plan.id !== 'free' && (
