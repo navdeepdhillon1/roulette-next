@@ -41,6 +41,15 @@ const articles = [
     readTime: '10 min read',
     featured: false,
   },
+  {
+    slug: 'european-vs-american-roulette',
+    title: 'European vs American Roulette: Why the Extra Zero Matters',
+    excerpt: 'That second green pocket nearly doubles the house edge. Discover why you should always choose European roulette when possible.',
+    category: 'Fundamentals',
+    date: '2025-01-23',
+    readTime: '7 min read',
+    featured: true,
+  },
 ]
 
 export default function LearnPage() {
