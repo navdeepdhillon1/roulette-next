@@ -14,6 +14,7 @@ export default function SubscriptionDashboard() {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null)
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
+  const [managingBilling, setManagingBilling] = useState(false)
 
   useEffect(() => {
     loadSubscription()
@@ -51,6 +52,39 @@ export default function SubscriptionDashboard() {
       console.error('Failed to load subscription:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleManageBilling = async () => {
+    setManagingBilling(true)
+    try {
+      const { supabase } = await import('@/lib/supabase')
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session?.access_token) {
+        alert('Please sign in to manage billing')
+        return
+      }
+
+      const response = await fetch('/api/create-portal-session', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
+      const data = await response.json()
+
+      if (data.url) {
+        // Redirect to Stripe Customer Portal
+        window.location.href = data.url
+      } else {
+        throw new Error(data.error || 'Failed to create portal session')
+      }
+    } catch (error) {
+      console.error('Failed to open billing portal:', error)
+      alert('Failed to open billing portal. Please try again.')
+      setManagingBilling(false)
     }
   }
 
@@ -181,14 +215,13 @@ export default function SubscriptionDashboard() {
 
         {(tier === 'pro' || tier === 'elite') && isActive && (
           <>
-            <a
-              href="https://billing.stripe.com/p/login/test_YOUR_PORTAL_ID"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all text-center"
+            <button
+              onClick={handleManageBilling}
+              disabled={managingBilling}
+              className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Manage Billing
-            </a>
+              {managingBilling ? 'Opening Portal...' : 'Manage Billing'}
+            </button>
             {tier === 'pro' && (
               <a
                 href="/pricing"
