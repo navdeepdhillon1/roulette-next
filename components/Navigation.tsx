@@ -10,6 +10,7 @@ import AuthModal from './AuthModal';
 export default function Navigation() {
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
+  const [userTier, setUserTier] = useState<'free' | 'pro' | 'elite'>('free');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
@@ -21,18 +22,41 @@ export default function Navigation() {
   const checkAuth = async () => {
     const currentUser = await getCurrentUser();
     setUser(currentUser);
+
+    // If user is signed in, check their subscription tier
+    if (currentUser) {
+      try {
+        const { supabase } = await import('@/lib/supabase');
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.access_token) {
+          const response = await fetch('/api/subscription', {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          });
+
+          const data = await response.json();
+          setUserTier(data.tier || 'free');
+        }
+      } catch (error) {
+        console.error('Failed to load subscription:', error);
+        setUserTier('free');
+      }
+    } else {
+      // Not signed in = free tier
+      setUserTier('free');
+    }
   };
 
   const handleSignOut = async () => {
     await signOut();
     setUser(null);
+    setUserTier('free');
     setShowUserMenu(false);
     window.location.reload(); // Refresh to clear session
   };
 
-  // For now, show all 5 tabs - we'll add tier restrictions later with auth
-  let userTier: 'free' | 'pro' | 'elite' = 'elite'; // ✅ allows all 3 types without literal narrowing
-  
   // Dynamic links based on tier (use mapping to avoid literal-comparison errors)
   const linksByTier: Record<'free' | 'pro' | 'elite', Array<{ href: string; label: string; icon: string }>> = {
     free: [
