@@ -46,13 +46,17 @@ export async function GET(request: Request) {
       )
     }
 
-    // Query subscription from database - first try with status filter
-    const { data: activeSubscription, error: activeError } = await supabase
+    // Query subscription from database - get all active subscriptions (user may have multiple)
+    const { data: activeSubscriptions, error: activeError } = await supabase
       .from('subscriptions')
       .select('*')
       .eq('user_id', user.id)
       .eq('status', 'active')
-      .single()
+      .order('created_at', { ascending: false })
+      .limit(10)
+
+    // Pick the highest tier subscription
+    const activeSubscription = activeSubscriptions?.[0] || null
 
     console.log('[API Subscription] Active subscription query:', {
       found: !!activeSubscription,
