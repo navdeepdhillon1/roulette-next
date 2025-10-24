@@ -131,11 +131,21 @@ export default function Navigation() {
                       <p className="text-sm text-gray-400">Signed in as</p>
                       <p className="text-sm font-medium text-white truncate">{user.email}</p>
                     </div>
+                    <Link
+                      href="/account"
+                      onClick={() => {
+                        setShowUserMenu(false)
+                        trackNavigationClick('Account')
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-all"
+                    >
+                      ⚙️ Account Settings
+                    </Link>
                     <button
                       onClick={handleSignOut}
                       className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 transition-all"
                     >
-                      Sign Out
+                      🚪 Sign Out
                     </button>
                   </div>
                 )}
