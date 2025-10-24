@@ -1,14 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
-import { getCurrentUser } from '@/lib/auth'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
 export async function POST(request: NextRequest) {
   try {
-    // Get authenticated user
-    const user = await getCurrentUser()
+    // Get the access token from the Authorization header
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
 
-    if (!user || !user.email) {
+    const token = authHeader.replace('Bearer ', '')
+
+    // Create a Supabase client and get the user from the token
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+
+    if (authError || !user || !user.email) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }

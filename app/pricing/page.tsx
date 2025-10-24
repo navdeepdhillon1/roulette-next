@@ -116,11 +116,20 @@ export default function PricingPage() {
       // User is authenticated - get the correct price ID
       const priceId = STRIPE_PRICE_IDS[planId][billingInterval]
 
-      // Call our checkout API
+      // Get the session token to pass to the API
+      const { supabase } = await import('@/lib/supabase')
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (!session) {
+        throw new Error('No session found')
+      }
+
+      // Call our checkout API with the access token
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ price_id: priceId }),
       })
