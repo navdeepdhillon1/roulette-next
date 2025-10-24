@@ -34,18 +34,19 @@ export default function ProtectedRoute({ children, requiredTier, featureName }: 
 
     setIsAuthenticated(true)
 
-    // Get user's subscription tier from Supabase
-    const { supabase } = await import('@/lib/supabase')
+    // Get user's subscription tier from API (server-side check)
+    try {
+      const response = await fetch('/api/subscription')
+      const data = await response.json()
 
-    const { data: subscription } = await supabase
-      .from('subscriptions')
-      .select('tier, status')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single()
+      console.log('[ProtectedRoute] Subscription data:', data)
 
-    const tier = (subscription?.tier || 'free') as SubscriptionTier
-    setUserTier(tier)
+      const tier = (data.tier || 'free') as SubscriptionTier
+      setUserTier(tier)
+    } catch (error) {
+      console.error('[ProtectedRoute] Failed to fetch subscription:', error)
+      setUserTier('free')
+    }
   }
 
   // Still checking authentication
