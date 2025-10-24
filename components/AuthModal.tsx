@@ -76,15 +76,16 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-yellow-400/30 rounded-xl p-8 max-w-md w-full my-8 relative">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl leading-none"
-        >
-          ×
-        </button>
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm overflow-y-auto">
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border border-yellow-400/30 rounded-xl p-8 max-w-md w-full relative">
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl leading-none"
+          >
+            ×
+          </button>
 
         {/* Header */}
         <div className="text-center mb-6">
@@ -213,6 +214,7 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
           <p className="text-gray-500 text-xs text-center">
             Your data is securely stored and encrypted. We never share your information.
           </p>
+        </div>
         </div>
       </div>
     </div>
