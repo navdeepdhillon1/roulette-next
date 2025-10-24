@@ -154,7 +154,11 @@ export default function Navigation() {
             // Refresh user state after auth
             checkAuth();
           }}
-          defaultPlan="free"
+          onSuccess={() => {
+            setShowAuthModal(false);
+            // Refresh user state after successful auth
+            checkAuth();
+          }}
         />
       )}
     </nav>
