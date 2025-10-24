@@ -5,11 +5,13 @@ import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { trackNavigationClick } from '@/lib/analytics';
 import { getCurrentUser, signOut } from '@/lib/auth';
+import AuthModal from './AuthModal';
 
 export default function Navigation() {
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Check authentication status on mount
   useEffect(() => {
@@ -90,16 +92,28 @@ export default function Navigation() {
               );
             })}
 
-            {/* Auth Button / User Menu */}
+            {/* Auth Buttons / User Menu */}
             {!user ? (
-              <Link
-                href="/pricing"
-                onClick={() => trackNavigationClick('Get Started')}
-                className="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
-              >
-                <span>🚀</span>
-                <span className="hidden md:inline">Get Started</span>
-              </Link>
+              <>
+                <button
+                  onClick={() => {
+                    trackNavigationClick('Sign In');
+                    setShowAuthModal(true);
+                  }}
+                  className="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white"
+                >
+                  <span>🔐</span>
+                  <span className="hidden md:inline">Sign In</span>
+                </button>
+                <Link
+                  href="/pricing"
+                  onClick={() => trackNavigationClick('Get Started')}
+                  className="px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
+                >
+                  <span>🚀</span>
+                  <span className="hidden md:inline">Get Started</span>
+                </Link>
+              </>
             ) : (
               <div className="relative">
                 <button
@@ -130,6 +144,19 @@ export default function Navigation() {
           </div>
         </div>
       </div>
+
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => {
+            setShowAuthModal(false);
+            // Refresh user state after auth
+            checkAuth();
+          }}
+          defaultPlan="free"
+        />
+      )}
     </nav>
   );
 }
