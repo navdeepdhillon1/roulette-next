@@ -36,9 +36,24 @@ export default function ProtectedRoute({ children, requiredTier, featureName }: 
 
     // Get user's subscription tier from API (server-side check)
     try {
-      const response = await fetch('/api/subscription')
-      const data = await response.json()
+      // Get the session to extract the access token
+      const { supabase } = await import('@/lib/supabase')
+      const { data: { session } } = await supabase.auth.getSession()
 
+      if (!session?.access_token) {
+        console.warn('[ProtectedRoute] No access token available')
+        setUserTier('free')
+        return
+      }
+
+      // Call API with auth token
+      const response = await fetch('/api/subscription', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      })
+
+      const data = await response.json()
       console.log('[ProtectedRoute] Subscription data:', data)
 
       const tier = (data.tier || 'free') as SubscriptionTier

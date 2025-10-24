@@ -1,19 +1,45 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { getCurrentUser } from '@/lib/auth'
+import { cookies } from 'next/headers'
 
 // Server-side Supabase client (uses environment variables from server)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-const supabase = createClient(supabaseUrl, supabaseKey)
-
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Get current user
-    const user = await getCurrentUser()
+    // Get auth token from Authorization header (sent by client)
+    const authHeader = request.headers.get('authorization')
+    const token = authHeader?.replace('Bearer ', '')
 
-    if (!user) {
+    if (!token) {
+      console.log('[API Subscription] No authorization token provided')
+      return NextResponse.json(
+        { error: 'Unauthorized', tier: 'free', status: 'inactive' },
+        { status: 401 }
+      )
+    }
+
+    // Create Supabase client
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    })
+
+    // Get user from token
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token)
+
+    console.log('[API Subscription] User check:', {
+      hasUser: !!user,
+      userId: user?.id,
+      error: userError
+    })
+
+    if (!user || userError) {
+      console.log('[API Subscription] Invalid token or user not found')
       return NextResponse.json(
         { error: 'Unauthorized', tier: 'free', status: 'inactive' },
         { status: 401 }
