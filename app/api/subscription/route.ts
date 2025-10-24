@@ -52,11 +52,13 @@ export async function GET(request: Request) {
       .select('*')
       .eq('user_id', user.id)
       .eq('status', 'active')
-      .order('created_at', { ascending: false })
-      .limit(10)
+      .limit(20) // Get up to 20 subscriptions
 
-    // Pick the highest tier subscription
-    const activeSubscription = activeSubscriptions?.[0] || null
+    // Pick the highest tier subscription (elite > pro > free)
+    const tierPriority: Record<string, number> = { elite: 3, pro: 2, free: 1 }
+    const activeSubscription = activeSubscriptions?.sort((a, b) => {
+      return (tierPriority[b.tier] || 0) - (tierPriority[a.tier] || 0)
+    })[0] || null
 
     console.log('[API Subscription] Active subscription query:', {
       found: !!activeSubscription,
