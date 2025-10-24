@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getStripe } from '@/lib/stripe'
 import { PRICE_ID_TO_TIER } from '@/lib/stripe-config'
 import { createClient } from '@supabase/supabase-js'
+import { sendEmail, getNewSubscriptionEmail, getSubscriptionCanceledEmail } from '@/lib/email'
 import Stripe from 'stripe'
 
 // Disable body parsing so we can verify the webhook signature
@@ -89,6 +90,25 @@ export async function POST(request: NextRequest) {
           })
 
           console.log(`Subscription created for user ${userId}`)
+
+          // Send email notification for new subscription
+          const notificationEmail = process.env.NOTIFICATION_EMAIL
+          if (notificationEmail) {
+            const emailTemplate = getNewSubscriptionEmail({
+              customerEmail: session.customer_email || session.customer_details?.email || 'Unknown',
+              tier: tier,
+              amount: subscriptionDetails.items.data[0].price.unit_amount || 0,
+              interval: subscriptionDetails.items.data[0].price.recurring?.interval || 'month',
+            })
+
+            await sendEmail({
+              to: notificationEmail,
+              subject: emailTemplate.subject,
+              html: emailTemplate.html,
+            })
+
+            console.log(`Sent new subscription notification email to ${notificationEmail}`)
+          }
         }
         break
       }
@@ -120,6 +140,14 @@ export async function POST(request: NextRequest) {
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription
+        const priceId = subscription.items.data[0].price.id
+        const tier = PRICE_ID_TO_TIER[priceId] || 'free'
+
+        // Get customer details for email
+        const customer = await stripe.customers.retrieve(subscription.customer as string)
+        const customerEmail = typeof customer !== 'string' && !customer.deleted
+          ? customer.email
+          : 'Unknown'
 
         await supabase
           .from('subscriptions')
@@ -130,6 +158,24 @@ export async function POST(request: NextRequest) {
           .eq('stripe_subscription_id', subscription.id)
 
         console.log(`Subscription canceled: ${subscription.id}`)
+
+        // Send email notification for canceled subscription
+        const notificationEmail = process.env.NOTIFICATION_EMAIL
+        if (notificationEmail && customerEmail) {
+          const emailTemplate = getSubscriptionCanceledEmail({
+            customerEmail: customerEmail,
+            tier: tier,
+          })
+
+          await sendEmail({
+            to: notificationEmail,
+            subject: emailTemplate.subject,
+            html: emailTemplate.html,
+          })
+
+          console.log(`Sent cancellation notification email to ${notificationEmail}`)
+        }
+
         break
       }
 
