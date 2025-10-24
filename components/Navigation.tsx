@@ -79,8 +79,9 @@ export default function Navigation() {
     ],
   };
   const links = linksByTier[userTier];
-  
+
   return (
+    <>
     <nav className="bg-black/60 backdrop-blur border-b border-yellow-400/30 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between py-4">
@@ -178,23 +179,24 @@ export default function Navigation() {
           </div>
         </div>
       </div>
-
-      {/* Auth Modal */}
-      {showAuthModal && (
-        <AuthModal
-          isOpen={showAuthModal}
-          onClose={() => {
-            setShowAuthModal(false);
-            // Refresh user state after auth
-            checkAuth();
-          }}
-          onSuccess={() => {
-            setShowAuthModal(false);
-            // Refresh user state after successful auth
-            checkAuth();
-          }}
-        />
-      )}
     </nav>
+
+    {/* Auth Modal - Rendered outside nav to avoid z-index issues */}
+    {showAuthModal && (
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => {
+          setShowAuthModal(false);
+          // Refresh user state after auth
+          checkAuth();
+        }}
+        onSuccess={() => {
+          setShowAuthModal(false);
+          // Refresh user state after successful auth
+          checkAuth();
+        }}
+      />
+    )}
+    </>
   );
 }
