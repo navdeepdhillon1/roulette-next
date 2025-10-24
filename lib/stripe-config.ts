@@ -1,23 +1,23 @@
-// Stripe Price IDs for subscription plans (TEST MODE)
+// Stripe Price IDs for subscription plans (LIVE MODE)
 export const STRIPE_PRICE_IDS = {
   pro: {
-    monthly: 'price_1SLbAyDTwvVaO48oYGicnCCR',
-    annual: 'price_1SLbCxDTwvVaO48oVcKQ3Jhj',
+    monthly: 'price_1SLRqFDkp2x7MJ09zMyQak64',
+    annual: 'price_1SLRzCDkp2x7MJ09NZWjZrMp',
   },
   elite: {
-    monthly: 'price_1SLbDlDTwvVaO48o5or3R8A9',
-    annual: 'price_1SLbENDTwvVaO48ovsGfH0q4',
+    monthly: 'price_1SLS1LDkp2x7MJ09kNwk7KT9',
+    annual: 'price_1SLS2QDkp2x7MJ091dHGEvJT',
   },
 } as const
 
 // Price ID to tier mapping
 export const PRICE_ID_TO_TIER: Record<string, 'pro' | 'elite'> = {
   // Pro
-  'price_1SLbAyDTwvVaO48oYGicnCCR': 'pro',
-  'price_1SLbCxDTwvVaO48oVcKQ3Jhj': 'pro',
+  'price_1SLRqFDkp2x7MJ09zMyQak64': 'pro',
+  'price_1SLRzCDkp2x7MJ09NZWjZrMp': 'pro',
   // Elite
-  'price_1SLbDlDTwvVaO48o5or3R8A9': 'elite',
-  'price_1SLbENDTwvVaO48ovsGfH0q4': 'elite',
+  'price_1SLS1LDkp2x7MJ09kNwk7KT9': 'elite',
+  'price_1SLS2QDkp2x7MJ091dHGEvJT': 'elite',
 }
 
 export type SubscriptionTier = 'free' | 'pro' | 'elite'
