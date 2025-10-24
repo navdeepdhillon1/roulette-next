@@ -63,6 +63,7 @@ export default function SubscriptionDashboard() {
 
       if (!session?.access_token) {
         alert('Please sign in to manage billing')
+        setManagingBilling(false)
         return
       }
 
@@ -79,11 +80,28 @@ export default function SubscriptionDashboard() {
         // Redirect to Stripe Customer Portal
         window.location.href = data.url
       } else {
-        throw new Error(data.error || 'Failed to create portal session')
+        const errorMessage = data.error || 'Failed to create portal session'
+
+        // Show more helpful error message
+        if (errorMessage.includes('not configured')) {
+          alert(
+            '⚙️ Stripe Customer Portal Setup Required\n\n' +
+            'The billing portal needs to be configured in Stripe:\n\n' +
+            '1. Go to: https://dashboard.stripe.com/settings/billing/portal\n' +
+            '2. Click "Activate" or "Turn on"\n' +
+            '3. Configure the portal settings\n' +
+            '4. Save changes\n\n' +
+            'Then try again!'
+          )
+        } else {
+          alert(`Failed to open billing portal:\n${errorMessage}`)
+        }
+
+        setManagingBilling(false)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to open billing portal:', error)
-      alert('Failed to open billing portal. Please try again.')
+      alert(`Failed to open billing portal:\n${error?.message || 'Please try again.'}`)
       setManagingBilling(false)
     }
   }
