@@ -15,7 +15,7 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ children, requiredTier, featureName }: ProtectedRouteProps) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
-  const [userTier, setUserTier] = useState<SubscriptionTier>('free')
+  const [userTier, setUserTier] = useState<SubscriptionTier | null>(null) // null = loading
   const [showAuthModal, setShowAuthModal] = useState(false)
   const router = useRouter()
 
@@ -116,6 +116,18 @@ export default function ProtectedRoute({ children, requiredTier, featureName }: 
             defaultPlan="pro"
           />
         )}
+      </div>
+    )
+  }
+
+  // Still checking subscription tier
+  if (userTier === null) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-400 mb-4"></div>
+          <p className="text-gray-400">Checking subscription...</p>
+        </div>
       </div>
     )
   }
