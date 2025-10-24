@@ -46,29 +46,52 @@ export async function GET(request: Request) {
       )
     }
 
-    // Query subscription from database
-    const { data: subscription, error } = await supabase
+    // Query subscription from database - first try with status filter
+    const { data: activeSubscription, error: activeError } = await supabase
       .from('subscriptions')
-      .select('tier, status, current_period_end')
+      .select('*')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .single()
 
-    if (error) {
-      console.error('[API Subscription] Database error:', error)
-      // Return free tier if no subscription found
+    console.log('[API Subscription] Active subscription query:', {
+      found: !!activeSubscription,
+      tier: activeSubscription?.tier,
+      status: activeSubscription?.status,
+      error: activeError?.message
+    })
+
+    // If no active subscription, check ALL subscriptions for this user
+    const { data: allSubscriptions, error: allError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+
+    console.log('[API Subscription] All subscriptions for user:', {
+      count: allSubscriptions?.length || 0,
+      subscriptions: allSubscriptions,
+      error: allError?.message
+    })
+
+    if (activeSubscription) {
       return NextResponse.json({
-        tier: 'free',
-        status: 'inactive',
+        tier: activeSubscription.tier || 'free',
+        status: activeSubscription.status || 'inactive',
+        current_period_end: activeSubscription.current_period_end,
         user_id: user.id,
       })
     }
 
+    // No active subscription found
     return NextResponse.json({
-      tier: subscription?.tier || 'free',
-      status: subscription?.status || 'inactive',
-      current_period_end: subscription?.current_period_end,
+      tier: 'free',
+      status: 'inactive',
       user_id: user.id,
+      debug: {
+        activeError: activeError?.message,
+        allSubsCount: allSubscriptions?.length || 0,
+        allSubs: allSubscriptions,
+      }
     })
   } catch (error) {
     console.error('[API Subscription] Error:', error)
