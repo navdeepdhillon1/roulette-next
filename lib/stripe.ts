@@ -4,7 +4,7 @@ import Stripe from 'stripe'
 // Environment variables are only available at runtime in Vercel
 let stripeInstance: Stripe | null = null
 
-function getStripeInstance(): Stripe {
+export function getStripe(): Stripe {
   if (stripeInstance) {
     return stripeInstance
   }
@@ -21,18 +21,10 @@ function getStripeInstance(): Stripe {
   return stripeInstance
 }
 
-// Export the stripe instance - getter pattern
-export const stripe = {
-  get customers() {
-    return getStripeInstance().customers
-  },
-  get checkout() {
-    return getStripeInstance().checkout
-  },
-  get subscriptions() {
-    return getStripeInstance().subscriptions
-  },
-  get webhooks() {
-    return getStripeInstance().webhooks
-  },
-}
+// For backwards compatibility, export as stripe
+// This returns the full Stripe instance
+export const stripe = new Proxy({} as Stripe, {
+  get(target, prop) {
+    return getStripe()[prop as keyof Stripe]
+  }
+})
