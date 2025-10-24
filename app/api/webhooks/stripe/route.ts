@@ -79,9 +79,13 @@ export async function POST(request: NextRequest) {
             stripe_price_id: priceId,
             tier: tier,
             status: subscriptionDetails.status,
-            current_period_start: new Date(subscriptionDetails.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscriptionDetails.current_period_end * 1000).toISOString(),
-            cancel_at_period_end: subscriptionDetails.cancel_at_period_end,
+            current_period_start: subscriptionDetails.current_period_start
+              ? new Date(subscriptionDetails.current_period_start * 1000).toISOString()
+              : null,
+            current_period_end: subscriptionDetails.current_period_end
+              ? new Date(subscriptionDetails.current_period_end * 1000).toISOString()
+              : null,
+            cancel_at_period_end: subscriptionDetails.cancel_at_period_end || false,
           })
 
           console.log(`Subscription created for user ${userId}`)
@@ -100,9 +104,13 @@ export async function POST(request: NextRequest) {
             stripe_price_id: priceId,
             tier: tier,
             status: subscription.status,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            cancel_at_period_end: subscription.cancel_at_period_end,
+            current_period_start: subscription.current_period_start
+              ? new Date(subscription.current_period_start * 1000).toISOString()
+              : null,
+            current_period_end: subscription.current_period_end
+              ? new Date(subscription.current_period_end * 1000).toISOString()
+              : null,
+            cancel_at_period_end: subscription.cancel_at_period_end || false,
           })
           .eq('stripe_subscription_id', subscription.id)
 
