@@ -38,25 +38,37 @@ export default function ProtectedRoute({ children, requiredTier, featureName }: 
     try {
       // Get the session to extract the access token
       const { supabase } = await import('@/lib/supabase')
-      const { data: { session } } = await supabase.auth.getSession()
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+      console.log('[ProtectedRoute] Session check:', {
+        hasSession: !!session,
+        hasAccessToken: !!session?.access_token,
+        tokenPreview: session?.access_token?.substring(0, 20) + '...',
+        sessionError: sessionError,
+        userId: session?.user?.id,
+      })
 
       if (!session?.access_token) {
-        console.warn('[ProtectedRoute] No access token available')
+        console.warn('[ProtectedRoute] No access token available - defaulting to free tier')
         setUserTier('free')
         return
       }
 
       // Call API with auth token
+      console.log('[ProtectedRoute] Calling /api/subscription with auth token...')
       const response = await fetch('/api/subscription', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
         },
       })
 
+      console.log('[ProtectedRoute] API response status:', response.status)
+
       const data = await response.json()
       console.log('[ProtectedRoute] Subscription data:', data)
 
       const tier = (data.tier || 'free') as SubscriptionTier
+      console.log('[ProtectedRoute] Setting user tier to:', tier)
       setUserTier(tier)
     } catch (error) {
       console.error('[ProtectedRoute] Failed to fetch subscription:', error)
