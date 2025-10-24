@@ -18,6 +18,7 @@ Add these to **Production, Preview, and Development** environments:
 ```
 RESEND_API_KEY=re_YRCVRLHT_2LsgWTqWfmcqwPVuhpUxNaqF
 NOTIFICATION_EMAIL=nav.dhillon21@gmail.com
+NEXT_PUBLIC_SITE_URL=https://www.euroroulette-tracker.com
 ```
 
 **How to add:**
@@ -28,7 +29,7 @@ NOTIFICATION_EMAIL=nav.dhillon21@gmail.com
    - Name: `RESEND_API_KEY`
    - Value: `re_YRCVRLHT_2LsgWTqWfmcqwPVuhpUxNaqF`
    - Environments: ✅ Production ✅ Preview ✅ Development
-5. Click **Add** then repeat for `NOTIFICATION_EMAIL`
+5. Click **Add** then repeat for `NOTIFICATION_EMAIL` and `NEXT_PUBLIC_SITE_URL`
 
 ---
 
@@ -139,7 +140,13 @@ Use the comprehensive testing guide:
    - Should show "Elite Plan" or "Pro Plan"
    - Should show renewal date
    - Features should have checkmarks
-6. **Sign out** - navigation should reduce to only Home, Basic Tracker, Learning
+6. **Click "Manage Billing"** button:
+   - Should show "Opening Portal..." briefly
+   - Should redirect to Stripe Customer Portal
+   - Portal shows payment methods, invoices, and subscription management
+   - Can cancel subscription or update payment method
+   - Click "← Return to Your Account" to go back
+7. **Sign out** - navigation should reduce to only Home, Basic Tracker, Learning
 
 ---
 
@@ -157,9 +164,11 @@ Check if you have active test subscriptions in Stripe:
 
 ### 🐛 Bug Fixes
 - **Navigation Tier Loading**: Fixed bug where all users saw Elite-tier navigation links regardless of subscription. Now dynamically loads actual user tier.
+- **Manage Billing Button**: Fixed broken "Manage Billing" link that showed 404 error. Now properly creates Stripe Customer Portal session and redirects users to manage subscriptions.
 
 ### ✨ Features Added (from previous sessions)
 - Server-side subscription check API (`/api/subscription`)
+- Stripe Customer Portal integration (`/api/create-portal-session`)
 - Email notifications for new subscriptions and cancellations (Resend)
 - Subscription dashboard showing tier, status, and features
 - Account settings page with billing management
