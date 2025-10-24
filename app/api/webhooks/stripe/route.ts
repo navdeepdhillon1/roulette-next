@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { PRICE_ID_TO_TIER } from '@/lib/stripe-config'
 import { createClient } from '@supabase/supabase-js'
 import Stripe from 'stripe'
@@ -25,6 +25,9 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+
+  // Get Stripe instance
+  const stripe = getStripe()
 
   let event: Stripe.Event
 
@@ -64,8 +67,8 @@ export async function POST(request: NextRequest) {
           }
 
           // Get the subscription details
-          const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-          const priceId = subscription.items.data[0].price.id
+          const subscriptionDetails = await stripe.subscriptions.retrieve(subscriptionId)
+          const priceId = subscriptionDetails.items.data[0].price.id
           const tier = PRICE_ID_TO_TIER[priceId] || 'free'
 
           // Update or create subscription record
@@ -75,10 +78,10 @@ export async function POST(request: NextRequest) {
             stripe_subscription_id: subscriptionId,
             stripe_price_id: priceId,
             tier: tier,
-            status: subscription.status,
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            cancel_at_period_end: subscription.cancel_at_period_end,
+            status: subscriptionDetails.status,
+            current_period_start: new Date(subscriptionDetails.current_period_start * 1000).toISOString(),
+            current_period_end: new Date(subscriptionDetails.current_period_end * 1000).toISOString(),
+            cancel_at_period_end: subscriptionDetails.cancel_at_period_end,
           })
 
           console.log(`Subscription created for user ${userId}`)
