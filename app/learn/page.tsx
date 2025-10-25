@@ -5,6 +5,44 @@ import Navigation from '@/components/Navigation'
 
 // This will eventually come from a CMS or markdown files
 const articles = [
+  // How-To Guides - Phase 1
+  {
+    slug: 'getting-started-basic-tracker',
+    title: 'Getting Started with Basic Tracker',
+    excerpt: 'Your first steps with Roulette Tracker Pro. Learn how to add spins, understand statistics, and track your sessions.',
+    category: 'How-To Guides',
+    date: '2025-01-24',
+    readTime: '7 min read',
+    featured: true,
+  },
+  {
+    slug: 'your-first-betting-card',
+    title: 'Your First Betting Card',
+    excerpt: 'Step-by-step guide to creating and using betting cards. Learn how to set targets, follow suggestions, and improve discipline.',
+    category: 'How-To Guides',
+    date: '2025-01-24',
+    readTime: '10 min read',
+    featured: true,
+  },
+  {
+    slug: 'understanding-47-groups',
+    title: 'Understanding the 47 Betting Groups',
+    excerpt: 'Complete breakdown of all 47 betting groups: table-based, wheel-based, and alternative patterns. Learn which groups to track.',
+    category: 'How-To Guides',
+    date: '2025-01-24',
+    readTime: '15 min read',
+    featured: true,
+  },
+  {
+    slug: 'betting-systems-explained',
+    title: 'Betting Systems Explained',
+    excerpt: 'Deep dive into Flat, Martingale, Fibonacci, D\'Alembert, and Custom systems. Understand progression rules and risk management.',
+    category: 'How-To Guides',
+    date: '2025-01-24',
+    readTime: '18 min read',
+    featured: false,
+  },
+  // Existing Articles
   {
     slug: 'understanding-roulette-probability',
     title: 'Understanding Roulette Probability: Math vs Myth',
@@ -12,7 +50,7 @@ const articles = [
     category: 'Fundamentals',
     date: '2025-01-15',
     readTime: '8 min read',
-    featured: true,
+    featured: false,
   },
   {
     slug: 'betting-systems-comparison',
@@ -21,7 +59,7 @@ const articles = [
     category: 'Strategy',
     date: '2025-01-12',
     readTime: '12 min read',
-    featured: true,
+    featured: false,
   },
   {
     slug: 'gamblers-fallacy-explained',
@@ -48,7 +86,7 @@ const articles = [
     category: 'Fundamentals',
     date: '2025-01-23',
     readTime: '7 min read',
-    featured: true,
+    featured: false,
   },
 ]
 
@@ -74,7 +112,7 @@ export default function LearnPage() {
 
         {/* Categories */}
         <div className="flex gap-3 justify-center mb-12 flex-wrap">
-          {['All', 'Fundamentals', 'Strategy', 'Psychology', 'Data Analysis'].map((cat) => (
+          {['All', 'How-To Guides', 'Fundamentals', 'Strategy', 'Psychology', 'Data Analysis'].map((cat) => (
             <button
               key={cat}
               className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition-all border border-gray-700 hover:border-yellow-400/50"
