@@ -410,7 +410,14 @@ export default function BetAdvisor() {
   // IMPORTANT: Memoize this so reference only changes when spinHistory actually changes
   const numericSpins = useMemo(() =>
     spinHistory.length > 0
-      ? spinHistory.map(s => s.number)
+      ? spinHistory
+          .filter(s => {
+            // Filter out notification spins (dealer change, card start/end)
+            if ((s as any).isDealerChange || (s as any).isCardStart || (s as any).isCardEnd) return false
+            // Filter out invalid numbers (only keep 0-36)
+            return s.number >= 0 && s.number <= 36
+          })
+          .map(s => s.number)
       : (() => {
           // Demo data for when no real spins yet
           const base = Array.from({ length: 40 }, (_, i) => {
