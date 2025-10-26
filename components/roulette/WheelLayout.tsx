@@ -21,10 +21,6 @@ export default function WheelLayout({ spinHistory, onNumberAdded }: WheelLayoutP
 
   return (
     <div className="bg-gray-900/50 rounded-lg p-4 border border-gray-700">
-      <h3 className="text-lg font-bold text-yellow-400 mb-4 text-center">
-        🎡 THE RACETRACK - European Wheel Order
-      </h3>
-
       {/* Racetrack layout - Train style */}
       <div className="space-y-1">
         {/* Top row - first 18 numbers */}
