@@ -1356,16 +1356,14 @@ const newBet: BetRecord = {
                   {/* Recent Numbers & History */}
                   <div className="space-y-2">
                     {/* Recent 25 Numbers with Number Entry */}
-                    <div className="bg-gray-800 rounded border border-gray-700 p-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-sm font-bold text-yellow-400">Last 25 Spins</h3>
-                        <div className="flex items-center gap-2">
+                    <div className="bg-gray-800 rounded border border-gray-700 px-1 py-0.5">
+                      <div className="flex items-center justify-end gap-2">
                           <input
                             type="number"
                             min="0"
                             max="36"
                             placeholder="0-36"
-                            className="w-16 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-xs text-center focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                            className="w-14 px-1.5 py-0.5 bg-gray-700 border border-gray-600 rounded text-white text-[10px] text-center focus:outline-none focus:ring-2 focus:ring-yellow-400"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
                                 const value = parseInt(e.currentTarget.value)
