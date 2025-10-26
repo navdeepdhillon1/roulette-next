@@ -514,9 +514,7 @@ export default function HistoryTable({
 
             // Check if this is a dealer change event
             if ((spin as any).isDealerChange) {
-              const dealerNumber = (spin as any).dealerNumber
-              const dealerIndex = dealerNumber - 1
-              const dealerName = dealers[dealerIndex]?.name || `Dealer ${dealerNumber}`
+              const dealerName = (spin as any).dealerName || `Dealer ${(spin as any).dealerNumber}`
 
               return (
                 <tr key={index} className="border-t-2 border-yellow-500 bg-yellow-900/20">

@@ -11,6 +11,7 @@ interface SpinData {
   dealer?: number
   isDealerChange?: boolean
   dealerNumber?: number
+  dealerName?: string  // Actual dealer name
   isCardStart?: boolean
   isCardEnd?: boolean
   cardNumber?: number
@@ -49,7 +50,7 @@ interface BettingDataContextType {
   // Spin History
   spinHistory: SpinData[]
   addSpin: (spin: SpinData) => void
-  addDealerChange: (dealerNumber: number) => void
+  addDealerChange: (dealerNumber: number, dealerName?: string) => void
   addCardStart: (cardNumber: number, cardTarget: number) => void
   addCardEnd: (cardNumber: number, cardProfit: number, cardSuccess: boolean, cardTarget: number, cardBetsUsed: number, cardMaxBets: number) => void
   undoLastSpin: () => void
@@ -108,12 +109,13 @@ export function BettingDataProvider({ children }: { children: ReactNode }) {
     }))
   }
 
-  const addDealerChange = (dealerNumber: number) => {
+  const addDealerChange = (dealerNumber: number, dealerName?: string) => {
     const dealerChangeEvent: SpinData = {
       number: -1, // Special marker for dealer change
       timestamp: Date.now(),
       isDealerChange: true,
-      dealerNumber
+      dealerNumber,
+      dealerName: dealerName || `Dealer ${dealerNumber}`
     }
     setSpinHistory(prev => [dealerChangeEvent, ...prev])
   }

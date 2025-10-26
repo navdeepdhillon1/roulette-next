@@ -491,7 +491,7 @@ export default function WheelHistoryTable({
                     <td colSpan={11} className="px-2 py-1 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <span className="text-yellow-400 font-bold text-xs">
-                          🎰 Changed to dealer {(spin as any).dealerNumber}
+                          🎰 Changed to dealer: <span className="text-yellow-300">{(spin as any).dealerName || `Dealer ${(spin as any).dealerNumber}`}</span>
                         </span>
                       </div>
                     </td>

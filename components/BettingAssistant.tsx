@@ -238,7 +238,10 @@ export default function BettingAssistant() {
   // Track dealer changes
   useEffect(() => {
     if (currentDealer !== previousDealer && session) {
-      addDealerChange(currentDealer)
+      // Look up the actual dealer name from availableDealers
+      const dealerIndex = currentDealer - 1
+      const dealerName = session.config.availableDealers?.[dealerIndex]?.name || `Dealer ${currentDealer}`
+      addDealerChange(currentDealer, dealerName)
       setPreviousDealer(currentDealer)
     }
   }, [currentDealer, previousDealer, session, addDealerChange])
