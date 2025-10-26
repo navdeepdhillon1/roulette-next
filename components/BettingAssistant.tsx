@@ -1485,7 +1485,10 @@ const newBet: BetRecord = {
           <div className="w-1/2 overflow-y-auto">
             <RightSideLayout
               session={session}
-              spinHistory={spinHistory.map(s => s.number)}
+              spinHistory={spinHistory
+                .filter(s => !(s as any).isDealerChange && !(s as any).isCardStart && !(s as any).isCardEnd)
+                .map(s => s.number)
+              }
             />
           </div>
         </div>
