@@ -605,7 +605,7 @@ export default function MyGroupsLayout({
   // Filter out invalid spins (number -1 or outside 0-36), but keep notification spins
   const validSpins = spins.filter(spin => {
     // Keep spins with dealer change or bet card start flags (even if number is -1)
-    if (spin.dealer_change || spin.bet_card_start) return true
+    if ((spin as any).isDealerChange || (spin as any).isCardStart) return true
     // Otherwise, only keep valid roulette numbers (0-36)
     return spin.number >= 0 && spin.number <= 36
   })
@@ -679,8 +679,8 @@ export default function MyGroupsLayout({
             const spinBetData = historicalBets[spinKey]
 
             // Check if this spin has dealer change or bet card notification
-            const hasDealerChange = spin.dealer_change
-            const hasBetCardStart = spin.bet_card_start
+            const hasDealerChange = (spin as any).isDealerChange
+            const hasBetCardStart = (spin as any).isCardStart
 
             // Skip rendering the spin row for notification-only spins (number -1)
             const isNotificationOnly = num === -1
@@ -692,7 +692,7 @@ export default function MyGroupsLayout({
                   <tr className="bg-yellow-900/30 border-b border-yellow-700/50">
                     <td colSpan={displayGroups.length + 1} className="px-2 py-1 text-center">
                       <span className="text-yellow-400 text-xs font-semibold">
-                        🎲 Changed to dealer: {spin.dealer_name || 'Unknown'}
+                        🎲 Changed to dealer {(spin as any).dealerNumber}
                       </span>
                     </td>
                   </tr>
@@ -703,7 +703,7 @@ export default function MyGroupsLayout({
                   <tr className="bg-blue-900/30 border-b border-blue-700/50">
                     <td colSpan={displayGroups.length + 1} className="px-2 py-1 text-center">
                       <span className="text-blue-400 text-xs font-semibold">
-                        📋 Bet Card {spin.bet_card_number} started
+                        📋 Bet Card {(spin as any).cardNumber} started
                       </span>
                     </td>
                   </tr>
