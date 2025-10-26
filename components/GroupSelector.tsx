@@ -5,6 +5,7 @@ import React, { useState } from 'react'
 import type { SelectedGroup, CustomGroup } from '@/types/bettingAssistant'
 import { RED_NUMBERS } from '@/lib/roulette-logic'
 import TableLayoutModal from './roulette/TableLayoutModal'
+import WheelLayoutModal from './roulette/WheelLayoutModal'
 
 interface GroupSelectorProps {
   selectedGroups: SelectedGroup[]
@@ -110,6 +111,7 @@ export default function GroupSelector({
   const [customNumbers, setCustomNumbers] = useState('')
   const [viewingGroup, setViewingGroup] = useState<{type: 'table' | 'wheel' | 'custom', id: string, name: string, numbers: number[]} | null>(null)
   const [viewingTableGroup, setViewingTableGroup] = useState<'dozen' | 'column' | 'color' | 'evenOdd' | 'lowHigh' | 'alt1' | 'alt2' | 'alt3' | 'edgeCenter' | 'six' | null>(null)
+  const [showWheelModal, setShowWheelModal] = useState(false)
 
   const isGroupSelected = (type: 'table' | 'wheel' | 'custom', id: string) => {
     return selectedGroups.some(g => g.type === type && g.id === id)
@@ -236,7 +238,13 @@ export default function GroupSelector({
                   <span className="text-sm text-gray-200">{group.name}</span>
                 </label>
                 <button
-                  onClick={() => setViewingGroup({type: 'wheel', id: group.id, name: group.name, numbers: getGroupNumbers('wheel', group.id)})}
+                  onClick={() => {
+                    if (group.id === 'vois-orph-tier') {
+                      setShowWheelModal(true)
+                    } else {
+                      setViewingGroup({type: 'wheel', id: group.id, name: group.name, numbers: getGroupNumbers('wheel', group.id)})
+                    }
+                  }}
                   className="p-1 text-gray-400 hover:text-purple-400 transition-colors"
                   title="View numbers"
                 >
@@ -391,6 +399,12 @@ export default function GroupSelector({
         isOpen={viewingTableGroup !== null}
         onClose={() => setViewingTableGroup(null)}
         groupType={viewingTableGroup}
+      />
+
+      {/* Visual Wheel Layout Modal - for Vois/Orph/Tier */}
+      <WheelLayoutModal
+        isOpen={showWheelModal}
+        onClose={() => setShowWheelModal(false)}
       />
     </div>
   )
