@@ -979,7 +979,7 @@ const newBet: BetRecord = {
                               }
                             }}
                           />
-                          <div className="flex flex-col gap-0.5">
+                          <div className="flex gap-1">
                             <button
                               onClick={(e) => {
                                 const input = e.currentTarget.parentElement?.previousElementSibling as HTMLInputElement
@@ -1126,7 +1126,7 @@ const newBet: BetRecord = {
                               }
                             }}
                           />
-                          <div className="flex flex-col gap-0.5">
+                          <div className="flex gap-1">
                             <button
                               onClick={(e) => {
                                 const input = e.currentTarget.parentElement?.previousElementSibling as HTMLInputElement
@@ -1374,7 +1374,7 @@ const newBet: BetRecord = {
                               }
                             }}
                           />
-                          <div className="flex flex-col gap-0.5">
+                          <div className="flex gap-1">
                             <button
                               onClick={(e) => {
                                 const input = e.currentTarget.parentElement?.previousElementSibling as HTMLInputElement
