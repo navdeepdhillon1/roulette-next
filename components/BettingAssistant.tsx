@@ -1020,7 +1020,7 @@ const newBet: BetRecord = {
                     </div>
 
                     {/* History Table */}
-                    <div className="bg-gray-800 rounded border border-gray-700 p-2">
+                    <div className="bg-slate-700 rounded border-2 border-slate-500/50 p-2 shadow-lg">
                       <div className="flex items-center justify-between gap-3 mb-2 text-[10px] font-bold">
                         <div className="flex items-center gap-1">
                           <span className="text-gray-400">Bank:</span>
@@ -1167,7 +1167,7 @@ const newBet: BetRecord = {
                     </div>
 
                     {/* History Table */}
-                    <div className="bg-gray-800 rounded border border-gray-700 p-2">
+                    <div className="bg-slate-700 rounded border-2 border-slate-500/50 p-2 shadow-lg">
                       <div className="flex items-center justify-between gap-3 mb-2 text-[10px] font-bold">
                         <div className="flex items-center gap-1">
                           <span className="text-gray-400">Bank:</span>
