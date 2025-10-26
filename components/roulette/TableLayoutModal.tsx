@@ -153,22 +153,22 @@ export default function TableLayoutModal({ isOpen, onClose, groupType }: TableLa
           <div className="bg-gray-900 rounded-lg p-6 border-2 border-gray-700">
             <div className="flex items-center justify-center gap-2">
               {/* Zero */}
-              <div className="flex flex-col mr-3">
-                <div className="w-20 h-[240px] flex items-center justify-center bg-green-600 border-2 border-white/30 rounded text-white font-bold text-3xl">
+              <div className="flex flex-col mr-2">
+                <div className="w-16 h-[204px] flex items-center justify-center bg-green-600 border-2 border-white/30 rounded text-white font-bold text-2xl">
                   0
                 </div>
               </div>
 
               {/* Main number grid */}
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1">
                 {TABLE_LAYOUT.map((row, rowIdx) => (
-                  <div key={rowIdx} className="flex gap-1.5">
+                  <div key={rowIdx} className="flex gap-1">
                     {row.map((num) => {
                       const bgColor = getNumberColor(num)
                       return (
                         <div
                           key={num}
-                          className="w-16 h-16 flex items-center justify-center border-2 border-white/30 rounded font-bold text-xl text-white shadow-lg"
+                          className="w-14 h-14 flex items-center justify-center border-2 border-white/30 rounded font-bold text-lg text-white shadow-lg"
                           style={{ backgroundColor: bgColor }}
                         >
                           {num}
