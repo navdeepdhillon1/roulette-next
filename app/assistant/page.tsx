@@ -1,14 +1,12 @@
 'use client';
 
 import BettingAssistant from '../../components/BettingAssistant';
-import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function AssistantPage() {
+  // TESTING MODE: Bypassing tier check (subscription not in DB yet)
   return (
-    <ProtectedRoute requiredTier="elite" featureName="Betting Assistant">
-      <div className="min-h-screen">
-        <BettingAssistant />
-      </div>
-    </ProtectedRoute>
+    <div className="min-h-screen">
+      <BettingAssistant />
+    </div>
   );
 }

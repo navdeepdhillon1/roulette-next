@@ -8,6 +8,9 @@ export interface NumberStat {
   L18: number;
   L27: number;
   L36: number;
+  L72: number;
+  L144: number;
+  L288: number;
   actualPercent: number;
   expectedPercent: number;
   deviation: number;
@@ -39,6 +42,9 @@ export const getNumberStats = (num: number, history: number[]): NumberStat => {
       L18: 0,
       L27: 0,
       L36: 0,
+      L72: 0,
+      L144: 0,
+      L288: 0,
       actualPercent: 0,
       expectedPercent: 2.7,
       deviation: -2.7,
@@ -87,6 +93,9 @@ export const getNumberStats = (num: number, history: number[]): NumberStat => {
   const L18 = history.slice(-18).filter(n => n === num).length;
   const L27 = history.slice(-27).filter(n => n === num).length;
   const L36 = history.slice(-36).filter(n => n === num).length;
+  const L72 = history.slice(-72).filter(n => n === num).length;
+  const L144 = history.slice(-144).filter(n => n === num).length;
+  const L288 = history.slice(-288).filter(n => n === num).length;
   
   // Calculate percentages
   const totalSpins = Math.min(history.length, 36);
@@ -129,6 +138,9 @@ export const getNumberStats = (num: number, history: number[]): NumberStat => {
     L18,
     L27,
     L36,
+    L72,
+    L144,
+    L288,
     actualPercent,
     expectedPercent,
     deviation,

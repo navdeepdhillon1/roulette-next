@@ -722,20 +722,19 @@ export default function MyGroupsLayout({
           </thead>
           <tbody>
             {/* NEXT BET row */}
-            <tr className="bg-yellow-900/30 border-b-2 border-yellow-600">
-              <td className="px-3 py-3 text-center border-r border-gray-700">
-                <div className="flex flex-col gap-1">
-                  <div className="font-bold text-yellow-400 text-xs">NEXT<br/>BET</div>
+            <tr className="bg-yellow-900/30 border-b-2 border-yellow-600 h-12">
+              <td className="px-2 py-0.5 text-center border-r border-gray-700">
+                <div className="flex flex-col items-center justify-center gap-0 leading-none">
+                  <div className="font-bold text-yellow-400 text-[10px] mb-0.5">NEXT BET</div>
                   {onClearBets && (
                     <button
                       onClick={onClearBets}
-                      className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded"
+                      className="px-1.5 py-0.5 bg-red-600 hover:bg-red-700 text-white text-[9px] font-bold rounded mb-0.5"
                     >
                       Clear
                     </button>
                   )}
-                  <div className="text-[10px] text-gray-300">
-                    <div>Total:</div>
+                  <div className="text-[9px] text-gray-300 leading-none">
                     <div className="font-bold text-cyan-400">
                       ${Object.values(manualBets).reduce((sum, val) => sum + (parseFloat(val) || 0), 0).toFixed(0)}
                     </div>
@@ -754,7 +753,7 @@ export default function MyGroupsLayout({
                   return (
                     <td
                       key={`next-${group.type}-${group.id}-${idx}`}
-                      className="px-1 py-1 text-center border-r border-gray-700"
+                      className="px-1 py-0.5 text-center border-r border-gray-700"
                     >
                       <div className={`grid ${group.id === 'six' ? 'grid-cols-3' : group.id === 'wheel-quarters' ? 'grid-cols-2' : 'grid-cols-3'} gap-0.5`}>
                         {options.map((option) => {
@@ -794,7 +793,7 @@ export default function MyGroupsLayout({
                                 delete updatedBets[key]
                                 setManualBets(updatedBets)
                               }}
-                              className={`relative px-1 py-1 ${buttonClass} rounded text-[10px] font-bold transition-all`}
+                              className={`relative px-1 py-1 ${buttonClass} rounded text-xs font-bold transition-all`}
                             >
                               {displayText}
                               {showBadge && (
@@ -851,7 +850,7 @@ export default function MyGroupsLayout({
                   return (
                     <td
                       key={`next-${group.type}-${group.id}-${idx}`}
-                      className="px-1 py-1 text-center border-r border-gray-700"
+                      className="px-1 py-0.5 text-center border-r border-gray-700"
                     >
                       <div className="flex flex-col gap-0.5">
                         <button
@@ -927,7 +926,7 @@ export default function MyGroupsLayout({
                   return (
                     <td
                       key={`next-${group.type}-${group.id}-${idx}`}
-                      className="px-1 py-1 text-center border-r border-gray-700"
+                      className="px-1 py-0.5 text-center border-r border-gray-700"
                     >
                       <button
                         onClick={() => {
@@ -1004,12 +1003,12 @@ export default function MyGroupsLayout({
                 return (
                   <tr
                     key={`${spin.timestamp}-${rowIdx}`}
-                    className="border-b border-gray-700 hover:bg-gray-800/30"
+                    className="border-b border-gray-700 hover:bg-gray-800/30 h-12"
                   >
                     {/* Number column */}
-                    <td className="px-3 py-2 text-center border-r border-gray-700">
+                    <td className="px-2 py-0.5 text-center border-r border-gray-700">
                       <div
-                        className={`inline-flex items-center justify-center w-10 h-10 rounded-full font-bold text-white ${numberColor}`}
+                        className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm text-white ${numberColor}`}
                       >
                         {spin.number}
                       </div>
@@ -1038,10 +1037,10 @@ export default function MyGroupsLayout({
                       return (
                         <td
                           key={`${spin.timestamp}-${group.type}-${group.id}-${idx}`}
-                          className="px-3 py-2 text-center border-r border-gray-700"
+                          className="px-2 py-0.5 text-center border-r border-gray-700"
                         >
                           {renderCellWithBadge(
-                            <div className={`inline-block px-3 py-1 rounded font-bold ${cellColor}`}>
+                            <div className={`inline-block px-1.5 py-0 rounded text-xs ${cellColor}`}>
                               {value}
                             </div>,
                             '',

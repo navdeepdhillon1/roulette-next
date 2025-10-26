@@ -20,6 +20,7 @@ interface BetCardDashboardProps {
   onSelectCard: (index: number) => void
   onEndSession: () => void
   onOpenPerformance: () => void
+  onOpenHistory?: () => void
 }
 
 // ✅ EXPANDED CARD DETAIL VIEW
@@ -404,7 +405,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
   )
 }
 
-export default function BetCardDashboard({ session, onSelectCard, onEndSession, onOpenPerformance }: BetCardDashboardProps) {
+export default function BetCardDashboard({ session, onSelectCard, onEndSession, onOpenPerformance, onOpenHistory }: BetCardDashboardProps) {
   const completedCards = session.cards.filter(c => c.status === 'completed').length
   const failedCards = session.cards.filter(c => c.status === 'failed').length
   const totalProfit = session.currentBankroll - session.config.bankroll
@@ -423,7 +424,7 @@ export default function BetCardDashboard({ session, onSelectCard, onEndSession, 
     </p>
   </div>
   
-  {/* TWO BUTTONS IN A ROW */}
+  {/* THREE BUTTONS IN A ROW */}
   <div className="flex gap-3">
     <button
       onClick={onOpenPerformance}
@@ -431,6 +432,15 @@ export default function BetCardDashboard({ session, onSelectCard, onEndSession, 
     >
       📊 Performance
     </button>
+
+    {onOpenHistory && (
+      <button
+        onClick={onOpenHistory}
+        className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-lg font-bold text-white transition-all"
+      >
+        📜 History
+      </button>
+    )}
 
     <button
       onClick={onEndSession}

@@ -100,6 +100,15 @@ export default function WheelHistoryTable({
   const [showResults, setShowResults] = useState(false)
   const [modalOpen, setModalOpen] = useState<'specials1' | 'specials2' | 'voisins' | 'orphelins' | 'tiers' | 'jeu_zero' | 'non_voisin' | 'a' | 'b' | 'aa' | 'bb' | 'aaa' | 'bbb' | 'a6' | 'b6' | 'a9' | 'b9' | 'right' | 'left' | 'first_9' | 'second_9' | 'third_9' | 'fourth_9' | null>(null)
 
+  // Track previous spin count to detect new spins
+  const prevSpinCountRef = React.useRef(spins.length)
+  const betsRef = React.useRef(bets)
+
+  // Keep betsRef in sync with bets state
+  React.useEffect(() => {
+    betsRef.current = bets
+  }, [bets])
+
   const handleBetClick = (betKey: WheelBetKey, isDoubleClick: boolean) => {
     if (showResults) return
 
@@ -181,8 +190,13 @@ export default function WheelHistoryTable({
 
   // Auto-calculate results when a new spin is added
   React.useEffect(() => {
-    if (spins.length > 0 && Object.keys(bets).length > 0 && !showResults) {
+    // Only process if a NEW spin was added (length increased)
+    const hasNewSpin = spins.length > prevSpinCountRef.current
+    prevSpinCountRef.current = spins.length
+
+    if (hasNewSpin && Object.keys(betsRef.current).length > 0 && !showResults) {
       const latestSpin = spins[0]
+      const currentBets = betsRef.current
       const calcResults = calculateResults(latestSpin.number)
       setResults(calcResults)
       setShowResults(true)
@@ -192,19 +206,21 @@ export default function WheelHistoryTable({
       if (onHistoricalBetsUpdate) {
         const updatedBets = {
           ...historicalBets,
-          [spinKey]: { bets: { ...bets }, results: calcResults }
+          [spinKey]: { bets: { ...currentBets }, results: calcResults }
         }
         onHistoricalBetsUpdate(updatedBets)
       }
 
       // Calculate totals
-      const totalWagered = Object.values(bets).reduce((sum, bet) => sum + bet, 0)
+      const totalWagered = Object.values(currentBets).reduce((sum, bet) => sum + bet, 0)
       const totalPnL = Object.values(calcResults).reduce((sum, result) => sum + result.amount, 0)
       const totalReturned = totalWagered + totalPnL
 
-      // Convert results to simple Record<string, number> format
+      // Convert results to P/L format (positive for wins, negative for losses)
       const groupResults: Record<string, number> = {}
       Object.entries(calcResults).forEach(([key, result]) => {
+        const betAmount = currentBets[key as WheelBetKey]
+        // result.amount is already the P/L: (payout - betAmount) for wins, -betAmount for losses
         groupResults[key] = result.amount
       })
 
@@ -213,7 +229,7 @@ export default function WheelHistoryTable({
 
       // Notify parent with betting matrix and results
       if (onBetPlaced) {
-        onBetPlaced(totalWagered, totalReturned, totalPnL, bets, groupResults, latestSpin.number, spinTimestamp)
+        onBetPlaced(totalWagered, totalReturned, totalPnL, currentBets, groupResults, latestSpin.number, spinTimestamp)
       }
 
       // Auto-clear after 3 seconds
@@ -223,7 +239,8 @@ export default function WheelHistoryTable({
         setResults({})
       }, 3000)
     }
-  }, [spins.length, bets, showResults, onBetPlaced, onHistoricalBetsUpdate, historicalBets])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spins.length, showResults])
 
   const clearBets = () => {
     setBets({})
@@ -618,105 +635,98 @@ export default function WheelHistoryTable({
                     )}
                   </td>
                   <td className="px-1 py-2 text-center">
-                    {isA && renderCellWithBadge(
-                      <span className="px-1 py-0.5 bg-red-600/30 text-red-400 rounded text-xs">A</span>,
+                    {renderCellWithBadge(
+                      isA ? (
+                        <span className="px-1 py-0.5 bg-red-600/30 text-red-400 rounded text-xs">A</span>
+                      ) : isB ? (
+                        <span className="px-1 py-0.5 bg-blue-600/30 text-blue-400 rounded text-xs">B</span>
+                      ) : (
+                        <span className="text-gray-600 text-xs">-</span>
+                      ),
                       '',
-                      'a'
-                    )}
-                    {isB && renderCellWithBadge(
-                      <span className="px-1 py-0.5 bg-blue-600/30 text-blue-400 rounded text-xs">B</span>,
-                      '',
-                      'b'
-                    )}
-                  </td>
-                  <td className="px-1 py-2 text-center">
-                    {isAA && renderCellWithBadge(
-                      <span className="px-1 py-0.5 bg-yellow-600/30 text-yellow-400 rounded text-xs">AA</span>,
-                      '',
-                      'aa'
-                    )}
-                    {isBB && renderCellWithBadge(
-                      <span className="px-1 py-0.5 bg-green-600/30 text-green-400 rounded text-xs">BB</span>,
-                      '',
-                      'bb'
+                      ['a', 'b']
                     )}
                   </td>
                   <td className="px-1 py-2 text-center">
-                    {isAAA && renderCellWithBadge(
-                      <span className="px-1 py-0.5 bg-pink-600/30 text-pink-400 rounded text-xs">AAA</span>,
+                    {renderCellWithBadge(
+                      isAA ? (
+                        <span className="px-1 py-0.5 bg-yellow-600/30 text-yellow-400 rounded text-xs">AA</span>
+                      ) : isBB ? (
+                        <span className="px-1 py-0.5 bg-green-600/30 text-green-400 rounded text-xs">BB</span>
+                      ) : (
+                        <span className="text-gray-600 text-xs">-</span>
+                      ),
                       '',
-                      'aaa'
-                    )}
-                    {isBBB && renderCellWithBadge(
-                      <span className="px-1 py-0.5 bg-cyan-600/30 text-cyan-400 rounded text-xs">BBB</span>,
-                      '',
-                      'bbb'
-                    )}
-                  </td>
-                  <td className="px-1 py-2 text-center">
-                    {isA6 && renderCellWithBadge(
-                      <span className="px-1 py-0.5 bg-amber-600/30 text-amber-400 rounded text-xs">A6</span>,
-                      '',
-                      'a6'
-                    )}
-                    {isB6 && renderCellWithBadge(
-                      <span className="px-1 py-0.5 bg-teal-600/30 text-teal-400 rounded text-xs">B6</span>,
-                      '',
-                      'b6'
+                      ['aa', 'bb']
                     )}
                   </td>
                   <td className="px-1 py-2 text-center">
-                    {isA9 && renderCellWithBadge(
-                      <span className="px-1 py-0.5 bg-lime-600/30 text-lime-400 rounded text-xs">A9</span>,
+                    {renderCellWithBadge(
+                      isAAA ? (
+                        <span className="px-1 py-0.5 bg-pink-600/30 text-pink-400 rounded text-xs">AAA</span>
+                      ) : isBBB ? (
+                        <span className="px-1 py-0.5 bg-cyan-600/30 text-cyan-400 rounded text-xs">BBB</span>
+                      ) : (
+                        <span className="text-gray-600 text-xs">-</span>
+                      ),
                       '',
-                      'a9'
-                    )}
-                    {isB9 && renderCellWithBadge(
-                      <span className="px-1 py-0.5 bg-indigo-600/30 text-indigo-400 rounded text-xs">B9</span>,
-                      '',
-                      'b9'
-                    )}
-                  </td>
-                  <td className="px-1 py-2 text-center">
-                    {isRight && renderCellWithBadge(
-                      <span className="px-1 py-0.5 bg-rose-600/30 text-rose-400 rounded text-xs">Right</span>,
-                      '',
-                      'right'
-                    )}
-                    {isLeft && renderCellWithBadge(
-                      <span className="px-1 py-0.5 bg-violet-600/30 text-violet-400 rounded text-xs">Left</span>,
-                      '',
-                      'left'
+                      ['aaa', 'bbb']
                     )}
                   </td>
                   <td className="px-1 py-2 text-center">
-                    {quarter === '1st Q' && renderCellWithBadge(
-                      <span className="px-1 py-0.5 bg-red-600/30 text-red-400 rounded text-xs">
-                        {quarter}
-                      </span>,
+                    {renderCellWithBadge(
+                      isA6 ? (
+                        <span className="px-1 py-0.5 bg-amber-600/30 text-amber-400 rounded text-xs">A6</span>
+                      ) : isB6 ? (
+                        <span className="px-1 py-0.5 bg-teal-600/30 text-teal-400 rounded text-xs">B6</span>
+                      ) : (
+                        <span className="text-gray-600 text-xs">-</span>
+                      ),
                       '',
-                      'first_9'
+                      ['a6', 'b6']
                     )}
-                    {quarter === '2nd Q' && renderCellWithBadge(
-                      <span className="px-1 py-0.5 bg-yellow-600/30 text-yellow-400 rounded text-xs">
-                        {quarter}
-                      </span>,
+                  </td>
+                  <td className="px-1 py-2 text-center">
+                    {renderCellWithBadge(
+                      isA9 ? (
+                        <span className="px-1 py-0.5 bg-lime-600/30 text-lime-400 rounded text-xs">A9</span>
+                      ) : isB9 ? (
+                        <span className="px-1 py-0.5 bg-indigo-600/30 text-indigo-400 rounded text-xs">B9</span>
+                      ) : (
+                        <span className="text-gray-600 text-xs">-</span>
+                      ),
                       '',
-                      'second_9'
+                      ['a9', 'b9']
                     )}
-                    {quarter === '3rd Q' && renderCellWithBadge(
-                      <span className="px-1 py-0.5 bg-green-600/30 text-green-400 rounded text-xs">
-                        {quarter}
-                      </span>,
+                  </td>
+                  <td className="px-1 py-2 text-center">
+                    {renderCellWithBadge(
+                      isRight ? (
+                        <span className="px-1 py-0.5 bg-rose-600/30 text-rose-400 rounded text-xs">Right</span>
+                      ) : isLeft ? (
+                        <span className="px-1 py-0.5 bg-violet-600/30 text-violet-400 rounded text-xs">Left</span>
+                      ) : (
+                        <span className="text-gray-600 text-xs">-</span>
+                      ),
                       '',
-                      'third_9'
+                      ['right', 'left']
                     )}
-                    {quarter === '4th Q' && renderCellWithBadge(
-                      <span className="px-1 py-0.5 bg-blue-600/30 text-blue-400 rounded text-xs">
-                        {quarter}
-                      </span>,
+                  </td>
+                  <td className="px-1 py-2 text-center">
+                    {renderCellWithBadge(
+                      quarter === '1st Q' ? (
+                        <span className="px-1 py-0.5 bg-red-600/30 text-red-400 rounded text-xs">1st Q</span>
+                      ) : quarter === '2nd Q' ? (
+                        <span className="px-1 py-0.5 bg-yellow-600/30 text-yellow-400 rounded text-xs">2nd Q</span>
+                      ) : quarter === '3rd Q' ? (
+                        <span className="px-1 py-0.5 bg-green-600/30 text-green-400 rounded text-xs">3rd Q</span>
+                      ) : quarter === '4th Q' ? (
+                        <span className="px-1 py-0.5 bg-blue-600/30 text-blue-400 rounded text-xs">4th Q</span>
+                      ) : (
+                        <span className="text-gray-600 text-xs">-</span>
+                      ),
                       '',
-                      'fourth_9'
+                      ['first_9', 'second_9', 'third_9', 'fourth_9']
                     )}
                   </td>
                   <td className="px-1 py-2 text-center">

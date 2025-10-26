@@ -10,6 +10,9 @@ interface NumberStat {
   L18: number;
   L27: number;
   L36: number;
+  L72: number;
+  L144: number;
+  L288: number;
   actualPercent: number;
   expectedPercent: number;
   deviation: number;
@@ -38,6 +41,9 @@ const NumbersTableSection: React.FC<NumbersTableSectionProps> = ({
             <th className="text-center p-1">L18</th>
             <th className="text-center p-1">L27</th>
             <th className="text-center p-1">L36</th>
+            <th className="text-center p-1">L72</th>
+            <th className="text-center p-1">L144</th>
+            <th className="text-center p-1">L288</th>
             <th className="text-center p-1">Act%</th>
             <th className="text-center p-1">Exp%</th>
             <th className="text-center p-1">Dev</th>
@@ -49,7 +55,7 @@ const NumbersTableSection: React.FC<NumbersTableSectionProps> = ({
             <th className="p-1">Max</th>
             <th className="p-1">Now</th>
             <th className="p-1">Max</th>
-            <th colSpan={8}></th>
+            <th colSpan={11}></th>
           </tr>
         </thead>
         <tbody>
@@ -86,6 +92,9 @@ const NumbersTableSection: React.FC<NumbersTableSectionProps> = ({
               <td className="p-1 text-center text-gray-200">{stat.L18}</td>
               <td className="p-1 text-center text-gray-200">{stat.L27}</td>
               <td className="p-1 text-center text-gray-200">{stat.L36}</td>
+              <td className="p-1 text-center text-gray-200">{stat.L72}</td>
+              <td className="p-1 text-center text-gray-200">{stat.L144}</td>
+              <td className="p-1 text-center text-gray-200">{stat.L288}</td>
               <td className="p-1 text-center text-gray-200">{stat.actualPercent.toFixed(1)}</td>
               <td className="p-1 text-center text-gray-400">2.7</td>
               <td className={`p-1 text-center ${

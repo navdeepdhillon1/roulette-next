@@ -244,7 +244,7 @@ export default function CommonGroupsTable({ spinHistory }: CommonGroupsTableProp
     <th rowSpan={2} className="px-1 py-2 text-center border-r border-gray-700">
       Last<br/>Seen
     </th>
-    <th colSpan={4} className="px-1 py-1 text-center border-r border-gray-700 bg-blue-900/30">
+    <th colSpan={7} className="px-1 py-1 text-center border-r border-gray-700 bg-blue-900/30">
       Hit Count
     </th>
     <th colSpan={2} className="px-1 py-1 text-center border-r border-gray-700 bg-green-900/30">
@@ -272,6 +272,9 @@ export default function CommonGroupsTable({ spinHistory }: CommonGroupsTableProp
     <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">L18</th>
     <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">L27</th>
     <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">L36</th>
+    <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">L72</th>
+    <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">L144</th>
+    <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">L288</th>
     {/* Percentage sub-headers */}
     <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">Act%</th>
     <th className="px-1 py-1 text-center border-r border-gray-700 text-xs">Exp%</th>
@@ -284,7 +287,10 @@ export default function CommonGroupsTable({ spinHistory }: CommonGroupsTableProp
             l9: calculateHits(orderedHistory.slice(0, 9), group.id),
             l18: calculateHits(orderedHistory.slice(0, 18), group.id),
             l27: calculateHits(orderedHistory.slice(0, 27), group.id),
-            l36: calculateHits(orderedHistory.slice(0, 36), group.id)
+            l36: calculateHits(orderedHistory.slice(0, 36), group.id),
+            l72: calculateHits(orderedHistory.slice(0, 72), group.id),
+            l144: calculateHits(orderedHistory.slice(0, 144), group.id),
+            l288: calculateHits(orderedHistory.slice(0, 288), group.id)
           };
           
           const absence = calculateAbsence(group.id, orderedHistory);
@@ -379,7 +385,10 @@ export default function CommonGroupsTable({ spinHistory }: CommonGroupsTableProp
               <td className="px-1 py-2 text-center border-r border-gray-700">{hits.l18}</td>
               <td className="px-1 py-2 text-center border-r border-gray-700">{hits.l27}</td>
               <td className="px-1 py-2 text-center border-r border-gray-700">{hits.l36}</td>
-              
+              <td className="px-1 py-2 text-center border-r border-gray-700">{hits.l72}</td>
+              <td className="px-1 py-2 text-center border-r border-gray-700">{hits.l144}</td>
+              <td className="px-1 py-2 text-center border-r border-gray-700">{hits.l288}</td>
+
               {/* PERCENTAGES */}
               <td className="px-1 py-2 text-center border-r border-gray-700">{actual.toFixed(1)}</td>
               <td className="px-1 py-2 text-center border-r border-gray-700">{expected.toFixed(1)}</td>

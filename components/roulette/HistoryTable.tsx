@@ -30,6 +30,7 @@ interface HistoryTableProps {
   }
   historicalBets?: Record<string, HistoricalBetData>
   onHistoricalBetsUpdate?: (newBets: Record<string, HistoricalBetData>) => void
+  dealers?: Array<{ id: string; name: string; nickname?: string }>
 }
 
 // Mapping of betting groups to their display info and BetKey
@@ -95,7 +96,8 @@ export default function HistoryTable({
   onNumberAdded,
   sessionStats,
   historicalBets = {},
-  onHistoricalBetsUpdate
+  onHistoricalBetsUpdate,
+  dealers = []
 }: HistoryTableProps) {
   const [bets, setBets] = useState<Record<BetKey, number>>({} as Record<BetKey, number>)
   const [results, setResults] = useState<Record<BetKey, { won: boolean, amount: number }>>({})
@@ -512,12 +514,16 @@ export default function HistoryTable({
 
             // Check if this is a dealer change event
             if ((spin as any).isDealerChange) {
+              const dealerNumber = (spin as any).dealerNumber
+              const dealerIndex = dealerNumber - 1
+              const dealerName = dealers[dealerIndex]?.name || `Dealer ${dealerNumber}`
+
               return (
                 <tr key={index} className="border-t-2 border-yellow-500 bg-yellow-900/20">
                   <td colSpan={12} className="px-2 py-1 text-center">
                     <div className="flex items-center justify-center gap-2">
                       <span className="text-yellow-400 font-bold text-xs">
-                        🎰 Changed to dealer {(spin as any).dealerNumber}
+                        🎰 Changed to dealer: <span className="text-yellow-300">{dealerName}</span>
                       </span>
                     </div>
                   </td>

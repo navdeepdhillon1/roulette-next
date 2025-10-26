@@ -1091,11 +1091,6 @@ const newBet: BetRecord = {
               )}
               {tableView === 'wheelLayout' && (
                 <div className="space-y-2">
-                  <WheelLayout
-                    spinHistory={spinHistory}
-                    onNumberAdded={handleNumberAdded}
-                  />
-
                   {/* Game Control Bar */}
                   <GameControlBar
                     currentDealer={currentDealer}
@@ -1113,6 +1108,11 @@ const newBet: BetRecord = {
                     currentView={tableView}
                     onViewChange={setTableView}
                     hasSelectedGroups={session.config.selectedGroups !== undefined && session.config.selectedGroups.length > 0}
+                  />
+
+                  <WheelLayout
+                    spinHistory={spinHistory}
+                    onNumberAdded={handleNumberAdded}
                   />
 
                   {/* Recent Numbers & History */}
@@ -1265,6 +1265,7 @@ const newBet: BetRecord = {
                   <ClickableRouletteTable
                     onNumberClick={handleNumberAdded}
                     recentSpins={spinHistory.filter(s => !(s as any).isDealerChange && !(s as any).isCardStart && !(s as any).isCardEnd).slice(0, 1).map(s => s.number)}
+                    spinHistory={spinHistory.filter(s => !(s as any).isDealerChange && !(s as any).isCardStart && !(s as any).isCardEnd).map(s => s.number)}
                   />
 
                   {/* Recent Numbers & History */}
@@ -1389,6 +1390,7 @@ const newBet: BetRecord = {
                         historicalBets={historicalBets}
                         onHistoricalBetsUpdate={handleHistoricalBetsUpdate}
                         onBetPlaced={handleHistoryTableBet}
+                        onClearBets={() => setMyGroupsManualBets({})}
                       />
                     </div>
                   </div>
