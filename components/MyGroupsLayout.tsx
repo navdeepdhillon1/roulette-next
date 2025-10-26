@@ -647,7 +647,7 @@ export default function MyGroupsLayout({
 
               return (
                 <td key={`bet-${group.type}-${group.id}-${idx}`} className="px-1 py-1">
-                  <div className="flex flex-col gap-0.5">
+                  <div className="grid grid-cols-2 gap-0.5">
                     {subgroups.map((subgroupLabel, subIdx) => {
                       const betKey = getSubgroupKey(subgroupLabel, group)
                       return (
