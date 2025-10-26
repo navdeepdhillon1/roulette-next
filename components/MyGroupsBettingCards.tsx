@@ -252,25 +252,37 @@ export default function MyGroupsBettingCards({
         <div className="flex flex-col gap-0.5">
           <button
             onClick={() => {
-              const currentValue = manualBets[keyA]
-              const newValue = currentValue ? '' : playerUnit.toString()
-              const updatedBets = { ...manualBets, [keyA]: newValue }
+              // Cumulative click - each click adds playerUnit up to max 1000
+              const currentValue = parseInt(manualBets[keyA] || '0')
+              const newValue = Math.min(currentValue + playerUnit, 1000)
+              const updatedBets = { ...manualBets, [keyA]: newValue.toString() }
               setManualBets(updatedBets)
             }}
-            className={`px-2 py-1 ${buttonClassA} rounded text-xs font-bold transition-all`}
+            className={`px-2 py-1 ${buttonClassA} rounded text-xs font-bold transition-all relative`}
           >
             {displayTextA}
+            {hasBetA && !resultA && (
+              <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[9px] font-bold px-1 rounded">
+                ${manualBets[keyA]}
+              </span>
+            )}
           </button>
           <button
             onClick={() => {
-              const currentValue = manualBets[keyB]
-              const newValue = currentValue ? '' : playerUnit.toString()
-              const updatedBets = { ...manualBets, [keyB]: newValue }
+              // Cumulative click - each click adds playerUnit up to max 1000
+              const currentValue = parseInt(manualBets[keyB] || '0')
+              const newValue = Math.min(currentValue + playerUnit, 1000)
+              const updatedBets = { ...manualBets, [keyB]: newValue.toString() }
               setManualBets(updatedBets)
             }}
-            className={`px-2 py-1 ${buttonClassB} rounded text-xs font-bold transition-all`}
+            className={`px-2 py-1 ${buttonClassB} rounded text-xs font-bold transition-all relative`}
           >
             {displayTextB}
+            {hasBetB && !resultB && (
+              <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[9px] font-bold px-1 rounded">
+                ${manualBets[keyB]}
+              </span>
+            )}
           </button>
         </div>
       )
@@ -295,14 +307,20 @@ export default function MyGroupsBettingCards({
       return (
         <button
           onClick={() => {
-            const currentValue = manualBets[key]
-            const newValue = currentValue ? '' : playerUnit.toString()
-            const updatedBets = { ...manualBets, [key]: newValue }
+            // Cumulative click - each click adds playerUnit up to max 1000
+            const currentValue = parseInt(manualBets[key] || '0')
+            const newValue = Math.min(currentValue + playerUnit, 1000)
+            const updatedBets = { ...manualBets, [key]: newValue.toString() }
             setManualBets(updatedBets)
           }}
-          className={`px-2 py-1 ${buttonClass} rounded text-xs font-bold transition-all`}
+          className={`px-2 py-1 ${buttonClass} rounded text-xs font-bold transition-all relative`}
         >
           {displayText}
+          {hasBet && !result && (
+            <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[9px] font-bold px-1 rounded">
+              ${manualBets[key]}
+            </span>
+          )}
         </button>
       )
     }
