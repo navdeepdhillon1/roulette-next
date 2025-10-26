@@ -604,8 +604,8 @@ export default function MyGroupsLayout({
 
   // Filter out invalid spins (number -1 or outside 0-36), but keep notification spins
   const validSpins = spins.filter(spin => {
-    // Keep spins with dealer change or bet card start flags (even if number is -1)
-    if ((spin as any).isDealerChange || (spin as any).isCardStart) return true
+    // Keep spins with dealer change, card start, or card end flags (even if number is -1)
+    if ((spin as any).isDealerChange || (spin as any).isCardStart || (spin as any).isCardEnd) return true
     // Otherwise, only keep valid roulette numbers (0-36)
     return spin.number >= 0 && spin.number <= 36
   })
@@ -681,30 +681,64 @@ export default function MyGroupsLayout({
             // Check if this spin has dealer change or bet card notification
             const hasDealerChange = (spin as any).isDealerChange
             const hasBetCardStart = (spin as any).isCardStart
+            const hasCardEnd = (spin as any).isCardEnd
 
             // Skip rendering the spin row for notification-only spins (number -1)
             const isNotificationOnly = num === -1
 
             return (
               <React.Fragment key={spin.id || spinIdx}>
-                {/* Dealer change row */}
-                {hasDealerChange && (
-                  <tr className="bg-yellow-900/30 border-b border-yellow-700/50">
+                {/* Card start row */}
+                {hasBetCardStart && (
+                  <tr className="border-t-2 border-cyan-500 bg-gradient-to-r from-cyan-900/30 via-cyan-800/10 to-cyan-900/30">
                     <td colSpan={displayGroups.length + 1} className="px-2 py-1 text-center">
-                      <span className="text-yellow-400 text-xs font-semibold">
-                        🎲 Changed to dealer {(spin as any).dealerNumber}
-                      </span>
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="text-cyan-300 font-bold text-xs">
+                          🎴 Card #{(spin as any).cardNumber} Started - Target: ${(spin as any).cardTarget}
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 )}
 
-                {/* Bet card start row */}
-                {hasBetCardStart && (
-                  <tr className="bg-blue-900/30 border-b border-blue-700/50">
+                {/* Card end row */}
+                {hasCardEnd && (() => {
+                  const profit = (spin as any).cardProfit || 0
+                  const success = (spin as any).cardSuccess || false
+                  const target = (spin as any).cardTarget || 0
+                  const betsUsed = (spin as any).cardBetsUsed || 0
+                  const maxBets = (spin as any).cardMaxBets || 0
+
+                  return (
+                    <tr className={`border-t-2 ${success ? 'border-green-500 bg-gradient-to-r from-green-900/30 via-green-800/10 to-green-900/30' : 'border-red-500 bg-gradient-to-r from-red-900/30 via-red-800/10 to-red-900/30'}`}>
+                      <td colSpan={displayGroups.length + 1} className="px-2 py-1 text-center">
+                        <div className="flex items-center justify-center gap-2 text-xs">
+                          <span className={`font-bold ${success ? 'text-green-300' : 'text-red-300'}`}>
+                            {success ? `✅ $${target} Target Achieved` : `❌ FAILED: Card #${(spin as any).cardNumber}`}
+                          </span>
+                          <span className="text-gray-400">•</span>
+                          <span className={`font-semibold ${profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            Profit: ${profit >= 0 ? '+' : ''}{profit.toFixed(2)}
+                          </span>
+                          <span className="text-gray-400">•</span>
+                          <span className="text-gray-300">
+                            Bets: {betsUsed}/{maxBets}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })()}
+
+                {/* Dealer change row */}
+                {hasDealerChange && (
+                  <tr className="border-t-2 border-yellow-500 bg-yellow-900/20">
                     <td colSpan={displayGroups.length + 1} className="px-2 py-1 text-center">
-                      <span className="text-blue-400 text-xs font-semibold">
-                        📋 Bet Card {(spin as any).cardNumber} started
-                      </span>
+                      <div className="flex items-center justify-center gap-2">
+                        <span className="text-yellow-400 font-bold text-xs">
+                          🎰 Changed to dealer {(spin as any).dealerNumber}
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 )}
