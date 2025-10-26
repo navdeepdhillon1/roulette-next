@@ -602,8 +602,13 @@ export default function MyGroupsLayout({
     return <p className="text-gray-400 text-center py-8">No spins recorded yet</p>
   }
 
-  // Filter out invalid spins (number -1 or outside 0-36)
-  const validSpins = spins.filter(spin => spin.number >= 0 && spin.number <= 36)
+  // Filter out invalid spins (number -1 or outside 0-36), but keep notification spins
+  const validSpins = spins.filter(spin => {
+    // Keep spins with dealer change or bet card start flags (even if number is -1)
+    if (spin.dealer_change || spin.bet_card_start) return true
+    // Otherwise, only keep valid roulette numbers (0-36)
+    return spin.number >= 0 && spin.number <= 36
+  })
 
   return (
     <div className="overflow-x-auto">
@@ -677,6 +682,9 @@ export default function MyGroupsLayout({
             const hasDealerChange = spin.dealer_change
             const hasBetCardStart = spin.bet_card_start
 
+            // Skip rendering the spin row for notification-only spins (number -1)
+            const isNotificationOnly = num === -1
+
             return (
               <React.Fragment key={spin.id || spinIdx}>
                 {/* Dealer change row */}
@@ -701,8 +709,9 @@ export default function MyGroupsLayout({
                   </tr>
                 )}
 
-                {/* Spin row */}
-                <tr className="border-b border-gray-700/50 hover:bg-gray-800/50">
+                {/* Spin row - skip for notification-only spins */}
+                {!isNotificationOnly && (
+                  <tr className="border-b border-gray-700/50 hover:bg-gray-800/50">
                   <td className="px-1 py-1 text-center align-top">
                   <div className={`
                     inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold text-white
@@ -753,7 +762,8 @@ export default function MyGroupsLayout({
                     </td>
                   )
                 })}
-                </tr>
+                  </tr>
+                )}
               </React.Fragment>
             )
           })}
