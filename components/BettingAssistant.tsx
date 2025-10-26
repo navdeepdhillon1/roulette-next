@@ -961,16 +961,16 @@ const newBet: BetRecord = {
                   {/* Recent Numbers & History */}
                   <div className="space-y-2">
                     {/* Recent 15 Numbers with Number Entry */}
-                    <div className="bg-gray-800 rounded border border-gray-700 p-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="text-xs text-gray-300">Last 25 Spins</h3>
+                    <div className="bg-gray-800 rounded border border-gray-700 px-1 py-0.5">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <h3 className="text-[10px] text-gray-300">Last 25 Spins</h3>
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
                             min="0"
                             max="36"
                             placeholder="0-36"
-                            className="w-16 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-xs text-center focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                            className="w-14 px-1.5 py-0.5 bg-gray-700 border border-gray-600 rounded text-white text-[10px] text-center focus:outline-none focus:ring-2 focus:ring-yellow-400"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
                                 const value = parseInt(e.currentTarget.value)
@@ -981,7 +981,7 @@ const newBet: BetRecord = {
                               }
                             }}
                           />
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-col gap-0.5">
                             <button
                               onClick={(e) => {
                                 const input = e.currentTarget.parentElement?.previousElementSibling as HTMLInputElement
@@ -991,25 +991,25 @@ const newBet: BetRecord = {
                                   input.value = ''
                                 }
                               }}
-                              className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white text-xs font-bold rounded"
+                              className="px-2 py-0.5 bg-yellow-600 hover:bg-yellow-700 text-white text-[10px] font-bold rounded"
                             >
                               Add
                             </button>
                             <button
                               onClick={undoLastSpin}
-                              className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded"
+                              className="px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded"
                             >
                               Undo
                             </button>
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex gap-0.5">
                         {spinHistory.filter(s => !(s as any).isDealerChange && !(s as any).isCardStart && !(s as any).isCardEnd).slice(0, 25).map((spin, idx) => (
                           <div
                             key={idx}
                             className={`
-                              w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white
+                              w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white
                               ${idx === 0 ? 'ring-2 ring-yellow-400 animate-pulse' : ''}
                               ${spin.number === 0 ? 'bg-green-600' :
                                 [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(spin.number)
@@ -1111,16 +1111,16 @@ const newBet: BetRecord = {
                   {/* Recent Numbers & History */}
                   <div className="space-y-2">
                     {/* Recent 15 Numbers with Number Entry */}
-                    <div className="bg-gray-800 rounded border border-gray-700 p-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="text-xs text-gray-300">Last 25 Spins</h3>
+                    <div className="bg-gray-800 rounded border border-gray-700 px-1 py-0.5">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <h3 className="text-[10px] text-gray-300">Last 25 Spins</h3>
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
                             min="0"
                             max="36"
                             placeholder="0-36"
-                            className="w-16 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-xs text-center focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                            className="w-14 px-1.5 py-0.5 bg-gray-700 border border-gray-600 rounded text-white text-[10px] text-center focus:outline-none focus:ring-2 focus:ring-yellow-400"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
                                 const value = parseInt(e.currentTarget.value)
@@ -1131,7 +1131,7 @@ const newBet: BetRecord = {
                               }
                             }}
                           />
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-col gap-0.5">
                             <button
                               onClick={(e) => {
                                 const input = e.currentTarget.parentElement?.previousElementSibling as HTMLInputElement
@@ -1141,25 +1141,25 @@ const newBet: BetRecord = {
                                   input.value = ''
                                 }
                               }}
-                              className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white text-xs font-bold rounded"
+                              className="px-2 py-0.5 bg-yellow-600 hover:bg-yellow-700 text-white text-[10px] font-bold rounded"
                             >
                               Add
                             </button>
                             <button
                               onClick={undoLastSpin}
-                              className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded"
+                              className="px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded"
                             >
                               Undo
                             </button>
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex gap-0.5">
                         {spinHistory.filter(s => !(s as any).isDealerChange && !(s as any).isCardStart && !(s as any).isCardEnd).slice(0, 25).map((spin, idx) => (
                           <div
                             key={idx}
                             className={`
-                              w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white
+                              w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white
                               ${idx === 0 ? 'ring-2 ring-yellow-400 animate-pulse' : ''}
                               ${spin.number === 0 ? 'bg-green-600' :
                                 [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(spin.number)
@@ -1382,7 +1382,7 @@ const newBet: BetRecord = {
                               }
                             }}
                           />
-                          <div className="flex flex-col gap-1">
+                          <div className="flex flex-col gap-0.5">
                             <button
                               onClick={(e) => {
                                 const input = e.currentTarget.parentElement?.previousElementSibling as HTMLInputElement
@@ -1392,25 +1392,25 @@ const newBet: BetRecord = {
                                   input.value = ''
                                 }
                               }}
-                              className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white text-xs font-bold rounded"
+                              className="px-2 py-0.5 bg-yellow-600 hover:bg-yellow-700 text-white text-[10px] font-bold rounded"
                             >
                               Add
                             </button>
                             <button
                               onClick={undoLastSpin}
-                              className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded"
+                              className="px-2 py-0.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded"
                             >
                               Undo
                             </button>
                           </div>
                         </div>
                       </div>
-                      <div className="flex gap-1">
+                      <div className="flex gap-0.5">
                         {spinHistory.filter(s => !(s as any).isDealerChange && !(s as any).isCardStart && !(s as any).isCardEnd).slice(0, 25).map((spin, idx) => (
                           <div
                             key={idx}
                             className={`
-                              w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white
+                              w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white
                               ${idx === 0 ? 'ring-2 ring-yellow-400 animate-pulse' : ''}
                               ${spin.number === 0 ? 'bg-green-600' :
                                 [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(spin.number)
