@@ -931,9 +931,16 @@ export default function MyGroupsLayout({
                       <button
                         onClick={() => {
                           if (!setManualBets) return
-                          const currentValue = manualBets[key]
-                          const newValue = currentValue ? '' : playerUnit.toString()
+                          const currentValue = parseFloat(manualBets[key] || '0')
+                          const newValue = Math.min(currentValue + playerUnit, 1000).toString()
                           const updatedBets = { ...manualBets, [key]: newValue }
+                          setManualBets(updatedBets)
+                        }}
+                        onContextMenu={(e) => {
+                          e.preventDefault()
+                          if (!setManualBets) return
+                          const updatedBets = { ...manualBets }
+                          delete updatedBets[key]
                           setManualBets(updatedBets)
                         }}
                         className={`relative px-2 py-1 ${buttonClass} rounded text-xs font-bold transition-all`}
