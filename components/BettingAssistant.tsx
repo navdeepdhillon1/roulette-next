@@ -22,7 +22,6 @@ import HistoryTable from './roulette/HistoryTable'
 import WheelHistory from './WheelHistory'
 import MyGroupsLayout from './MyGroupsLayout'
 import GameControlBar from './GameControlBar'
-import ClickableRouletteTable from './ClickableRouletteTable'
 import { getNumberProperties, RED_NUMBERS } from '@/lib/roulette-logic'
 
 function updateBettingSystem(config: BettingSystemConfig, outcome: 'win' | 'loss'): BettingSystemConfig {
@@ -893,9 +892,7 @@ const newBet: BetRecord = {
                           >
                             {num}
                             {hitCount > 0 && (
-                              <span className={`absolute -top-0.5 -right-0.5 text-xs rounded-full px-1 ${
-                                isHot ? 'bg-yellow-400 text-black font-bold' : 'bg-gray-600 text-white'
-                              }`}>
+                              <span className="absolute -top-0.5 -right-0.5 text-xs rounded-full px-1 bg-yellow-400 text-black font-bold">
                                 {hitCount}
                               </span>
                             )}
@@ -923,9 +920,7 @@ const newBet: BetRecord = {
                           >
                             {num}
                             {hitCount > 0 && (
-                              <span className={`absolute -top-0.5 -right-0.5 text-xs rounded-full px-1 ${
-                                isHot ? 'bg-yellow-400 text-black font-bold' : 'bg-gray-600 text-white'
-                              }`}>
+                              <span className="absolute -top-0.5 -right-0.5 text-xs rounded-full px-1 bg-yellow-400 text-black font-bold">
                                 {hitCount}
                               </span>
                             )}
@@ -953,9 +948,7 @@ const newBet: BetRecord = {
                           >
                             {num}
                             {hitCount > 0 && (
-                              <span className={`absolute -top-0.5 -right-0.5 text-xs rounded-full px-1 ${
-                                isHot ? 'bg-yellow-400 text-black font-bold' : 'bg-gray-600 text-white'
-                              }`}>
+                              <span className="absolute -top-0.5 -right-0.5 text-xs rounded-full px-1 bg-yellow-400 text-black font-bold">
                                 {hitCount}
                               </span>
                             )}
@@ -1261,12 +1254,110 @@ const newBet: BetRecord = {
                     hasSelectedGroups={session.config.selectedGroups !== undefined && session.config.selectedGroups.length > 0}
                   />
 
-                  {/* Clickable Roulette Table for Quick Entry */}
-                  <ClickableRouletteTable
-                    onNumberClick={handleNumberAdded}
-                    recentSpins={spinHistory.filter(s => !(s as any).isDealerChange && !(s as any).isCardStart && !(s as any).isCardEnd).slice(0, 1).map(s => s.number)}
-                    spinHistory={spinHistory.filter(s => !(s as any).isDealerChange && !(s as any).isCardStart && !(s as any).isCardEnd).map(s => s.number)}
-                  />
+                  {/* Roulette Table Layout */}
+                  <div className="space-y-0.5">
+                    {/* Zero */}
+                    <div className="relative">
+                      <button
+                        onClick={() => handleNumberAdded(0)}
+                        className="w-full py-1.5 bg-green-600 hover:bg-green-700 rounded text-sm font-bold text-white transition"
+                      >
+                        0
+                        {spinHistory.filter(s => s.number === 0).length > 0 && (
+                          <span className="absolute top-0 right-0 bg-yellow-400 text-black text-xs rounded-full px-1.5">
+                            {spinHistory.filter(s => s.number === 0).length}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Main number grid */}
+                    <div className="grid grid-cols-12 gap-0.5">
+                      {/* Top row */}
+                      {[3,6,9,12,15,18,21,24,27,30,33,36].map(num => {
+                        const hitCount = spinHistory.slice(0, 36).filter(s => s.number === num).length;
+                        const isHot = hitCount >= 3;
+                        const isCold = hitCount === 0;
+
+                        return (
+                          <button
+                            key={num}
+                            onClick={() => handleNumberAdded(num)}
+                            className={`relative py-1.5 rounded text-sm font-bold text-white transition ${
+                              isHot ? 'ring-1 ring-yellow-400 animate-pulse' : ''
+                            } ${
+                              [3,9,12,18,21,27,30,36].includes(num)
+                                ? 'bg-red-600 hover:bg-red-700'
+                                : 'bg-black hover:bg-gray-800 border border-gray-600'
+                            } ${isCold ? 'opacity-50' : ''}`}
+                          >
+                            {num}
+                            {hitCount > 0 && (
+                              <span className="absolute -top-0.5 -right-0.5 text-xs rounded-full px-1 bg-yellow-400 text-black font-bold">
+                                {hitCount}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+
+                      {/* Middle row */}
+                      {[2,5,8,11,14,17,20,23,26,29,32,35].map(num => {
+                        const hitCount = spinHistory.slice(0, 36).filter(s => s.number === num).length;
+                        const isHot = hitCount >= 3;
+                        const isCold = hitCount === 0;
+
+                        return (
+                          <button
+                            key={num}
+                            onClick={() => handleNumberAdded(num)}
+                            className={`relative py-1.5 rounded text-sm font-bold text-white transition ${
+                              isHot ? 'ring-1 ring-yellow-400 animate-pulse' : ''
+                            } ${
+                              [5,14,23,32].includes(num)
+                                ? 'bg-red-600 hover:bg-red-700'
+                                : 'bg-black hover:bg-gray-800 border border-gray-600'
+                            } ${isCold ? 'opacity-50' : ''}`}
+                          >
+                            {num}
+                            {hitCount > 0 && (
+                              <span className="absolute -top-0.5 -right-0.5 text-xs rounded-full px-1 bg-yellow-400 text-black font-bold">
+                                {hitCount}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+
+                      {/* Bottom row */}
+                      {[1,4,7,10,13,16,19,22,25,28,31,34].map(num => {
+                        const hitCount = spinHistory.slice(0, 36).filter(s => s.number === num).length;
+                        const isHot = hitCount >= 3;
+                        const isCold = hitCount === 0;
+
+                        return (
+                          <button
+                            key={num}
+                            onClick={() => handleNumberAdded(num)}
+                            className={`relative py-1.5 rounded text-sm font-bold text-white transition ${
+                              isHot ? 'ring-1 ring-yellow-400 animate-pulse' : ''
+                            } ${
+                              [1,7,16,19,25,34].includes(num)
+                                ? 'bg-red-600 hover:bg-red-700'
+                                : 'bg-black hover:bg-gray-800 border border-gray-600'
+                            } ${isCold ? 'opacity-50' : ''}`}
+                          >
+                            {num}
+                            {hitCount > 0 && (
+                              <span className="absolute -top-0.5 -right-0.5 text-xs rounded-full px-1 bg-yellow-400 text-black font-bold">
+                                {hitCount}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
                   {/* Recent Numbers & History */}
                   <div className="space-y-2">
