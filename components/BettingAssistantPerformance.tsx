@@ -90,7 +90,27 @@ export default function BettingAssistantPerformance({ session }: Props) {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-4xl font-bold text-yellow-400 mb-2">📊 Performance Dashboard</h1>
-          <p className="text-gray-400">Session ID: {session.id.slice(-8)}</p>
+          <div className="flex items-center gap-4 flex-wrap">
+            <p className="text-gray-400">Session ID: {session.id.slice(-8)}</p>
+            {session.config?.casinoName && (
+              <>
+                <span className="text-gray-600">•</span>
+                <p className="text-cyan-400 font-semibold">🎰 {session.config.casinoName}</p>
+              </>
+            )}
+            {session.config?.dealerName && (
+              <>
+                <span className="text-gray-600">•</span>
+                <p className="text-green-400 font-semibold">👤 {session.config.dealerName}</p>
+              </>
+            )}
+            {session.config?.tableNumber && (
+              <>
+                <span className="text-gray-600">•</span>
+                <p className="text-purple-400 font-semibold">🎲 Table {session.config.tableNumber}</p>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Tab Navigation */}

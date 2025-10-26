@@ -114,6 +114,12 @@ export interface SessionConfig {
   bettingSystem: BettingSystemConfig
   selectedGroups?: SelectedGroup[]  // Groups selected for "My Groups" layout
   historyLayout?: 'table' | 'wheel' | 'my-groups'  // Current layout view
+  // Casino & Dealer tracking
+  casinoId?: string | null
+  casinoName?: string | null
+  dealerId?: string | null
+  dealerName?: string | null
+  tableNumber?: string | null
 }
 
 export interface SessionState {

@@ -243,7 +243,28 @@ export default function BettingAssistant() {
     }
   }, [currentDealer, previousDealer, session, addDealerChange])
 
-  const startSession = (config: SessionConfig) => {
+  const startSession = (
+    config: SessionConfig,
+    locationData?: {
+      casinoId: string | null
+      casinoName?: string | null
+      dealerId: string | null
+      dealerName?: string | null
+      tableNumber: string | null
+    }
+  ) => {
+    // Merge location data into config if provided
+    const configWithLocation: SessionConfig = locationData
+      ? {
+          ...config,
+          casinoId: locationData.casinoId,
+          casinoName: locationData.casinoName || null,
+          dealerId: locationData.dealerId,
+          dealerName: locationData.dealerName || null,
+          tableNumber: locationData.tableNumber,
+        }
+      : config
+
     const cards: BetCard[] = Array.from({ length: config.totalCards }, (_, i) => ({
       id: `card-${i + 1}`,
       cardNumber: i + 1,
@@ -258,7 +279,7 @@ export default function BettingAssistant() {
 
     setSession({
       id: `session-${Date.now()}`,
-      config,
+      config: configWithLocation,
       cards,
       currentCardIndex: 0,
       currentBankroll: config.bankroll,
