@@ -647,7 +647,7 @@ export default function MyGroupsLayout({
               const useGrid = subgroups.length > 2
 
               return (
-                <td key={`bet-${group.type}-${group.id}-${idx}`} className="px-1 py-1">
+                <td key={`bet-${group.type}-${group.id}-${idx}`} className="px-1 py-1 align-top">
                   <div className={useGrid ? "grid grid-cols-2 gap-0.5" : "flex gap-0.5"}>
                     {subgroups.map((subgroupLabel, subIdx) => {
                       const betKey = getSubgroupKey(subgroupLabel, group)
