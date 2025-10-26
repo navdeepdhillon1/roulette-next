@@ -961,9 +961,9 @@ const newBet: BetRecord = {
                   {/* Recent Numbers & History */}
                   <div className="space-y-2">
                     {/* Recent 15 Numbers with Number Entry */}
-                    <div className="bg-gray-800 rounded border border-gray-700 p-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-sm font-bold text-yellow-400">Last 25 Spins</h3>
+                    <div className="bg-gray-800 rounded border border-gray-700 p-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="text-xs text-gray-300">Last 25 Spins</h3>
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
@@ -1111,9 +1111,9 @@ const newBet: BetRecord = {
                   {/* Recent Numbers & History */}
                   <div className="space-y-2">
                     {/* Recent 15 Numbers with Number Entry */}
-                    <div className="bg-gray-800 rounded border border-gray-700 p-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="text-sm font-bold text-yellow-400">Last 25 Spins</h3>
+                    <div className="bg-gray-800 rounded border border-gray-700 p-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="text-xs text-gray-300">Last 25 Spins</h3>
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
