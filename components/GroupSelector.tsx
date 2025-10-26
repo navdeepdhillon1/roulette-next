@@ -5,7 +5,7 @@ import React, { useState } from 'react'
 import type { SelectedGroup, CustomGroup } from '@/types/bettingAssistant'
 import { RED_NUMBERS } from '@/lib/roulette-logic'
 import TableLayoutModal from './roulette/TableLayoutModal'
-import WheelLayoutModal from './roulette/WheelLayoutModal'
+import WheelLayoutModal from './WheelLayoutModal'
 
 interface GroupSelectorProps {
   selectedGroups: SelectedGroup[]

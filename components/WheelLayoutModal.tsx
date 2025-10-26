@@ -15,7 +15,7 @@ interface GroupConfig {
 interface WheelLayoutModalProps {
   isOpen: boolean
   onClose: () => void
-  groupType: 'specials1' | 'specials2' | 'voisins' | 'orphelins' | 'tiers' | 'jeu_zero' | 'non_voisin' | 'a' | 'b' | 'aa' | 'bb' | 'aaa' | 'bbb' | 'a6' | 'b6' | 'a9' | 'b9' | 'right' | 'left' | 'first_9' | 'second_9' | 'third_9' | 'fourth_9' | null
+  groupType: 'specials1' | 'specials2' | 'voisins' | 'orphelins' | 'tiers' | 'jeu_zero' | 'non_voisin' | 'a' | 'b' | 'aa' | 'bb' | 'aaa' | 'bbb' | 'a6' | 'b6' | 'a9' | 'b9' | 'right' | 'left' | 'first_9' | 'second_9' | 'third_9' | 'fourth_9' | 'vois-orph-tier' | 'voisins-nonvoisins' | 'wheel-quarters' | 'ab-split' | 'aabb-split' | 'aaabbb-split' | 'a6b6-split' | 'a9b9-split' | 'right-left' | null
 }
 
 const GROUP_CONFIGS: Record<string, GroupConfig> = {
@@ -113,6 +113,73 @@ const GROUP_CONFIGS: Record<string, GroupConfig> = {
       { label: '2nd Nine', numbers: WHEEL_GROUPS.second_9, color: '#0891B2' },
       { label: '3rd Nine', numbers: WHEEL_GROUPS.third_9, color: '#16A34A' },
       { label: '4th Nine', numbers: WHEEL_GROUPS.fourth_9, color: '#9333EA' }
+    ]
+  },
+  // GroupSelector types (with hyphenated names)
+  'vois-orph-tier': {
+    name: 'Voisins / Orphelins / Tiers',
+    groups: [
+      { label: 'Voisins (17 numbers)', numbers: WHEEL_GROUPS.voisins, color: '#3B82F6' },
+      { label: 'Orphelins (8 numbers)', numbers: WHEEL_GROUPS.orphelins, color: '#EAB308' },
+      { label: 'Tiers (12 numbers)', numbers: WHEEL_GROUPS.tiers, color: '#10B981' }
+    ]
+  },
+  'voisins-nonvoisins': {
+    name: 'Voisins / Non-Voisins',
+    groups: [
+      { label: 'Voisins (25 numbers)', numbers: WHEEL_GROUPS.voisins, color: '#3B82F6' },
+      { label: 'Non-Voisins (12 numbers)', numbers: WHEEL_GROUPS.non_voisin, color: '#EF4444' }
+    ]
+  },
+  'wheel-quarters': {
+    name: 'Wheel Quarters (9s)',
+    groups: [
+      { label: '1st 9', numbers: WHEEL_GROUPS.first_9, color: '#DC2626' },
+      { label: '2nd 9', numbers: WHEEL_GROUPS.second_9, color: '#0891B2' },
+      { label: '3rd 9', numbers: WHEEL_GROUPS.third_9, color: '#16A34A' },
+      { label: '4th 9', numbers: WHEEL_GROUPS.fourth_9, color: '#9333EA' }
+    ]
+  },
+  'ab-split': {
+    name: 'A/B Split',
+    groups: [
+      { label: 'A', numbers: WHEEL_GROUPS.a, color: '#6366F1' },
+      { label: 'B', numbers: WHEEL_GROUPS.b, color: '#EC4899' }
+    ]
+  },
+  'aabb-split': {
+    name: 'AA/BB Split',
+    groups: [
+      { label: 'AA', numbers: WHEEL_GROUPS.aa, color: '#84CC16' },
+      { label: 'BB', numbers: WHEEL_GROUPS.bb, color: '#9333EA' }
+    ]
+  },
+  'aaabbb-split': {
+    name: 'AAA/BBB Split',
+    groups: [
+      { label: 'AAA', numbers: WHEEL_GROUPS.aaa, color: '#3B82F6' },
+      { label: 'BBB', numbers: WHEEL_GROUPS.bbb, color: '#EAB308' }
+    ]
+  },
+  'a6b6-split': {
+    name: 'A6/B6 Split',
+    groups: [
+      { label: 'A6', numbers: WHEEL_GROUPS.a6, color: '#F59E0B' },
+      { label: 'B6', numbers: WHEEL_GROUPS.b6, color: '#8B5CF6' }
+    ]
+  },
+  'a9b9-split': {
+    name: 'A9/B9 Split',
+    groups: [
+      { label: 'A9', numbers: WHEEL_GROUPS.a9, color: '#06B6D4' },
+      { label: 'B9', numbers: WHEEL_GROUPS.b9, color: '#F97316' }
+    ]
+  },
+  'right-left': {
+    name: 'Right/Left Split',
+    groups: [
+      { label: 'Right', numbers: WHEEL_GROUPS.right, color: '#14B8A6' },
+      { label: 'Left', numbers: WHEEL_GROUPS.left, color: '#A855F7' }
     ]
   }
 }
