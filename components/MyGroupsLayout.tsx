@@ -673,9 +673,37 @@ export default function MyGroupsLayout({
             const spinKey = new Date(spin.created_at).getTime().toString()
             const spinBetData = historicalBets[spinKey]
 
+            // Check if this spin has dealer change or bet card notification
+            const hasDealerChange = spin.dealer_change
+            const hasBetCardStart = spin.bet_card_start
+
             return (
-              <tr key={spin.id || spinIdx} className="border-b border-gray-700/50 hover:bg-gray-800/50">
-                <td className="px-1 py-1 text-center">
+              <React.Fragment key={spin.id || spinIdx}>
+                {/* Dealer change row */}
+                {hasDealerChange && (
+                  <tr className="bg-yellow-900/30 border-b border-yellow-700/50">
+                    <td colSpan={displayGroups.length + 1} className="px-2 py-1 text-center">
+                      <span className="text-yellow-400 text-xs font-semibold">
+                        🎲 Changed to dealer: {spin.dealer_name || 'Unknown'}
+                      </span>
+                    </td>
+                  </tr>
+                )}
+
+                {/* Bet card start row */}
+                {hasBetCardStart && (
+                  <tr className="bg-blue-900/30 border-b border-blue-700/50">
+                    <td colSpan={displayGroups.length + 1} className="px-2 py-1 text-center">
+                      <span className="text-blue-400 text-xs font-semibold">
+                        📋 Bet Card {spin.bet_card_number} started
+                      </span>
+                    </td>
+                  </tr>
+                )}
+
+                {/* Spin row */}
+                <tr className="border-b border-gray-700/50 hover:bg-gray-800/50">
+                  <td className="px-1 py-1 text-center align-top">
                   <div className={`
                     inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold text-white
                     ${spin.color === 'red' ? 'bg-red-600' :
@@ -711,7 +739,7 @@ export default function MyGroupsLayout({
                   }
 
                   return (
-                    <td key={`cell-${group.type}-${group.id}-${groupIdx}`} className="px-1 py-1 text-center">
+                    <td key={`cell-${group.type}-${group.id}-${groupIdx}`} className="px-1 py-1 text-center align-top">
                       <span className={`relative inline-block px-1.5 py-0.5 rounded text-xs font-bold ${bgColor}`}>
                         {displayValue}
                         {betResult && (
@@ -725,7 +753,8 @@ export default function MyGroupsLayout({
                     </td>
                   )
                 })}
-              </tr>
+                </tr>
+              </React.Fragment>
             )
           })}
         </tbody>
