@@ -452,20 +452,40 @@ export default function MyGroupsLayout({
     return <p className="text-gray-400 text-center py-8">No spins recorded yet</p>
   }
 
+  // Filter out invalid spins (number -1 or outside 0-36)
+  const validSpins = spins.filter(spin => spin.number >= 0 && spin.number <= 36)
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead className="bg-gray-800 sticky top-0">
           <tr>
             <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300 w-14">Number</th>
-            {displayGroups.map((group, idx) => (
-              <th
-                key={`header-${group.type}-${group.id}-${idx}`}
-                className="px-1 py-1 text-center font-semibold text-xs text-gray-300"
-              >
-                {group.name}
-              </th>
-            ))}
+            {displayGroups.map((group, idx) => {
+              const isSplit = isSplitGroup(group)
+              if (isSplit) {
+                const labels = getSplitLabels(group)
+                return (
+                  <React.Fragment key={`header-${group.type}-${group.id}-${idx}`}>
+                    <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300">
+                      {labels.a}
+                    </th>
+                    <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300">
+                      {labels.b}
+                    </th>
+                  </React.Fragment>
+                )
+              } else {
+                return (
+                  <th
+                    key={`header-${group.type}-${group.id}-${idx}`}
+                    className="px-1 py-1 text-center font-semibold text-xs text-gray-300"
+                  >
+                    {group.name}
+                  </th>
+                )
+              }
+            })}
           </tr>
         </thead>
         <tbody>
@@ -499,12 +519,14 @@ export default function MyGroupsLayout({
                 const keyB = `${groupKey}-b`
 
                 return (
-                  <td key={`bet-${groupKey}-${idx}`} className="px-1 py-1">
-                    <div className="flex flex-col gap-0.5">
+                  <React.Fragment key={`bet-${groupKey}-${idx}`}>
+                    <td className="px-1 py-1">
                       {renderBetButton(keyA, labels.a, 'bg-blue-600 hover:bg-blue-700')}
+                    </td>
+                    <td className="px-1 py-1">
                       {renderBetButton(keyB, labels.b, 'bg-orange-600 hover:bg-orange-700')}
-                    </div>
-                  </td>
+                    </td>
+                  </React.Fragment>
                 )
               } else {
                 return (
@@ -517,22 +539,14 @@ export default function MyGroupsLayout({
           </tr>
 
           {/* HISTORICAL ROWS */}
-          {spins.map((spin, spinIdx) => {
+          {validSpins.map((spin, spinIdx) => {
             const num = spin.number
             const spinKey = new Date(spin.created_at).getTime().toString()
             const spinBetData = historicalBets[spinKey]
 
             // Helper to render cell with optional P/L badge
-            const renderCellWithBadge = (content: React.ReactNode, className: string, betKeys: string | string[]) => {
-              const keysArray = Array.isArray(betKeys) ? betKeys : [betKeys]
-
-              let betResult = null
-              for (const key of keysArray) {
-                if (spinBetData?.results[key]) {
-                  betResult = spinBetData.results[key]
-                  break
-                }
-              }
+            const renderCellWithBadge = (content: React.ReactNode, className: string, betKey: string) => {
+              const betResult = spinBetData?.results[betKey]
 
               return (
                 <span className={`relative inline-block ${className}`}>
@@ -566,28 +580,62 @@ export default function MyGroupsLayout({
                   const isSplit = isSplitGroup(group)
 
                   const won = checkGroupWin(num, group)
-                  let bgColor = 'bg-gray-600/30 text-gray-300'
+                  const wonB = num !== 0 && !won // B side wins if not A and not zero
 
-                  if (displayValue !== '-') {
-                    if (group.type === 'custom') {
-                      bgColor = won ? 'bg-purple-600/30 text-purple-400' : 'bg-gray-600/30 text-gray-400'
-                    } else {
-                      // Color code based on group type
-                      bgColor = won ? 'bg-green-600/30 text-green-400' : 'bg-red-600/30 text-red-400'
+                  if (isSplit) {
+                    const labels = getSplitLabels(group)
+                    let bgColorA = 'bg-gray-600/30 text-gray-300'
+                    let bgColorB = 'bg-gray-600/30 text-gray-300'
+
+                    if (num !== 0) {
+                      if (group.type === 'custom') {
+                        bgColorA = won ? 'bg-purple-600/30 text-purple-400' : 'bg-gray-600/30 text-gray-400'
+                        bgColorB = wonB ? 'bg-purple-600/30 text-purple-400' : 'bg-gray-600/30 text-gray-400'
+                      } else {
+                        bgColorA = won ? 'bg-green-600/30 text-green-400' : 'bg-red-600/30 text-red-400'
+                        bgColorB = wonB ? 'bg-green-600/30 text-green-400' : 'bg-red-600/30 text-red-400'
+                      }
                     }
+
+                    return (
+                      <React.Fragment key={`cell-${groupKey}-${groupIdx}`}>
+                        <td className="px-1 py-1 text-center">
+                          {renderCellWithBadge(
+                            won ? labels.a : '-',
+                            `px-1.5 py-0.5 rounded text-xs font-bold ${bgColorA}`,
+                            `${groupKey}-a`
+                          )}
+                        </td>
+                        <td className="px-1 py-1 text-center">
+                          {renderCellWithBadge(
+                            wonB ? labels.b : '-',
+                            `px-1.5 py-0.5 rounded text-xs font-bold ${bgColorB}`,
+                            `${groupKey}-b`
+                          )}
+                        </td>
+                      </React.Fragment>
+                    )
+                  } else {
+                    let bgColor = 'bg-gray-600/30 text-gray-300'
+
+                    if (displayValue !== '-') {
+                      if (group.type === 'custom') {
+                        bgColor = won ? 'bg-purple-600/30 text-purple-400' : 'bg-gray-600/30 text-gray-400'
+                      } else {
+                        bgColor = won ? 'bg-green-600/30 text-green-400' : 'bg-red-600/30 text-red-400'
+                      }
+                    }
+
+                    return (
+                      <td key={`cell-${groupKey}-${groupIdx}`} className="px-1 py-1 text-center">
+                        {renderCellWithBadge(
+                          displayValue,
+                          `px-1.5 py-0.5 rounded text-xs font-bold ${bgColor}`,
+                          groupKey
+                        )}
+                      </td>
+                    )
                   }
-
-                  const keys = isSplit ? [`${groupKey}-a`, `${groupKey}-b`] : [groupKey]
-
-                  return (
-                    <td key={`cell-${groupKey}-${groupIdx}`} className="px-1 py-1 text-center">
-                      {renderCellWithBadge(
-                        displayValue,
-                        `px-1.5 py-0.5 rounded text-xs font-bold ${bgColor}`,
-                        keys
-                      )}
-                    </td>
-                  )
                 })}
               </tr>
             )
