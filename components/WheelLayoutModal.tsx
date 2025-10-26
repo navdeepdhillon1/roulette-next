@@ -212,8 +212,8 @@ export default function WheelLayoutModal({ isOpen, onClose, groupType }: WheelLa
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-start pointer-events-none">
-      <div className="bg-gray-800 rounded-lg shadow-2xl w-1/2 ml-4 max-h-[90vh] overflow-y-auto pointer-events-auto border-2 border-gray-600" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none p-4">
+      <div className="bg-gray-800 rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto border-2 border-gray-600" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800">
           <h2 className="text-2xl font-bold text-white">{config.name}</h2>
@@ -244,8 +244,8 @@ export default function WheelLayoutModal({ isOpen, onClose, groupType }: WheelLa
           </div>
 
           {/* Roulette Wheel Layout */}
-          <div className="bg-gray-900 rounded-lg p-8 border-2 border-gray-700">
-            <div className="relative w-full mx-auto" style={{ height: '500px', width: '500px' }}>
+          <div className="bg-gray-900 rounded-lg p-8 border-2 border-gray-700 flex justify-center">
+            <div className="relative mx-auto" style={{ height: '500px', width: '500px', maxWidth: '100%' }}>
               {/* Center circle */}
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-gray-700 rounded-full flex items-center justify-center border-2 border-gray-500 z-10">
                 <span className="text-white font-bold text-sm">WHEEL</span>
