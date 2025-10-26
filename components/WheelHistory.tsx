@@ -98,7 +98,7 @@ export default function WheelHistoryTable({
   const [bets, setBets] = useState<Record<WheelBetKey, number>>({} as Record<WheelBetKey, number>)
   const [results, setResults] = useState<Record<WheelBetKey, { won: boolean, amount: number }>>({})
   const [showResults, setShowResults] = useState(false)
-  const [modalOpen, setModalOpen] = useState<'vois-orph-tier' | 'voisins-nonvoisins' | 'wheel-quarters' | 'ab-split' | 'aabb-split' | 'aaabbb-split' | 'a6b6-split' | 'a9b9-split' | 'right-left' | null>(null)
+  const [modalOpen, setModalOpen] = useState<'specials1' | 'specials2' | 'voisins' | 'orphelins' | 'tiers' | 'jeu_zero' | 'non_voisin' | 'a' | 'b' | 'aa' | 'bb' | 'aaa' | 'bbb' | 'a6' | 'b6' | 'a9' | 'b9' | 'right' | 'left' | 'first_9' | 'second_9' | 'third_9' | 'fourth_9' | null>(null)
 
   // Track previous spin count to detect new spins
   const prevSpinCountRef = React.useRef(spins.length)
@@ -293,64 +293,64 @@ export default function WheelHistoryTable({
                 <th className="px-1 py-2 text-center w-10">Num</th>
                 <th
                   className="px-1 py-2 text-center cursor-pointer hover:bg-gray-700 transition-colors"
-                  onClick={() => setModalOpen('vois-orph-tier')}
-                  title="Click to view Vois/Orph/Tier layout"
+                  onClick={() => setModalOpen('specials1')}
+                  title="Click to view Specials 1 layout"
                 >
-                  Vois/Orph/Tier 🔍
+                  Specials 1 🔍
                 </th>
                 <th
                   className="px-1 py-2 text-center cursor-pointer hover:bg-gray-700 transition-colors"
-                  onClick={() => setModalOpen('voisins-nonvoisins')}
-                  title="Click to view Vois/NonVois layout"
+                  onClick={() => setModalOpen('specials2')}
+                  title="Click to view Specials 2 layout"
                 >
-                  Vois/NonVois 🔍
+                  Specials 2 🔍
                 </th>
                 <th
                   className="px-1 py-2 text-center cursor-pointer hover:bg-gray-700 transition-colors w-10"
-                  onClick={() => setModalOpen('ab-split')}
+                  onClick={() => setModalOpen('a')}
                   title="Click to view A/B layout"
                 >
                   A/B 🔍
                 </th>
                 <th
                   className="px-1 py-2 text-center cursor-pointer hover:bg-gray-700 transition-colors"
-                  onClick={() => setModalOpen('aabb-split')}
+                  onClick={() => setModalOpen('aa')}
                   title="Click to view AA/BB layout"
                 >
                   AA/BB 🔍
                 </th>
                 <th
                   className="px-1 py-2 text-center cursor-pointer hover:bg-gray-700 transition-colors"
-                  onClick={() => setModalOpen('aaabbb-split')}
+                  onClick={() => setModalOpen('aaa')}
                   title="Click to view AAA/BBB layout"
                 >
                   AAA/BBB 🔍
                 </th>
                 <th
                   className="px-1 py-2 text-center cursor-pointer hover:bg-gray-700 transition-colors"
-                  onClick={() => setModalOpen('a6b6-split')}
-                  title="Click to view A6/B6 layout"
+                  onClick={() => setModalOpen('a6')}
+                  title="Click to view Alternate 6's layout"
                 >
-                  A6/B6 🔍
+                  Alt 6 🔍
                 </th>
                 <th
                   className="px-1 py-2 text-center cursor-pointer hover:bg-gray-700 transition-colors"
-                  onClick={() => setModalOpen('a9b9-split')}
-                  title="Click to view A9/B9 layout"
+                  onClick={() => setModalOpen('a9')}
+                  title="Click to view Alternate 9's layout"
                 >
-                  A9/B9 🔍
+                  Alt 9 🔍
                 </th>
                 <th
                   className="px-1 py-2 text-center cursor-pointer hover:bg-gray-700 transition-colors"
-                  onClick={() => setModalOpen('right-left')}
+                  onClick={() => setModalOpen('right')}
                   title="Click to view Right/Left layout"
                 >
                   Right/Left 🔍
                 </th>
                 <th
                   className="px-1 py-2 text-center cursor-pointer hover:bg-gray-700 transition-colors"
-                  onClick={() => setModalOpen('wheel-quarters')}
-                  title="Click to view Wheel Quarters layout"
+                  onClick={() => setModalOpen('first_9')}
+                  title="Click to view Quarters layout"
                 >
                   Quarters 🔍
                 </th>
