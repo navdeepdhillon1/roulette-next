@@ -10,9 +10,6 @@ interface WheelLayoutModalProps {
 // European wheel order
 const WHEEL_ORDER = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26]
 
-// Red numbers
-const RED_NUMBERS = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]
-
 // Define the three groups
 const GROUPS = {
   voisins: {
@@ -35,18 +32,12 @@ const GROUPS = {
 export default function WheelLayoutModal({ isOpen, onClose }: WheelLayoutModalProps) {
   if (!isOpen) return null
 
-  // Get the group color for a number
+  // Get the group color for a number (this will be the background)
   const getNumberColor = (num: number): string => {
     if (GROUPS.voisins.numbers.includes(num)) return GROUPS.voisins.color
     if (GROUPS.orphelins.numbers.includes(num)) return GROUPS.orphelins.color
     if (GROUPS.tiers.numbers.includes(num)) return GROUPS.tiers.color
     return '#1F2937' // Default gray
-  }
-
-  // Get background color for wheel number (considering red/black)
-  const getBackgroundColor = (num: number): string => {
-    if (num === 0) return '#059669' // Green for zero
-    return RED_NUMBERS.includes(num) ? '#DC2626' : '#1F2937' // Red or black
   }
 
   return (
@@ -99,16 +90,12 @@ export default function WheelLayoutModal({ isOpen, onClose }: WheelLayoutModalPr
               {/* Top row - first 18 numbers */}
               <div className="grid grid-cols-18 gap-1">
                 {WHEEL_ORDER.slice(0, 18).map((num) => {
-                  const groupColor = getNumberColor(num)
-                  const bgColor = getBackgroundColor(num)
+                  const bgColor = getNumberColor(num)
                   return (
                     <div
                       key={num}
                       className="h-12 w-full rounded text-white font-bold text-xs flex items-center justify-center relative border-2 border-white/30"
-                      style={{
-                        backgroundColor: bgColor,
-                        boxShadow: groupColor !== '#1F2937' ? `0 0 0 3px ${groupColor}` : 'none'
-                      }}
+                      style={{ backgroundColor: bgColor }}
                     >
                       {num}
                     </div>
@@ -120,20 +107,14 @@ export default function WheelLayoutModal({ isOpen, onClose }: WheelLayoutModalPr
               <div className="grid grid-cols-18 gap-1">
                 <div
                   className="h-12 rounded text-white font-bold text-xs flex items-center justify-center relative border-2 border-white/30"
-                  style={{
-                    backgroundColor: getBackgroundColor(WHEEL_ORDER[36]),
-                    boxShadow: getNumberColor(WHEEL_ORDER[36]) !== '#1F2937' ? `0 0 0 3px ${getNumberColor(WHEEL_ORDER[36])}` : 'none'
-                  }}
+                  style={{ backgroundColor: getNumberColor(WHEEL_ORDER[36]) }}
                 >
                   {WHEEL_ORDER[36]}
                 </div>
                 <div className="col-span-16"></div>
                 <div
                   className="h-12 rounded text-white font-bold text-xs flex items-center justify-center relative border-2 border-white/30"
-                  style={{
-                    backgroundColor: getBackgroundColor(WHEEL_ORDER[18]),
-                    boxShadow: getNumberColor(WHEEL_ORDER[18]) !== '#1F2937' ? `0 0 0 3px ${getNumberColor(WHEEL_ORDER[18])}` : 'none'
-                  }}
+                  style={{ backgroundColor: getNumberColor(WHEEL_ORDER[18]) }}
                 >
                   {WHEEL_ORDER[18]}
                 </div>
@@ -142,16 +123,12 @@ export default function WheelLayoutModal({ isOpen, onClose }: WheelLayoutModalPr
               {/* Bottom row - remaining numbers (reversed) */}
               <div className="grid grid-cols-17 gap-1">
                 {WHEEL_ORDER.slice(19, 36).reverse().map((num) => {
-                  const groupColor = getNumberColor(num)
-                  const bgColor = getBackgroundColor(num)
+                  const bgColor = getNumberColor(num)
                   return (
                     <div
                       key={num}
                       className="h-12 w-full rounded text-white font-bold text-xs flex items-center justify-center relative border-2 border-white/30"
-                      style={{
-                        backgroundColor: bgColor,
-                        boxShadow: groupColor !== '#1F2937' ? `0 0 0 3px ${groupColor}` : 'none'
-                      }}
+                      style={{ backgroundColor: bgColor }}
                     >
                       {num}
                     </div>
