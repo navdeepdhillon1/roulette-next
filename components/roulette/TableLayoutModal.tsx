@@ -118,8 +118,8 @@ export default function TableLayoutModal({ isOpen, onClose, groupType }: TableLa
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-start pointer-events-none">
-      <div className="bg-gray-800 rounded-lg shadow-2xl w-1/2 ml-4 max-h-[90vh] overflow-y-auto pointer-events-auto border-2 border-gray-600" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none p-4">
+      <div className="bg-gray-800 rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto border-2 border-gray-600" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800">
           <h2 className="text-2xl font-bold text-white">{config.name}</h2>
@@ -153,22 +153,22 @@ export default function TableLayoutModal({ isOpen, onClose, groupType }: TableLa
           <div className="bg-gray-900 rounded-lg p-6 border-2 border-gray-700">
             <div className="flex items-center justify-center gap-2">
               {/* Zero */}
-              <div className="flex flex-col mr-2">
-                <div className="w-16 h-[180px] flex items-center justify-center bg-green-600 border-2 border-white/30 rounded text-white font-bold text-2xl">
+              <div className="flex flex-col mr-3">
+                <div className="w-20 h-[240px] flex items-center justify-center bg-green-600 border-2 border-white/30 rounded text-white font-bold text-3xl">
                   0
                 </div>
               </div>
 
               {/* Main number grid */}
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1.5">
                 {TABLE_LAYOUT.map((row, rowIdx) => (
-                  <div key={rowIdx} className="flex gap-1">
+                  <div key={rowIdx} className="flex gap-1.5">
                     {row.map((num) => {
                       const bgColor = getNumberColor(num)
                       return (
                         <div
                           key={num}
-                          className="w-14 h-14 flex items-center justify-center border-2 border-white/30 rounded font-bold text-lg text-white shadow-lg"
+                          className="w-16 h-16 flex items-center justify-center border-2 border-white/30 rounded font-bold text-xl text-white shadow-lg"
                           style={{ backgroundColor: bgColor }}
                         >
                           {num}
