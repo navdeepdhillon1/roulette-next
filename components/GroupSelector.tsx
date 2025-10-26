@@ -28,9 +28,7 @@ const TABLE_GROUPS = [
 
 // Available wheel groups
 const WHEEL_GROUPS = [
-  { id: 'voisins', name: 'Voisins' },
-  { id: 'orphelins', name: 'Orphelins' },
-  { id: 'tiers', name: 'Tiers' },
+  { id: 'vois-orph-tier', name: 'Vois/Orph/Tier' },
   { id: 'voisins-nonvoisins', name: 'Voisins/Non-Voisins' },
   { id: 'wheel-quarters', name: 'Wheel Quarters (9s)' },
   { id: 'ab-split', name: 'A/B Split' },
@@ -39,7 +37,6 @@ const WHEEL_GROUPS = [
   { id: 'a6b6-split', name: 'A6/B6 Split' },
   { id: 'a9b9-split', name: 'A9/B9 Split' },
   { id: 'right-left', name: 'Right/Left' },
-  { id: 'wheel-position', name: 'Wheel Position' },
 ]
 
 // Helper function to map group ID to TableLayoutModal groupType
@@ -79,9 +76,14 @@ function getGroupNumbers(type: 'table' | 'wheel', id: string): number[] {
 
   if (type === 'wheel') {
     switch (id) {
-      case 'voisins': return [22,18,29,7,28,12,35,3,26,0,32,15,19,4,21,2,25]
-      case 'orphelins': return [17,34,6,1,20,14,31,9]
-      case 'tiers': return [27,13,36,11,30,8,23,10,5,24,16,33]
+      case 'vois-orph-tier': return [
+        // Voisins
+        22,18,29,7,28,12,35,3,26,0,32,15,19,4,21,2,25,
+        // Orphelins
+        17,34,6,1,20,14,31,9,
+        // Tiers
+        27,13,36,11,30,8,23,10,5,24,16,33
+      ]
       case 'voisins-nonvoisins': return [22,18,29,7,28,12,35,3,26,0,32,15,19,4,21,2,25] // Voisins part
       case 'wheel-quarters': return [32,15,19,4,21,2,25,17,34] // 1st quarter
       case 'ab-split': return [32,19,21,25,34,27,36,30,23,5,16,1,14,9,18,7,12,3]
@@ -90,7 +92,6 @@ function getGroupNumbers(type: 'table' | 'wheel', id: string): number[] {
       case 'a6b6-split': return [32,15,19,4,21,2,36,11,30,8,23,10,14,31,9,22,18,29]
       case 'a9b9-split': return [32,15,19,4,21,2,25,17,34,5,24,16,33,1,20,14,31,9]
       case 'right-left': return [32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10]
-      case 'wheel-position': return Array.from({length: 37}, (_, i) => i) // All numbers
       default: return []
     }
   }
