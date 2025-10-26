@@ -615,15 +615,20 @@ export default function MyGroupsLayout({
       <table className="w-full text-xs">
         <thead className="bg-gray-800 sticky top-0">
           <tr>
-            <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300 w-14">Number</th>
-            {displayGroups.map((group, idx) => (
-              <th
-                key={`header-${group.type}-${group.id}-${idx}`}
-                className="px-1 py-1 text-center font-semibold text-xs text-gray-300"
-              >
-                {group.name}
-              </th>
-            ))}
+            <th className="px-1 py-2 text-center font-semibold text-xs text-gray-300 w-14">Number</th>
+            {displayGroups.map((group, idx) => {
+              const subgroups = getSubgroups(group)
+              const useGrid = subgroups.length > 2
+
+              return (
+                <th
+                  key={`header-${group.type}-${group.id}-${idx}`}
+                  className="px-1 py-2 text-center font-semibold text-xs text-gray-300 min-w-[80px]"
+                >
+                  {group.name}
+                </th>
+              )
+            })}
           </tr>
         </thead>
         <tbody>
@@ -652,7 +657,7 @@ export default function MyGroupsLayout({
               const useGrid = subgroups.length > 2
 
               return (
-                <td key={`bet-${group.type}-${group.id}-${idx}`} className="px-1 py-1 align-top">
+                <td key={`bet-${group.type}-${group.id}-${idx}`} className="px-1 py-1 align-top min-w-[80px]">
                   <div className={useGrid ? "grid grid-cols-2 gap-0.5" : "flex gap-0.5"}>
                     {subgroups.map((subgroupLabel, subIdx) => {
                       const betKey = getSubgroupKey(subgroupLabel, group)
@@ -782,7 +787,7 @@ export default function MyGroupsLayout({
                   }
 
                   return (
-                    <td key={`cell-${group.type}-${group.id}-${groupIdx}`} className="px-1 py-1 text-center align-top">
+                    <td key={`cell-${group.type}-${group.id}-${groupIdx}`} className="px-1 py-1 text-center align-top min-w-[80px]">
                       <span className={`relative inline-block px-1.5 py-0.5 rounded text-xs font-bold ${bgColor}`}>
                         {displayValue}
                         {betResult && (
