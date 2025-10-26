@@ -644,10 +644,11 @@ export default function MyGroupsLayout({
             </td>
             {displayGroups.map((group, idx) => {
               const subgroups = getSubgroups(group)
+              const useGrid = subgroups.length > 2
 
               return (
                 <td key={`bet-${group.type}-${group.id}-${idx}`} className="px-1 py-1">
-                  <div className="grid grid-cols-2 gap-0.5">
+                  <div className={useGrid ? "grid grid-cols-2 gap-0.5" : "flex gap-0.5"}>
                     {subgroups.map((subgroupLabel, subIdx) => {
                       const betKey = getSubgroupKey(subgroupLabel, group)
                       return (
