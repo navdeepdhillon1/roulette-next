@@ -4,6 +4,7 @@
 import React, { useState } from 'react'
 import type { SelectedGroup, CustomGroup } from '@/types/bettingAssistant'
 import { RED_NUMBERS } from '@/lib/roulette-logic'
+import TableLayoutModal from './roulette/TableLayoutModal'
 
 interface GroupSelectorProps {
   selectedGroups: SelectedGroup[]
@@ -40,6 +41,23 @@ const WHEEL_GROUPS = [
   { id: 'right-left', name: 'Right/Left' },
   { id: 'wheel-position', name: 'Wheel Position' },
 ]
+
+// Helper function to map group ID to TableLayoutModal groupType
+function mapToTableGroupType(id: string): 'dozen' | 'column' | 'color' | 'evenOdd' | 'lowHigh' | 'alt1' | 'alt2' | 'alt3' | 'edgeCenter' | 'six' | null {
+  const mapping: Record<string, 'dozen' | 'column' | 'color' | 'evenOdd' | 'lowHigh' | 'alt1' | 'alt2' | 'alt3' | 'edgeCenter' | 'six'> = {
+    'color': 'color',
+    'even-odd': 'evenOdd',
+    'column': 'column',
+    'dozen': 'dozen',
+    'low-high': 'lowHigh',
+    'alt1': 'alt1',
+    'alt2': 'alt2',
+    'alt3': 'alt3',
+    'ec': 'edgeCenter',
+    'six': 'six'
+  }
+  return mapping[id] || null
+}
 
 // Helper function to get numbers for each group
 function getGroupNumbers(type: 'table' | 'wheel', id: string): number[] {
@@ -90,6 +108,7 @@ export default function GroupSelector({
   const [customName, setCustomName] = useState('')
   const [customNumbers, setCustomNumbers] = useState('')
   const [viewingGroup, setViewingGroup] = useState<{type: 'table' | 'wheel' | 'custom', id: string, name: string, numbers: number[]} | null>(null)
+  const [viewingTableGroup, setViewingTableGroup] = useState<'dozen' | 'column' | 'color' | 'evenOdd' | 'lowHigh' | 'alt1' | 'alt2' | 'alt3' | 'edgeCenter' | 'six' | null>(null)
 
   const isGroupSelected = (type: 'table' | 'wheel' | 'custom', id: string) => {
     return selectedGroups.some(g => g.type === type && g.id === id)
@@ -183,7 +202,7 @@ export default function GroupSelector({
                   <span className="text-sm text-gray-200">{group.name}</span>
                 </label>
                 <button
-                  onClick={() => setViewingGroup({type: 'table', id: group.id, name: group.name, numbers: getGroupNumbers('table', group.id)})}
+                  onClick={() => setViewingTableGroup(mapToTableGroupType(group.id))}
                   className="p-1 text-gray-400 hover:text-cyan-400 transition-colors"
                   title="View numbers"
                 >
@@ -319,7 +338,7 @@ export default function GroupSelector({
         </div>
       )}
 
-      {/* Number Visual Modal */}
+      {/* Simple Number Grid Modal - for wheel and custom groups */}
       {viewingGroup && (
         <div
           className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
@@ -365,6 +384,13 @@ export default function GroupSelector({
           </div>
         </div>
       )}
+
+      {/* Visual Table Layout Modal - for table groups */}
+      <TableLayoutModal
+        isOpen={viewingTableGroup !== null}
+        onClose={() => setViewingTableGroup(null)}
+        groupType={viewingTableGroup}
+      />
     </div>
   )
 }
