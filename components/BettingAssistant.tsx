@@ -962,9 +962,7 @@ const newBet: BetRecord = {
                   <div className="space-y-2">
                     {/* Recent 15 Numbers with Number Entry */}
                     <div className="bg-gray-800 rounded border border-gray-700 px-1 py-0.5">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <h3 className="text-[10px] text-gray-300">Last 25 Spins</h3>
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-end gap-2">
                           <input
                             type="number"
                             min="0"
@@ -1112,9 +1110,7 @@ const newBet: BetRecord = {
                   <div className="space-y-2">
                     {/* Recent 15 Numbers with Number Entry */}
                     <div className="bg-gray-800 rounded border border-gray-700 px-1 py-0.5">
-                      <div className="flex items-center justify-between mb-0.5">
-                        <h3 className="text-[10px] text-gray-300">Last 25 Spins</h3>
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-end gap-2">
                           <input
                             type="number"
                             min="0"
