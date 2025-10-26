@@ -111,7 +111,7 @@ export default function GroupSelector({
   const [customNumbers, setCustomNumbers] = useState('')
   const [viewingGroup, setViewingGroup] = useState<{type: 'table' | 'wheel' | 'custom', id: string, name: string, numbers: number[]} | null>(null)
   const [viewingTableGroup, setViewingTableGroup] = useState<'dozen' | 'column' | 'color' | 'evenOdd' | 'lowHigh' | 'alt1' | 'alt2' | 'alt3' | 'edgeCenter' | 'six' | null>(null)
-  const [showWheelModal, setShowWheelModal] = useState(false)
+  const [viewingWheelGroup, setViewingWheelGroup] = useState<'vois-orph-tier' | 'voisins-nonvoisins' | 'wheel-quarters' | 'ab-split' | 'aabb-split' | 'aaabbb-split' | 'a6b6-split' | 'a9b9-split' | 'right-left' | null>(null)
 
   const isGroupSelected = (type: 'table' | 'wheel' | 'custom', id: string) => {
     return selectedGroups.some(g => g.type === type && g.id === id)
@@ -239,11 +239,7 @@ export default function GroupSelector({
                 </label>
                 <button
                   onClick={() => {
-                    if (group.id === 'vois-orph-tier') {
-                      setShowWheelModal(true)
-                    } else {
-                      setViewingGroup({type: 'wheel', id: group.id, name: group.name, numbers: getGroupNumbers('wheel', group.id)})
-                    }
+                    setViewingWheelGroup(group.id as any)
                   }}
                   className="p-1 text-gray-400 hover:text-purple-400 transition-colors"
                   title="View numbers"
@@ -401,10 +397,11 @@ export default function GroupSelector({
         groupType={viewingTableGroup}
       />
 
-      {/* Visual Wheel Layout Modal - for Vois/Orph/Tier */}
+      {/* Visual Wheel Layout Modal - for wheel groups */}
       <WheelLayoutModal
-        isOpen={showWheelModal}
-        onClose={() => setShowWheelModal(false)}
+        isOpen={viewingWheelGroup !== null}
+        onClose={() => setViewingWheelGroup(null)}
+        groupType={viewingWheelGroup}
       />
     </div>
   )

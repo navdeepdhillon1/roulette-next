@@ -2,9 +2,12 @@
 
 import React from 'react'
 
+type WheelGroupType = 'vois-orph-tier' | 'voisins-nonvoisins' | 'wheel-quarters' | 'ab-split' | 'aabb-split' | 'aaabbb-split' | 'a6b6-split' | 'a9b9-split' | 'right-left'
+
 interface WheelLayoutModalProps {
   isOpen: boolean
   onClose: () => void
+  groupType?: WheelGroupType | null
 }
 
 // European wheel order
@@ -29,8 +32,11 @@ const GROUPS = {
   }
 }
 
-export default function WheelLayoutModal({ isOpen, onClose }: WheelLayoutModalProps) {
-  if (!isOpen) return null
+export default function WheelLayoutModal({ isOpen, onClose, groupType = 'vois-orph-tier' }: WheelLayoutModalProps) {
+  if (!isOpen || !groupType) return null
+
+  // For now, only support vois-orph-tier
+  if (groupType !== 'vois-orph-tier') return null
 
   // Get the group color for a number (this will be the background)
   const getNumberColor = (num: number): string => {
