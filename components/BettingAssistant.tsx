@@ -10,7 +10,7 @@ import WheelBettingCard from './WheelBettingCard'
 import BetAdvisor from './BetAdvisor'
 import RightSideLayout from './RightSideLayout'
 import { CardSuccessCelebration, CardFailureModal, BreakTimerModal } from './CardCelebration'
-import type { SessionState, SessionConfig, BetCard, BetRecord, BettingSystemConfig } from '../types/bettingAssistant'
+import type { SessionState, SessionConfig, BetCard, BetRecord, BettingSystemConfig, Dealer } from '../types/bettingAssistant'
 import BettingAssistantPerformance from './BettingAssistantPerformance'
 import { useBettingData } from './BettingDataContext'
 import CommonGroupsTable from './CommonGroupsTable'
@@ -251,6 +251,7 @@ export default function BettingAssistant() {
       dealerId: string | null
       dealerName?: string | null
       tableNumber: string | null
+      availableDealers?: Dealer[]
     }
   ) => {
     // Merge location data into config if provided
@@ -262,6 +263,7 @@ export default function BettingAssistant() {
           dealerId: locationData.dealerId,
           dealerName: locationData.dealerName || null,
           tableNumber: locationData.tableNumber,
+          availableDealers: locationData.availableDealers || [],
         }
       : config
 
@@ -690,9 +692,8 @@ const newBet: BetRecord = {
   return (
     <>
       <Navigation />
-      <div className="min-h-screen pt-4">
-        {/* Intro/Welcome Page */}
-        {viewMode === 'intro' && (
+      {/* Intro/Welcome Page */}
+      {viewMode === 'intro' && (
         <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-8">
           <div className="max-w-4xl w-full">
             <div className="text-center mb-8">
@@ -798,7 +799,7 @@ const newBet: BetRecord = {
         </div>
       )}
 
-      {viewMode === 'setup' && <SessionSetup onStartSession={startSession} />}
+      {viewMode === 'setup' && <SessionSetup onStartSession={startSession} userId={null} hasEliteAccess={true} />}
       
       {viewMode === 'dashboard' && session && (
   <BetCardDashboard
@@ -859,6 +860,9 @@ const newBet: BetRecord = {
                   <GameControlBar
                     currentDealer={currentDealer}
                     onDealerChange={setCurrentDealer}
+                    availableDealers={session.config.availableDealers && session.config.availableDealers.length > 0
+                      ? session.config.availableDealers
+                      : undefined}
                     spinHistory={spinHistory}
                     sessionStats={sessionStats}
                     sessionId={session.id}
@@ -1106,6 +1110,9 @@ const newBet: BetRecord = {
                   <GameControlBar
                     currentDealer={currentDealer}
                     onDealerChange={setCurrentDealer}
+                    availableDealers={session.config.availableDealers && session.config.availableDealers.length > 0
+                      ? session.config.availableDealers
+                      : undefined}
                     spinHistory={spinHistory}
                     sessionStats={sessionStats}
                     sessionId={session.id}
@@ -1254,6 +1261,9 @@ const newBet: BetRecord = {
                   <GameControlBar
                     currentDealer={currentDealer}
                     onDealerChange={setCurrentDealer}
+                    availableDealers={session.config.availableDealers && session.config.availableDealers.length > 0
+                      ? session.config.availableDealers
+                      : undefined}
                     spinHistory={spinHistory}
                     sessionStats={sessionStats}
                     sessionId={session.id}
@@ -1582,7 +1592,6 @@ const newBet: BetRecord = {
           onComplete={handleBreakComplete}
         />
       )}
-      </div>
     </>
   )
 }

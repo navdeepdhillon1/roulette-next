@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react'
 import { ArrowRight, AlertTriangle } from 'lucide-react'
-import type { SessionConfig, BettingSystemConfig, CustomSystemRules, BetAction, SequentialProgressionRules, SelectedGroup } from '../types/bettingAssistant'
+import type { SessionConfig, BettingSystemConfig, CustomSystemRules, BetAction, SequentialProgressionRules, SelectedGroup, Dealer } from '../types/bettingAssistant'
 import SessionLocationSelector from './SessionLocationSelector'
 import GroupSelector from './GroupSelector'
 
@@ -13,8 +13,11 @@ interface SessionSetupProps {
     config: SessionConfig,
     locationData?: {
       casinoId: string | null
+      casinoName?: string | null
       dealerId: string | null
+      dealerName?: string | null
       tableNumber: string | null
+      availableDealers?: Dealer[]
     }
   ) => void
   userId: string | null
@@ -887,12 +890,14 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
     dealerId: string | null
     dealerName: string | null
     tableNumber: string | null
+    availableDealers: Dealer[]
   }>({
     casinoId: null,
     casinoName: null,
     dealerId: null,
     dealerName: null,
     tableNumber: null,
+    availableDealers: [],
   })
 
   // 🆕 Group selection for "My Groups" layout
@@ -924,8 +929,11 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
 
     onStartSession(config, {
       casinoId: locationData.casinoId,
+      casinoName: locationData.casinoName,
       dealerId: locationData.dealerId,
+      dealerName: locationData.dealerName,
       tableNumber: locationData.tableNumber,
+      availableDealers: locationData.availableDealers,
     })
   }
 

@@ -120,6 +120,7 @@ export interface SessionConfig {
   dealerId?: string | null
   dealerName?: string | null
   tableNumber?: string | null
+  availableDealers?: Dealer[]  // All dealers from the selected casino
 }
 
 export interface SessionState {
@@ -140,4 +141,12 @@ export interface ProbabilityGroupStats {
   currentStreak: number
   currentAbsence: number
   zScore: number
+}
+
+// Dealer type for casino/dealer tracking
+export interface Dealer {
+  id: string
+  name: string
+  nickname?: string
+  rating?: number
 }

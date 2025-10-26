@@ -31,6 +31,7 @@ interface SessionLocationSelectorProps {
     dealerId: string | null
     dealerName: string | null
     tableNumber: string | null
+    availableDealers: Dealer[]  // All dealers from the casino
   }) => void
   initialCasinoId?: string | null
   initialDealerId?: string | null
@@ -72,6 +73,7 @@ export default function SessionLocationSelector({
         dealerId: null,
         dealerName: null,
         tableNumber: null,
+        availableDealers: [],
       })
     } else {
       const selectedCasino = casinos.find((c) => c.id === selectedCasinoId)
@@ -82,9 +84,10 @@ export default function SessionLocationSelector({
         dealerId: selectedDealerId,
         dealerName: selectedDealer?.name || null,
         tableNumber: tableNumber || null,
+        availableDealers: dealers,  // Pass all dealers from the casino
       })
     }
-  }, [skipTracking, selectedCasinoId, selectedDealerId, tableNumber])
+  }, [skipTracking, selectedCasinoId, selectedDealerId, tableNumber, dealers])
 
   const loadCasinos = async () => {
     const result = await listCasinos(userId)
