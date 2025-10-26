@@ -304,23 +304,23 @@ export default function HistoryTable({
         <table className="w-full text-xs">
           <thead className="bg-gray-800 sticky top-0">
             <tr>
-              <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300 w-10">Number</th>
+              <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300 w-14">Number</th>
               <th
-                className="px-1 py-1 text-center font-semibold text-xs text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors w-10"
+                className="px-1 py-1 text-center font-semibold text-xs text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors w-14"
                 onClick={() => setModalOpen('color')}
                 title="Click to view color layout"
               >
                 Color 🔍
               </th>
               <th
-                className="px-1 py-1 text-center font-semibold text-xs text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors w-10"
+                className="px-1 py-1 text-center font-semibold text-xs text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors w-16"
                 onClick={() => setModalOpen('evenOdd')}
                 title="Click to view even/odd layout"
               >
                 Even/Odd 🔍
               </th>
               <th
-                className="px-1 py-1 text-center font-semibold text-xs text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors w-10"
+                className="px-1 py-1 text-center font-semibold text-xs text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors w-16"
                 onClick={() => setModalOpen('lowHigh')}
                 title="Click to view low/high layout"
               >
@@ -375,7 +375,7 @@ export default function HistoryTable({
               >
                 Six 🔍
               </th>
-              <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300">Wheel Pos</th>
+              <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300 w-14">Wheel Pos</th>
             </tr>
           </thead>
         <tbody>
