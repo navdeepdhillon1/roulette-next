@@ -236,41 +236,99 @@ function isSplitGroup(group: SelectedGroup): boolean {
   return splitIds.includes(id)
 }
 
-// Get split labels
-function getSplitLabels(group: SelectedGroup): { a: string, b: string } {
+// Get all subgroups for a group (for betting cards)
+function getSubgroups(group: SelectedGroup): string[] {
   const { type, id } = group
+
+  if (type === 'custom') return [group.name]
 
   if (type === 'table') {
     switch (id) {
-      case 'color': return { a: 'R', b: 'B' }
-      case 'even-odd': return { a: 'E', b: 'O' }
-      case 'low-high': return { a: 'L', b: 'H' }
-      case 'column': return { a: '1st', b: '2nd/3rd' }
-      case 'dozen': return { a: '1st', b: '2nd/3rd' }
-      case 'alt1': return { a: 'A', b: 'B' }
-      case 'alt2': return { a: 'AA', b: 'BB' }
-      case 'alt3': return { a: 'AAA', b: 'BBB' }
-      case 'ec': return { a: 'E', b: 'C' }
-      case 'six': return { a: '1-6', b: '7-36' }
-      default: return { a: 'A', b: 'B' }
+      case 'color': return ['R', 'B']
+      case 'even-odd': return ['E', 'O']
+      case 'low-high': return ['L', 'H']
+      case 'column': return ['1st', '2nd', '3rd']
+      case 'dozen': return ['1st', '2nd', '3rd']
+      case 'alt1': return ['A', 'B']
+      case 'alt2': return ['AA', 'BB']
+      case 'alt3': return ['AAA', 'BBB']
+      case 'ec': return ['E', 'C']
+      case 'six': return ['1st', '2nd', '3rd', '4th', '5th', '6th']
+      default: return [group.name]
     }
   }
 
   if (type === 'wheel') {
     switch (id) {
-      case 'voisins-nonvoisins': return { a: 'V', b: 'NV' }
-      case 'wheel-quarters': return { a: '1st', b: '2nd/3rd/4th' }
-      case 'ab-split': return { a: 'A', b: 'B' }
-      case 'aabb-split': return { a: 'AA', b: 'BB' }
-      case 'aaabbb-split': return { a: 'AAA', b: 'BBB' }
-      case 'a6b6-split': return { a: 'A6', b: 'B6' }
-      case 'a9b9-split': return { a: 'A9', b: 'B9' }
-      case 'right-left': return { a: 'R', b: 'L' }
-      default: return { a: 'A', b: 'B' }
+      case 'voisins': return ['V']
+      case 'orphelins': return ['O']
+      case 'tiers': return ['T']
+      case 'voisins-nonvoisins': return ['V', 'NV']
+      case 'wheel-quarters': return ['1st', '2nd', '3rd', '4th']
+      case 'ab-split': return ['A', 'B']
+      case 'aabb-split': return ['AA', 'BB']
+      case 'aaabbb-split': return ['AAA', 'BBB']
+      case 'a6b6-split': return ['A6', 'B6']
+      case 'a9b9-split': return ['A9', 'B9']
+      case 'right-left': return ['R', 'L']
+      default: return [group.name]
     }
   }
 
-  return { a: 'A', b: 'B' }
+  return [group.name]
+}
+
+// Get subgroup key suffix based on label
+function getSubgroupKey(subgroupLabel: string, group: SelectedGroup): string {
+  const { type, id } = group
+  const groupKey = `${type}-${id}`
+
+  if (type === 'custom') return groupKey
+
+  if (type === 'table') {
+    switch (id) {
+      case 'color': return subgroupLabel === 'R' ? `${groupKey}-a` : `${groupKey}-b`
+      case 'even-odd': return subgroupLabel === 'E' ? `${groupKey}-a` : `${groupKey}-b`
+      case 'low-high': return subgroupLabel === 'L' ? `${groupKey}-a` : `${groupKey}-b`
+      case 'column':
+        if (subgroupLabel === '1st') return `${groupKey}-1`
+        if (subgroupLabel === '2nd') return `${groupKey}-2`
+        return `${groupKey}-3`
+      case 'dozen':
+        if (subgroupLabel === '1st') return `${groupKey}-1`
+        if (subgroupLabel === '2nd') return `${groupKey}-2`
+        return `${groupKey}-3`
+      case 'alt1': return subgroupLabel === 'A' ? `${groupKey}-a` : `${groupKey}-b`
+      case 'alt2': return subgroupLabel === 'AA' ? `${groupKey}-a` : `${groupKey}-b`
+      case 'alt3': return subgroupLabel === 'AAA' ? `${groupKey}-a` : `${groupKey}-b`
+      case 'ec': return subgroupLabel === 'E' ? `${groupKey}-a` : `${groupKey}-b`
+      case 'six':
+        const sixMap: Record<string, string> = { '1st': '1', '2nd': '2', '3rd': '3', '4th': '4', '5th': '5', '6th': '6' }
+        return `${groupKey}-${sixMap[subgroupLabel]}`
+      default: return groupKey
+    }
+  }
+
+  if (type === 'wheel') {
+    switch (id) {
+      case 'voisins': return groupKey
+      case 'orphelins': return groupKey
+      case 'tiers': return groupKey
+      case 'voisins-nonvoisins': return subgroupLabel === 'V' ? `${groupKey}-a` : `${groupKey}-b`
+      case 'wheel-quarters':
+        const quartersMap: Record<string, string> = { '1st': '1', '2nd': '2', '3rd': '3', '4th': '4' }
+        return `${groupKey}-${quartersMap[subgroupLabel]}`
+      case 'ab-split': return subgroupLabel === 'A' ? `${groupKey}-a` : `${groupKey}-b`
+      case 'aabb-split': return subgroupLabel === 'AA' ? `${groupKey}-a` : `${groupKey}-b`
+      case 'aaabbb-split': return subgroupLabel === 'AAA' ? `${groupKey}-a` : `${groupKey}-b`
+      case 'a6b6-split': return subgroupLabel === 'A6' ? `${groupKey}-a` : `${groupKey}-b`
+      case 'a9b9-split': return subgroupLabel === 'A9' ? `${groupKey}-a` : `${groupKey}-b`
+      case 'right-left': return subgroupLabel === 'R' ? `${groupKey}-a` : `${groupKey}-b`
+      default: return groupKey
+    }
+  }
+
+  return groupKey
 }
 
 export default function MyGroupsLayout({
@@ -308,37 +366,129 @@ export default function MyGroupsLayout({
     })
   }
 
+  // Check if a specific subgroup won
+  const checkSubgroupWin = (num: number, group: SelectedGroup, subgroupLabel: string): boolean => {
+    const { type, id } = group
+
+    if (type === 'custom') return checkGroupWin(num, group)
+
+    if (type === 'table') {
+      switch (id) {
+        case 'color':
+          if (num === 0) return false
+          return subgroupLabel === 'R' ? RED_NUMBERS.includes(num) : !RED_NUMBERS.includes(num)
+        case 'even-odd':
+          if (num === 0) return false
+          return subgroupLabel === 'E' ? num % 2 === 0 : num % 2 === 1
+        case 'low-high':
+          if (num === 0) return false
+          return subgroupLabel === 'L' ? num >= 1 && num <= 18 : num >= 19 && num <= 36
+        case 'column':
+          if (num === 0) return false
+          if (subgroupLabel === '1st') return num % 3 === 1
+          if (subgroupLabel === '2nd') return num % 3 === 2
+          return num % 3 === 0
+        case 'dozen':
+          if (num === 0) return false
+          if (subgroupLabel === '1st') return num >= 1 && num <= 12
+          if (subgroupLabel === '2nd') return num >= 13 && num <= 24
+          return num >= 25 && num <= 36
+        case 'alt1':
+          if (num === 0) return false
+          const altA = [1,2,3,7,8,9,13,14,15,19,20,21,25,26,27,31,32,33]
+          return subgroupLabel === 'A' ? altA.includes(num) : !altA.includes(num)
+        case 'alt2':
+          if (num === 0) return false
+          const altAA = [1,2,3,4,5,6,13,14,15,16,17,18,25,26,27,28,29,30]
+          return subgroupLabel === 'AA' ? altAA.includes(num) : !altAA.includes(num)
+        case 'alt3':
+          if (num === 0) return false
+          const altAAA = [1,2,3,4,5,6,7,8,9,19,20,21,22,23,24,25,26,27]
+          return subgroupLabel === 'AAA' ? altAAA.includes(num) : !altAAA.includes(num)
+        case 'ec':
+          if (num === 0) return false
+          const edge = [1,2,3,4,5,6,7,8,9,28,29,30,31,32,33,34,35,36]
+          return subgroupLabel === 'E' ? edge.includes(num) : !edge.includes(num)
+        case 'six':
+          if (num === 0) return false
+          if (subgroupLabel === '1st') return num >= 1 && num <= 6
+          if (subgroupLabel === '2nd') return num >= 7 && num <= 12
+          if (subgroupLabel === '3rd') return num >= 13 && num <= 18
+          if (subgroupLabel === '4th') return num >= 19 && num <= 24
+          if (subgroupLabel === '5th') return num >= 25 && num <= 30
+          return num >= 31 && num <= 36
+        default:
+          return checkGroupWin(num, group)
+      }
+    }
+
+    if (type === 'wheel') {
+      switch (id) {
+        case 'voisins': return [22,18,29,7,28,12,35,3,26,0,32,15,19,4,21,2,25].includes(num)
+        case 'orphelins': return [17,34,6,1,20,14,31,9].includes(num)
+        case 'tiers': return [27,13,36,11,30,8,23,10,5,24,16,33].includes(num)
+        case 'voisins-nonvoisins':
+          const voisins = [22,18,29,7,28,12,35,3,26,0,32,15,19,4,21,2,25]
+          return subgroupLabel === 'V' ? voisins.includes(num) : !voisins.includes(num)
+        case 'wheel-quarters':
+          if (subgroupLabel === '1st') return [32,15,19,4,21,2,25,17,34].includes(num)
+          if (subgroupLabel === '2nd') return [6,27,13,36,11,30,8,23,10].includes(num)
+          if (subgroupLabel === '3rd') return [5,24,16,33,1,20,14,31,9].includes(num)
+          return [22,18,29,7,28,12,35,3,26].includes(num)
+        case 'ab-split':
+          const abA = [32,19,21,25,34,27,36,30,23,5,16,1,14,9,18,7,12,3]
+          return subgroupLabel === 'A' ? abA.includes(num) : !abA.includes(num)
+        case 'aabb-split':
+          const aabbAA = [32,15,21,2,34,6,36,11,23,10,16,33,14,31,18,29,12,35]
+          return subgroupLabel === 'AA' ? aabbAA.includes(num) : !aabbAA.includes(num)
+        case 'aaabbb-split':
+          const aaabbbAAA = [32,15,19,25,17,34,36,11,30,5,24,16,14,31,9,7,28,12]
+          return subgroupLabel === 'AAA' ? aaabbbAAA.includes(num) : !aaabbbAAA.includes(num)
+        case 'a6b6-split':
+          const a6A6 = [32,15,19,4,21,2,36,11,30,8,23,10,14,31,9,22,18,29]
+          return subgroupLabel === 'A6' ? a6A6.includes(num) : !a6A6.includes(num)
+        case 'a9b9-split':
+          const a9A9 = [32,15,19,4,21,2,25,17,34,5,24,16,33,1,20,14,31,9]
+          return subgroupLabel === 'A9' ? a9A9.includes(num) : !a9A9.includes(num)
+        case 'right-left':
+          const right = [32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10]
+          return subgroupLabel === 'R' ? right.includes(num) : !right.includes(num)
+        default:
+          return checkGroupWin(num, group)
+      }
+    }
+
+    return checkGroupWin(num, group)
+  }
+
   // Calculate payouts for each bet
   const calculatePayouts = (num: number): Record<string, { won: boolean, amount: number }> => {
     const wins: Record<string, { won: boolean, amount: number }> = {}
 
-    Object.entries(bets).forEach(([groupKey, betAmount]) => {
-      // Find the group
+    Object.entries(bets).forEach(([betKey, betAmount]) => {
+      // Find the group for this bet
       const group = displayGroups.find(g => {
-        const key = `${g.type}-${g.id}`
-        // Check both the base key and split keys (a/b)
-        return key === groupKey || `${key}-a` === groupKey || `${key}-b` === groupKey
+        const groupKey = `${g.type}-${g.id}`
+        return betKey.startsWith(groupKey)
       })
 
       if (!group) return
 
+      // Find which subgroup this bet is for
+      const subgroups = getSubgroups(group)
       let won = false
 
-      // Check if it's a split bet (ends with -a or -b)
-      if (groupKey.endsWith('-a')) {
-        // Side A - use the normal checkGroupWin
-        won = checkGroupWin(num, group)
-      } else if (groupKey.endsWith('-b')) {
-        // Side B - inverse of checkGroupWin (except for 0)
-        won = num !== 0 && !checkGroupWin(num, group)
-      } else {
-        // Non-split group
-        won = checkGroupWin(num, group)
+      for (const subgroupLabel of subgroups) {
+        const subgroupKey = getSubgroupKey(subgroupLabel, group)
+        if (subgroupKey === betKey) {
+          won = checkSubgroupWin(num, group, subgroupLabel)
+          break
+        }
       }
 
       const payout = getGroupPayout(group)
       const amount = won ? betAmount * payout - betAmount : -betAmount
-      wins[groupKey] = { won, amount }
+      wins[betKey] = { won, amount }
     })
 
     return wins
@@ -461,31 +611,14 @@ export default function MyGroupsLayout({
         <thead className="bg-gray-800 sticky top-0">
           <tr>
             <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300 w-14">Number</th>
-            {displayGroups.map((group, idx) => {
-              const isSplit = isSplitGroup(group)
-              if (isSplit) {
-                const labels = getSplitLabels(group)
-                return (
-                  <React.Fragment key={`header-${group.type}-${group.id}-${idx}`}>
-                    <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300">
-                      {labels.a}
-                    </th>
-                    <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300">
-                      {labels.b}
-                    </th>
-                  </React.Fragment>
-                )
-              } else {
-                return (
-                  <th
-                    key={`header-${group.type}-${group.id}-${idx}`}
-                    className="px-1 py-1 text-center font-semibold text-xs text-gray-300"
-                  >
-                    {group.name}
-                  </th>
-                )
-              }
-            })}
+            {displayGroups.map((group, idx) => (
+              <th
+                key={`header-${group.type}-${group.id}-${idx}`}
+                className="px-1 py-1 text-center font-semibold text-xs text-gray-300"
+              >
+                {group.name}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
@@ -510,31 +643,26 @@ export default function MyGroupsLayout({
               </div>
             </td>
             {displayGroups.map((group, idx) => {
-              const groupKey = `${group.type}-${group.id}`
-              const isSplit = isSplitGroup(group)
+              const subgroups = getSubgroups(group)
 
-              if (isSplit) {
-                const labels = getSplitLabels(group)
-                const keyA = `${groupKey}-a`
-                const keyB = `${groupKey}-b`
-
-                return (
-                  <React.Fragment key={`bet-${groupKey}-${idx}`}>
-                    <td className="px-1 py-1">
-                      {renderBetButton(keyA, labels.a, 'bg-blue-600 hover:bg-blue-700')}
-                    </td>
-                    <td className="px-1 py-1">
-                      {renderBetButton(keyB, labels.b, 'bg-orange-600 hover:bg-orange-700')}
-                    </td>
-                  </React.Fragment>
-                )
-              } else {
-                return (
-                  <td key={`bet-${groupKey}-${idx}`} className="px-1 py-1">
-                    {renderBetButton(groupKey, group.name, 'bg-purple-600 hover:bg-purple-700')}
-                  </td>
-                )
-              }
+              return (
+                <td key={`bet-${group.type}-${group.id}-${idx}`} className="px-1 py-1">
+                  <div className="flex flex-col gap-0.5">
+                    {subgroups.map((subgroupLabel, subIdx) => {
+                      const betKey = getSubgroupKey(subgroupLabel, group)
+                      return (
+                        <div key={`${betKey}-${subIdx}`}>
+                          {renderBetButton(
+                            betKey,
+                            subgroupLabel,
+                            'bg-blue-600 hover:bg-blue-700'
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </td>
+              )
             })}
           </tr>
 
@@ -543,24 +671,6 @@ export default function MyGroupsLayout({
             const num = spin.number
             const spinKey = new Date(spin.created_at).getTime().toString()
             const spinBetData = historicalBets[spinKey]
-
-            // Helper to render cell with optional P/L badge
-            const renderCellWithBadge = (content: React.ReactNode, className: string, betKey: string) => {
-              const betResult = spinBetData?.results[betKey]
-
-              return (
-                <span className={`relative inline-block ${className}`}>
-                  {content}
-                  {betResult && (
-                    <span className={`absolute -top-1 -right-1 text-[9px] font-bold px-1 rounded ${
-                      betResult.won ? 'bg-green-500 text-white' : 'bg-red-600 text-white'
-                    }`}>
-                      {betResult.won ? `+${betResult.amount}` : betResult.amount}
-                    </span>
-                  )}
-                </span>
-              )
-            }
 
             return (
               <tr key={spin.id || spinIdx} className="border-b border-gray-700/50 hover:bg-gray-800/50">
@@ -575,67 +685,44 @@ export default function MyGroupsLayout({
                   </div>
                 </td>
                 {displayGroups.map((group, groupIdx) => {
-                  const groupKey = `${group.type}-${group.id}`
                   const displayValue = getGroupDisplayValue(num, group)
-                  const isSplit = isSplitGroup(group)
+                  const subgroups = getSubgroups(group)
+
+                  // Find which subgroup has a bet result
+                  let betResult = null
+                  for (const subgroupLabel of subgroups) {
+                    const betKey = getSubgroupKey(subgroupLabel, group)
+                    if (spinBetData?.results[betKey]) {
+                      betResult = { ...spinBetData.results[betKey], key: betKey }
+                      break
+                    }
+                  }
 
                   const won = checkGroupWin(num, group)
-                  const wonB = num !== 0 && !won // B side wins if not A and not zero
+                  let bgColor = 'bg-gray-600/30 text-gray-300'
 
-                  if (isSplit) {
-                    const labels = getSplitLabels(group)
-                    let bgColorA = 'bg-gray-600/30 text-gray-300'
-                    let bgColorB = 'bg-gray-600/30 text-gray-300'
-
-                    if (num !== 0) {
-                      if (group.type === 'custom') {
-                        bgColorA = won ? 'bg-purple-600/30 text-purple-400' : 'bg-gray-600/30 text-gray-400'
-                        bgColorB = wonB ? 'bg-purple-600/30 text-purple-400' : 'bg-gray-600/30 text-gray-400'
-                      } else {
-                        bgColorA = won ? 'bg-green-600/30 text-green-400' : 'bg-red-600/30 text-red-400'
-                        bgColorB = wonB ? 'bg-green-600/30 text-green-400' : 'bg-red-600/30 text-red-400'
-                      }
+                  if (displayValue !== '-') {
+                    if (group.type === 'custom') {
+                      bgColor = won ? 'bg-purple-600/30 text-purple-400' : 'bg-gray-600/30 text-gray-400'
+                    } else {
+                      bgColor = won ? 'bg-green-600/30 text-green-400' : 'bg-red-600/30 text-red-400'
                     }
-
-                    return (
-                      <React.Fragment key={`cell-${groupKey}-${groupIdx}`}>
-                        <td className="px-1 py-1 text-center">
-                          {renderCellWithBadge(
-                            won ? labels.a : '-',
-                            `px-1.5 py-0.5 rounded text-xs font-bold ${bgColorA}`,
-                            `${groupKey}-a`
-                          )}
-                        </td>
-                        <td className="px-1 py-1 text-center">
-                          {renderCellWithBadge(
-                            wonB ? labels.b : '-',
-                            `px-1.5 py-0.5 rounded text-xs font-bold ${bgColorB}`,
-                            `${groupKey}-b`
-                          )}
-                        </td>
-                      </React.Fragment>
-                    )
-                  } else {
-                    let bgColor = 'bg-gray-600/30 text-gray-300'
-
-                    if (displayValue !== '-') {
-                      if (group.type === 'custom') {
-                        bgColor = won ? 'bg-purple-600/30 text-purple-400' : 'bg-gray-600/30 text-gray-400'
-                      } else {
-                        bgColor = won ? 'bg-green-600/30 text-green-400' : 'bg-red-600/30 text-red-400'
-                      }
-                    }
-
-                    return (
-                      <td key={`cell-${groupKey}-${groupIdx}`} className="px-1 py-1 text-center">
-                        {renderCellWithBadge(
-                          displayValue,
-                          `px-1.5 py-0.5 rounded text-xs font-bold ${bgColor}`,
-                          groupKey
-                        )}
-                      </td>
-                    )
                   }
+
+                  return (
+                    <td key={`cell-${group.type}-${group.id}-${groupIdx}`} className="px-1 py-1 text-center">
+                      <span className={`relative inline-block px-1.5 py-0.5 rounded text-xs font-bold ${bgColor}`}>
+                        {displayValue}
+                        {betResult && (
+                          <span className={`absolute -top-1 -right-1 text-[9px] font-bold px-1 rounded ${
+                            betResult.won ? 'bg-green-500 text-white' : 'bg-red-600 text-white'
+                          }`}>
+                            {betResult.won ? `+${betResult.amount}` : betResult.amount}
+                          </span>
+                        )}
+                      </span>
+                    </td>
+                  )
                 })}
               </tr>
             )
