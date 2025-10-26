@@ -1,11 +1,13 @@
 // components/GroupSelector.tsx
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import type { SelectedGroup, CustomGroup } from '@/types/bettingAssistant'
 import { RED_NUMBERS } from '@/lib/roulette-logic'
 import TableLayoutModal from './roulette/TableLayoutModal'
 import WheelLayoutModal from './WheelLayoutModal'
+import { supabase } from '@/lib/supabase'
+import { loadCustomGroups, saveCustomGroups } from '@/lib/customGroupsStorage'
 
 interface GroupSelectorProps {
   selectedGroups: SelectedGroup[]
@@ -107,11 +109,33 @@ export default function GroupSelector({
 }: GroupSelectorProps) {
   const [customGroups, setCustomGroups] = useState<CustomGroup[]>([])
   const [isAddingCustom, setIsAddingCustom] = useState(false)
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null)
   const [customName, setCustomName] = useState('')
   const [customNumbers, setCustomNumbers] = useState('')
   const [viewingGroup, setViewingGroup] = useState<{type: 'table' | 'wheel' | 'custom', id: string, name: string, numbers: number[]} | null>(null)
   const [viewingTableGroup, setViewingTableGroup] = useState<'dozen' | 'column' | 'color' | 'evenOdd' | 'lowHigh' | 'alt1' | 'alt2' | 'alt3' | 'edgeCenter' | 'six' | null>(null)
   const [viewingWheelGroup, setViewingWheelGroup] = useState<'vois-orph-tier' | 'voisins-nonvoisins' | 'wheel-quarters' | 'ab-split' | 'aabb-split' | 'aaabbb-split' | 'a6b6-split' | 'a9b9-split' | 'right-left' | null>(null)
+
+  // Load custom groups on mount
+  useEffect(() => {
+    const loadSavedGroups = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      const loaded = await loadCustomGroups(user?.id)
+      setCustomGroups(loaded)
+    }
+    loadSavedGroups()
+  }, [])
+
+  // Save custom groups whenever they change
+  useEffect(() => {
+    const saveGroups = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      await saveCustomGroups(customGroups, user?.id)
+    }
+    if (customGroups.length > 0 || localStorage.getItem('roulette_custom_groups')) {
+      saveGroups()
+    }
+  }, [customGroups])
 
   const isGroupSelected = (type: 'table' | 'wheel' | 'custom', id: string) => {
     return selectedGroups.some(g => g.type === type && g.id === id)
@@ -133,7 +157,7 @@ export default function GroupSelector({
     }
   }
 
-  const handleAddCustomGroup = () => {
+  const handleSaveCustomGroup = () => {
     if (!customName.trim()) {
       alert('Please enter a group name')
       return
@@ -150,23 +174,76 @@ export default function GroupSelector({
       return
     }
 
-    const customGroup: CustomGroup = {
-      id: `custom-${Date.now()}`,
-      name: customName.trim(),
-      numbers,
-    }
+    if (editingGroupId) {
+      // Update existing group
+      setCustomGroups(customGroups.map(g =>
+        g.id === editingGroupId
+          ? { ...g, name: customName.trim(), numbers }
+          : g
+      ))
 
-    setCustomGroups([...customGroups, customGroup])
+      // Update in selectedGroups if it's selected
+      if (isGroupSelected('custom', editingGroupId)) {
+        onGroupsChange(selectedGroups.map(g =>
+          g.type === 'custom' && g.id === editingGroupId
+            ? { ...g, name: customName.trim(), customGroup: { id: editingGroupId, name: customName.trim(), numbers } }
+            : g
+        ))
+      }
+    } else {
+      // Add new group
+      const customGroup: CustomGroup = {
+        id: `custom-${Date.now()}`,
+        name: customName.trim(),
+        numbers,
+      }
 
-    // Auto-select the new custom group
-    if (selectedGroups.length < maxGroups) {
-      toggleGroup('custom', customGroup.id, customGroup.name, customGroup)
+      setCustomGroups([...customGroups, customGroup])
+
+      // Auto-select the new custom group
+      if (selectedGroups.length < maxGroups) {
+        toggleGroup('custom', customGroup.id, customGroup.name, customGroup)
+      }
     }
 
     // Reset form
     setCustomName('')
     setCustomNumbers('')
     setIsAddingCustom(false)
+    setEditingGroupId(null)
+  }
+
+  const handleEditGroup = (group: CustomGroup) => {
+    setCustomName(group.name)
+    setCustomNumbers(group.numbers.join(', '))
+    setEditingGroupId(group.id)
+    setIsAddingCustom(true)
+  }
+
+  const handleDeleteGroup = () => {
+    if (!editingGroupId) return
+
+    if (confirm('Are you sure you want to delete this custom group?')) {
+      setCustomGroups(customGroups.filter(g => g.id !== editingGroupId))
+
+      // Remove from selectedGroups if it's selected
+      if (isGroupSelected('custom', editingGroupId)) {
+        onGroupsChange(selectedGroups.filter(g => !(g.type === 'custom' && g.id === editingGroupId)))
+      }
+
+      // Reset form
+      setCustomName('')
+      setCustomNumbers('')
+      setIsAddingCustom(false)
+      setEditingGroupId(null)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setCustomName('')
+    setCustomNumbers('')
+    setIsAddingCustom(false)
+    setEditingGroupId(null)
   }
 
   return (
@@ -275,16 +352,27 @@ export default function GroupSelector({
                     <div className="text-xs text-gray-400">({group.numbers.join(', ')})</div>
                   </div>
                 </label>
-                <button
-                  onClick={() => setViewingGroup({type: 'custom', id: group.id, name: group.name, numbers: group.numbers})}
-                  className="p-1 text-gray-400 hover:text-yellow-400 transition-colors"
-                  title="View numbers"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                </button>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => handleEditGroup(group)}
+                    className="p-1 text-gray-400 hover:text-blue-400 transition-colors"
+                    title="Edit group"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setViewingGroup({type: 'custom', id: group.id, name: group.name, numbers: group.numbers})}
+                    className="p-1 text-gray-400 hover:text-yellow-400 transition-colors"
+                    title="View numbers"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -308,17 +396,21 @@ export default function GroupSelector({
               />
               <div className="flex gap-2">
                 <button
-                  onClick={handleAddCustomGroup}
+                  onClick={handleSaveCustomGroup}
                   className="flex-1 px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded transition-colors"
                 >
-                  Add
+                  {editingGroupId ? 'Save' : 'Add'}
                 </button>
+                {editingGroupId && (
+                  <button
+                    onClick={handleDeleteGroup}
+                    className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded transition-colors"
+                  >
+                    Delete
+                  </button>
+                )}
                 <button
-                  onClick={() => {
-                    setIsAddingCustom(false)
-                    setCustomName('')
-                    setCustomNumbers('')
-                  }}
+                  onClick={handleCancelEdit}
                   className="px-3 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded transition-colors"
                 >
                   Cancel
