@@ -1000,7 +1000,6 @@ const newBet: BetRecord = {
                               Undo
                             </button>
                           </div>
-                        </div>
                       </div>
                       <div className="flex gap-0.5">
                         {spinHistory.filter(s => !(s as any).isDealerChange && !(s as any).isCardStart && !(s as any).isCardEnd).slice(0, 25).map((spin, idx) => (
@@ -1148,7 +1147,6 @@ const newBet: BetRecord = {
                               Undo
                             </button>
                           </div>
-                        </div>
                       </div>
                       <div className="flex gap-0.5">
                         {spinHistory.filter(s => !(s as any).isDealerChange && !(s as any).isCardStart && !(s as any).isCardEnd).slice(0, 25).map((spin, idx) => (
@@ -1399,7 +1397,6 @@ const newBet: BetRecord = {
                               Undo
                             </button>
                           </div>
-                        </div>
                       </div>
                       <div className="flex gap-0.5">
                         {spinHistory.filter(s => !(s as any).isDealerChange && !(s as any).isCardStart && !(s as any).isCardEnd).slice(0, 25).map((spin, idx) => (
