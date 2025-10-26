@@ -26,9 +26,16 @@ interface SessionStats {
   roi: number
 }
 
+interface Dealer {
+  id: string
+  name: string
+  nickname?: string
+}
+
 interface GameControlBarProps {
   currentDealer: number
   onDealerChange: (dealer: number) => void
+  availableDealers?: Dealer[]
   spinHistory: SpinData[]
   sessionStats: SessionStats
   sessionId?: string
@@ -39,13 +46,15 @@ interface GameControlBarProps {
   currentCardMaxBets?: number
   onCardStart?: (cardNumber: number, cardTarget: number) => void
   onCardEnd?: (cardNumber: number, cardProfit: number, cardSuccess: boolean, cardTarget: number, cardBetsUsed: number, cardMaxBets: number) => void
-  currentView?: 'layout' | 'wheelLayout'
-  onViewChange?: (view: 'layout' | 'wheelLayout') => void
+  currentView?: 'layout' | 'wheelLayout' | 'my-groups'
+  onViewChange?: (view: 'layout' | 'wheelLayout' | 'my-groups') => void
+  hasSelectedGroups?: boolean  // Whether user has configured custom groups
 }
 
 export default function GameControlBar({
   currentDealer,
   onDealerChange,
+  availableDealers = [],
   spinHistory,
   sessionStats,
   sessionId,
@@ -57,7 +66,8 @@ export default function GameControlBar({
   onCardStart,
   onCardEnd,
   currentView,
-  onViewChange
+  onViewChange,
+  hasSelectedGroups = false
 }: GameControlBarProps) {
   const [cardTrackingEnabled, setCardTrackingEnabled] = useState(false)
 
@@ -150,38 +160,36 @@ export default function GameControlBar({
             onChange={(e) => onDealerChange(Number(e.target.value))}
             className="bg-gray-900 text-white border border-gray-600 rounded-lg px-3 py-1.5 text-sm font-semibold hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
           >
-            <option value={1}>Dealer 1</option>
-            <option value={2}>Dealer 2</option>
-            <option value={3}>Dealer 3</option>
-            <option value={4}>Dealer 4</option>
-            <option value={5}>Dealer 5</option>
+            {availableDealers.length > 0 ? (
+              availableDealers.map((dealer, index) => (
+                <option key={dealer.id} value={index + 1}>
+                  {dealer.name}{dealer.nickname ? ` "${dealer.nickname}"` : ''}
+                </option>
+              ))
+            ) : (
+              <>
+                <option value={1}>Dealer 1</option>
+                <option value={2}>Dealer 2</option>
+                <option value={3}>Dealer 3</option>
+                <option value={4}>Dealer 4</option>
+                <option value={5}>Dealer 5</option>
+              </>
+            )}
           </select>
 
           {/* Switch Layout Button */}
           {currentView && onViewChange && (
-            <button
-              onClick={() => onViewChange(currentView === 'layout' ? 'wheelLayout' : 'layout')}
-              className="px-4 py-1.5 bg-gray-900 hover:bg-gray-700 text-white text-sm font-bold rounded-lg transition-all flex items-center gap-2 border border-gray-600"
-              title={`Switch to ${currentView === 'layout' ? 'Wheel' : 'Table'} Layout`}
+            <select
+              value={currentView || 'layout'}
+              onChange={(e) => onViewChange(e.target.value as 'layout' | 'wheelLayout' | 'my-groups')}
+              className="px-4 py-1.5 bg-gray-900 hover:bg-gray-700 text-white text-sm font-bold rounded-lg transition-all border border-gray-600 cursor-pointer"
             >
-              {currentView === 'layout' ? (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9" strokeWidth={2} />
-                    <circle cx="12" cy="12" r="3" fill="currentColor" />
-                  </svg>
-                  Switch to Wheel Layout
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth={2} />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9h18M9 3v18" />
-                  </svg>
-                  Switch to Table Layout
-                </>
+              <option value="layout">🎲 Table Groups</option>
+              <option value="wheelLayout">🎡 Wheel Groups</option>
+              {hasSelectedGroups && (
+                <option value="my-groups">⭐ My Groups</option>
               )}
-            </button>
+            </select>
           )}
 
           {/* Card Tracking Toggle */}

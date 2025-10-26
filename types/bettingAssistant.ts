@@ -85,6 +85,22 @@ export interface BetCard {
   startTime: Date | null
 }
 
+// Group selection for "My Groups" layout
+export type GroupType = 'table' | 'wheel' | 'custom'
+
+export interface CustomGroup {
+  id: string
+  name: string
+  numbers: number[]  // Array of roulette numbers (0-36)
+}
+
+export interface SelectedGroup {
+  type: GroupType
+  id: string  // e.g., 'red', 'voisins', or custom group ID
+  name: string  // Display name
+  customGroup?: CustomGroup  // Only for custom groups
+}
+
 export interface SessionConfig {
   bankroll: number
   stopProfit: number
@@ -96,6 +112,8 @@ export interface SessionConfig {
   betMode: 'table' | 'wheel'
   betCategory: 'common' | 'special'
   bettingSystem: BettingSystemConfig
+  selectedGroups?: SelectedGroup[]  // Groups selected for "My Groups" layout
+  historyLayout?: 'table' | 'wheel' | 'my-groups'  // Current layout view
 }
 
 export interface SessionState {

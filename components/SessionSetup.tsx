@@ -1,12 +1,24 @@
 // components/SessionSetup.tsx
+// Force recompile - debugging Elite access
 'use client'
 
 import React, { useState } from 'react'
 import { ArrowRight, AlertTriangle } from 'lucide-react'
-import type { SessionConfig, BettingSystemConfig, CustomSystemRules, BetAction, SequentialProgressionRules } from '../types/bettingAssistant'
+import type { SessionConfig, BettingSystemConfig, CustomSystemRules, BetAction, SequentialProgressionRules, SelectedGroup } from '../types/bettingAssistant'
+import SessionLocationSelector from './SessionLocationSelector'
+import GroupSelector from './GroupSelector'
 
 interface SessionSetupProps {
-  onStartSession: (config: SessionConfig) => void
+  onStartSession: (
+    config: SessionConfig,
+    locationData?: {
+      casinoId: string | null
+      dealerId: string | null
+      tableNumber: string | null
+    }
+  ) => void
+  userId: string | null
+  hasEliteAccess: boolean
 }
 
 const BETTING_SYSTEMS = [
@@ -854,7 +866,7 @@ function createBettingSystemConfig(systemId: string, baseBet: number, customConf
   }
 }
 
-export default function SessionSetup({ onStartSession }: SessionSetupProps) {
+export default function SessionSetup({ onStartSession, userId, hasEliteAccess }: SessionSetupProps) {
   const [bankroll, setBankroll] = useState(1000)
   const [stopProfit, setStopProfit] = useState(200)
   const [stopLoss, setStopLoss] = useState(300)
@@ -868,6 +880,24 @@ export default function SessionSetup({ onStartSession }: SessionSetupProps) {
   const [showCustomBuilder, setShowCustomBuilder] = useState(false)
   const [customSystemConfig, setCustomSystemConfig] = useState<BettingSystemConfig | null>(null)
 
+  // 🆕 Location data for Elite tier cloud storage
+  const [locationData, setLocationData] = useState<{
+    casinoId: string | null
+    casinoName: string | null
+    dealerId: string | null
+    dealerName: string | null
+    tableNumber: string | null
+  }>({
+    casinoId: null,
+    casinoName: null,
+    dealerId: null,
+    dealerName: null,
+    tableNumber: null,
+  })
+
+  // 🆕 Group selection for "My Groups" layout
+  const [selectedGroups, setSelectedGroups] = useState<SelectedGroup[]>([])
+
   const cardTarget = Math.floor((bankroll * cardPercent) / 100)
   const isValidSetup = cardPercent > 0 && cardPercent <= 10 && bankroll > 0 && stopLoss > 0 && stopProfit > 0
 
@@ -876,7 +906,7 @@ export default function SessionSetup({ onStartSession }: SessionSetupProps) {
       alert('Please check your settings:\n- Card % must be between 1-10%\n- All amounts must be positive')
       return
     }
-    
+
     const config: SessionConfig = {
       bankroll,
       stopProfit,
@@ -888,8 +918,15 @@ export default function SessionSetup({ onStartSession }: SessionSetupProps) {
       betMode,
       betCategory,
       bettingSystem: customSystemConfig || createBettingSystemConfig(selectedSystem, baseBet),
+      selectedGroups: selectedGroups.length > 0 ? selectedGroups : undefined,
+      historyLayout: selectedGroups.length > 0 ? 'my-groups' : 'table',
     }
-    onStartSession(config)
+
+    onStartSession(config, {
+      casinoId: locationData.casinoId,
+      dealerId: locationData.dealerId,
+      tableNumber: locationData.tableNumber,
+    })
   }
 
   const handleCustomSystemComplete = (config: BettingSystemConfig) => {
@@ -1078,10 +1115,37 @@ export default function SessionSetup({ onStartSession }: SessionSetupProps) {
             </div>
           </div>
 
-          {/* STEP 3: SESSION SETTINGS */}
+          {/* STEP 3: LOCATION TRACKING (Elite Tier Only) */}
+          {hasEliteAccess ? (
+            <div className="bg-gradient-to-br from-cyan-900/30 to-blue-900/30 rounded-lg p-3 border border-cyan-500/40">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-full bg-cyan-500 flex items-center justify-center font-bold text-xs">3</div>
+                <h2 className="text-lg font-bold text-cyan-300">Session Location (Elite)</h2>
+              </div>
+              <SessionLocationSelector
+                userId={userId || '9d399518-2d1d-4eb7-a5df-21f649359643'}
+                onSelect={setLocationData}
+              />
+            </div>
+          ) : null}
+
+          {/* STEP 3.5: SELECT GROUPS FOR MY GROUPS LAYOUT */}
+          <div className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 rounded-lg p-3 border border-purple-500/40">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-full bg-purple-500 flex items-center justify-center font-bold text-xs">⭐</div>
+              <h2 className="text-lg font-bold text-purple-300">My Groups (Optional)</h2>
+            </div>
+            <GroupSelector
+              selectedGroups={selectedGroups}
+              onGroupsChange={setSelectedGroups}
+              maxGroups={10}
+            />
+          </div>
+
+          {/* STEP 4: SESSION SETTINGS */}
           <div className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 rounded-lg p-3 border border-green-500/40">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center font-bold text-sm">3</div>
+              <div className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center font-bold text-sm">4</div>
               <h2 className="text-lg font-bold text-green-300">Configure Session</h2>
             </div>
             
@@ -1221,10 +1285,10 @@ export default function SessionSetup({ onStartSession }: SessionSetupProps) {
             </div>
           </div>
 
-          {/* STEP 4: START SESSION */}
+          {/* STEP 5: START SESSION */}
           <div className="text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="w-7 h-7 rounded-full bg-yellow-500 flex items-center justify-center font-bold text-sm">4</div>
+              <div className="w-7 h-7 rounded-full bg-yellow-500 flex items-center justify-center font-bold text-sm">5</div>
               <h2 className="text-lg font-bold text-yellow-300">Ready to Begin</h2>
             </div>
             <button onClick={handleStart}

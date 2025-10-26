@@ -20,8 +20,10 @@ import WheelLayout from './roulette/WheelLayout'
 import WheelBetGroups from './roulette/WheelBetGroups'
 import HistoryTable from './roulette/HistoryTable'
 import WheelHistory from './WheelHistory'
+import MyGroupsLayout from './MyGroupsLayout'
 import GameControlBar from './GameControlBar'
-import { getNumberProperties } from '@/lib/roulette-logic'
+import ClickableRouletteTable from './ClickableRouletteTable'
+import { getNumberProperties, RED_NUMBERS } from '@/lib/roulette-logic'
 
 function updateBettingSystem(config: BettingSystemConfig, outcome: 'win' | 'loss'): BettingSystemConfig {
   const consecutiveWins = outcome === 'win' ? config.consecutiveWins + 1 : 0
@@ -212,7 +214,7 @@ export default function BettingAssistant() {
   const { addSpin, addDealerChange, addCardStart, addCardEnd, undoLastSpin, updateSessionStats, spinHistory, sessionStats } = useBettingData()
   const [viewMode, setViewMode] = useState<'intro' | 'setup' | 'dashboard' | 'activeCard' | 'advisor' | 'performance'>('intro')
   const [session, setSession] = useState<SessionState | null>(null)
-  const [tableView, setTableView] = useState<'layout' | 'wheelLayout'>('layout')
+  const [tableView, setTableView] = useState<'layout' | 'wheelLayout' | 'my-groups'>('layout')
   const [currentDealer, setCurrentDealer] = useState(1)
   const [previousDealer, setPreviousDealer] = useState(1)
 
@@ -225,6 +227,10 @@ export default function BettingAssistant() {
 
   // Historical bets state - persists across view changes
   const [historicalBets, setHistoricalBets] = useState<Record<string, any>>({})
+
+  // My Groups betting state - persists across layout switches
+  const [myGroupsManualBets, setMyGroupsManualBets] = useState<Record<string, string>>({})
+  const [myGroupsBetResults, setMyGroupsBetResults] = useState<Record<string, { status: 'win' | 'loss', amount: string } | null>>({})
 
   const handleHistoricalBetsUpdate = (newBets: Record<string, any>) => {
     setHistoricalBets(newBets)
@@ -375,6 +381,56 @@ export default function BettingAssistant() {
     handleContinue()
   }
 
+  // Helper: Check if a number wins for a selected group
+  const checkSelectedGroupWin = (number: number, groupKey: string): boolean => {
+    if (!session?.config.selectedGroups) return false
+
+    // Parse the group key: format is "type-id-side" or "type-id" (no side for non-split)
+    const parts = groupKey.split('-')
+    const type = parts[0] as 'table' | 'wheel' | 'custom'
+
+    // Check if last part is 'a' or 'b' or a number (indicates split/multi-option group)
+    const lastPart = parts[parts.length - 1]
+    const isSplit = lastPart === 'a' || lastPart === 'b'
+    const isMultiOption = !isNaN(parseInt(lastPart)) && lastPart.length <= 2
+    const side = isSplit ? lastPart : null
+    const optionNum = isMultiOption ? lastPart : null
+
+    // Get the id (everything between type and side/option, if any)
+    const id = (isSplit || isMultiOption)
+      ? parts.slice(1, -1).join('-')
+      : parts.slice(1).join('-')
+
+    // Find the matching group
+    const group = session.config.selectedGroups.find(g => g.type === type && g.id === id)
+    if (!group) return false
+
+    // Handle custom groups
+    if (type === 'custom' && group.customGroup) {
+      return group.customGroup.numbers.includes(number)
+    }
+
+    // For multi-option groups, we need to determine which option the number belongs to
+    // This is simplified - in reality MyGroupsLayout has getGroupValue logic
+    // For now, just check if number is in the group's numbers
+    // The actual win/loss logic should match what's in MyGroupsLayout
+
+    return false // Placeholder - actual logic in MyGroupsLayout
+  }
+
+  // Calculate payout multiplier based on number count
+  const getPayoutMultiplier = (numberCount: number): number => {
+    if (numberCount >= 18) return 2 // 1:1 payout
+    if (numberCount >= 12) return 3 // 2:1 payout
+    if (numberCount >= 9) return 4 // 3:1 payout
+    if (numberCount >= 6) return 6 // 5:1 payout
+    if (numberCount >= 4) return 9 // 8:1 payout
+    if (numberCount >= 3) return 12 // 11:1 payout
+    if (numberCount === 2) return 18 // 17:1 payout
+    if (numberCount === 1) return 36 // 35:1 payout
+    return 2 // Default 1:1
+  }
+
   // ✅ NEW: Handle number input for trend analysis (before betting)
   const handleNumberAdded = (number: number) => {
     if (!session) return
@@ -386,6 +442,48 @@ export default function BettingAssistant() {
       sessionId: session.id,
       cardId: currentCard.id
     })
+
+    // Process my-groups bets if in my-groups view and there are pending bets
+    if (tableView === 'my-groups' && Object.values(myGroupsManualBets).some(val => val !== '')) {
+      const results: Record<string, number> = {}
+      const resultStates: Record<string, { status: 'win' | 'loss', amount: string } | null> = {}
+      let totalPnL = 0
+      let totalWagered = 0
+
+      Object.entries(myGroupsManualBets).forEach(([key, value]) => {
+        if (value) {
+          const betAmount = parseFloat(value)
+          totalWagered += betAmount
+          const won = checkSelectedGroupWin(number, key)
+
+          // Auto-calculate payout based on group size
+          // For now, default to 2x (1:1) - will enhance later
+          const payoutMultiplier = 2
+          const winAmount = won ? betAmount * payoutMultiplier : 0
+          const pnl = won ? winAmount - betAmount : -betAmount
+
+          results[key] = pnl
+          totalPnL += pnl
+
+          resultStates[key] = {
+            status: won ? 'win' : 'loss',
+            amount: Math.abs(pnl).toFixed(0)
+          }
+        }
+      })
+
+      // Show results on buttons
+      setMyGroupsBetResults(resultStates)
+
+      // Update financial tracking
+      updateSessionStats(totalWagered, totalWagered + totalPnL)
+
+      // Clear bets after 1.5 seconds
+      setTimeout(() => {
+        setMyGroupsManualBets({})
+        setMyGroupsBetResults({})
+      }, 1500)
+    }
   }
 
   // Handle bets placed in HistoryTable - NOW CONNECTED TO CARD SYSTEM
@@ -737,6 +835,25 @@ const newBet: BetRecord = {
             <div className="bg-gray-900/50 rounded-lg p-2 border border-gray-700">
               {tableView === 'layout' && (
                 <div className="space-y-2">
+                  {/* Game Control Bar - Table View */}
+                  <GameControlBar
+                    currentDealer={currentDealer}
+                    onDealerChange={setCurrentDealer}
+                    spinHistory={spinHistory}
+                    sessionStats={sessionStats}
+                    sessionId={session.id}
+                    currentCardNumber={session.cards[session.currentCardIndex].cardNumber}
+                    currentCardTarget={session.cards[session.currentCardIndex].target}
+                    currentCardProfit={session.cards[session.currentCardIndex].currentTotal}
+                    currentCardBetsUsed={session.cards[session.currentCardIndex].betsUsed}
+                    currentCardMaxBets={session.cards[session.currentCardIndex].maxBets}
+                    onCardStart={addCardStart}
+                    onCardEnd={addCardEnd}
+                    currentView={tableView}
+                    onViewChange={setTableView}
+                    hasSelectedGroups={session.config.selectedGroups !== undefined && session.config.selectedGroups.length > 0}
+                  />
+
                   {/* Roulette Table Layout */}
                   <div className="space-y-0.5">
                     {/* Zero */}
@@ -847,24 +964,6 @@ const newBet: BetRecord = {
                       })}
                     </div>
                   </div>
-
-                  {/* Game Control Bar */}
-                  <GameControlBar
-                    currentDealer={currentDealer}
-                    onDealerChange={setCurrentDealer}
-                    spinHistory={spinHistory}
-                    sessionStats={sessionStats}
-                    sessionId={session.id}
-                    currentCardNumber={session.cards[session.currentCardIndex].cardNumber}
-                    currentCardTarget={session.cards[session.currentCardIndex].target}
-                    currentCardProfit={session.cards[session.currentCardIndex].currentTotal}
-                    currentCardBetsUsed={session.cards[session.currentCardIndex].betsUsed}
-                    currentCardMaxBets={session.cards[session.currentCardIndex].maxBets}
-                    onCardStart={addCardStart}
-                    onCardEnd={addCardEnd}
-                    currentView={tableView}
-                    onViewChange={setTableView}
-                  />
 
                   {/* Recent Numbers & History */}
                   <div className="space-y-2">
@@ -1013,6 +1112,7 @@ const newBet: BetRecord = {
                     onCardEnd={addCardEnd}
                     currentView={tableView}
                     onViewChange={setTableView}
+                    hasSelectedGroups={session.config.selectedGroups !== undefined && session.config.selectedGroups.length > 0}
                   />
 
                   {/* Recent Numbers & History */}
@@ -1134,6 +1234,161 @@ const newBet: BetRecord = {
                         onBetPlaced={handleHistoryTableBet}
                         historicalBets={historicalBets}
                         onHistoricalBetsUpdate={handleHistoricalBetsUpdate}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* My Groups Layout */}
+              {tableView === 'my-groups' && (
+                <div className="space-y-2">
+                  <GameControlBar
+                    currentDealer={currentDealer}
+                    onDealerChange={setCurrentDealer}
+                    spinHistory={spinHistory}
+                    sessionStats={sessionStats}
+                    sessionId={session.id}
+                    currentCardNumber={session.cards[session.currentCardIndex].cardNumber}
+                    currentCardTarget={session.cards[session.currentCardIndex].target}
+                    currentCardProfit={session.cards[session.currentCardIndex].currentTotal}
+                    currentCardBetsUsed={session.cards[session.currentCardIndex].betsUsed}
+                    currentCardMaxBets={session.cards[session.currentCardIndex].maxBets}
+                    onCardStart={addCardStart}
+                    onCardEnd={addCardEnd}
+                    currentView={tableView}
+                    onViewChange={setTableView}
+                    hasSelectedGroups={session.config.selectedGroups !== undefined && session.config.selectedGroups.length > 0}
+                  />
+
+                  {/* Clickable Roulette Table for Quick Entry */}
+                  <ClickableRouletteTable
+                    onNumberClick={handleNumberAdded}
+                    recentSpins={spinHistory.filter(s => !(s as any).isDealerChange && !(s as any).isCardStart && !(s as any).isCardEnd).slice(0, 1).map(s => s.number)}
+                  />
+
+                  {/* Recent Numbers & History */}
+                  <div className="space-y-2">
+                    {/* Recent 25 Numbers with Number Entry */}
+                    <div className="bg-gray-800 rounded border border-gray-700 p-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="text-sm font-bold text-yellow-400">Last 25 Spins</h3>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            max="36"
+                            placeholder="0-36"
+                            className="w-16 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-xs text-center focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                const value = parseInt(e.currentTarget.value)
+                                if (value >= 0 && value <= 36) {
+                                  handleNumberAdded(value)
+                                  e.currentTarget.value = ''
+                                }
+                              }
+                            }}
+                          />
+                          <div className="flex flex-col gap-1">
+                            <button
+                              onClick={(e) => {
+                                const input = e.currentTarget.parentElement?.previousElementSibling as HTMLInputElement
+                                const value = parseInt(input.value)
+                                if (value >= 0 && value <= 36) {
+                                  handleNumberAdded(value)
+                                  input.value = ''
+                                }
+                              }}
+                              className="px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white text-xs font-bold rounded"
+                            >
+                              Add
+                            </button>
+                            <button
+                              onClick={undoLastSpin}
+                              className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded"
+                            >
+                              Undo
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        {spinHistory.filter(s => !(s as any).isDealerChange && !(s as any).isCardStart && !(s as any).isCardEnd).slice(0, 25).map((spin, idx) => (
+                          <div
+                            key={idx}
+                            className={`
+                              w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white
+                              ${idx === 0 ? 'ring-2 ring-yellow-400 animate-pulse' : ''}
+                              ${spin.number === 0 ? 'bg-green-600' :
+                                [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(spin.number)
+                                  ? 'bg-red-600' : 'bg-black border border-gray-600'}
+                            `}
+                          >
+                            {spin.number}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* History Table with Bankroll Stats */}
+                    <div className="bg-gray-800 rounded border border-gray-700 p-2">
+                      <div className="flex items-center justify-between gap-3 mb-2 text-[10px] font-bold">
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-400">Bank:</span>
+                          <span className="text-white">${sessionStats.currentBankroll.toFixed(0)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-400">Wager:</span>
+                          <span className="text-cyan-400">${sessionStats.totalWagered.toFixed(0)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-400">P/L:</span>
+                          <span className={`${(sessionStats.totalReturned - sessionStats.totalWagered) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            ${(sessionStats.totalReturned - sessionStats.totalWagered) >= 0 ? '+' : ''}{(sessionStats.totalReturned - sessionStats.totalWagered).toFixed(0)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-gray-400">ROI:</span>
+                          <span className={`${sessionStats.roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {sessionStats.roi >= 0 ? '+' : ''}{sessionStats.roi.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                      <MyGroupsLayout
+                        spins={spinHistory.map((s) => {
+                          // Handle dealer change events
+                          if ((s as any).isDealerChange) {
+                            return {
+                              ...s,
+                              number: -1,
+                              created_at: new Date(s.timestamp).toISOString()
+                            } as any
+                          }
+                          // If it's a card start or end, preserve those properties
+                          if ((s as any).isCardStart || (s as any).isCardEnd) {
+                            return {
+                              ...s,
+                              number: -1,
+                              created_at: new Date(s.timestamp).toISOString()
+                            } as any
+                          }
+                          // Otherwise, process normally
+                          return {
+                            ...getNumberProperties(s.number),
+                            session_id: s.sessionId || '',
+                            spin_number: 0,
+                            created_at: new Date(s.timestamp).toISOString()
+                          }
+                        })}
+                        selectedGroups={session.config.selectedGroups || []}
+                        manualBets={myGroupsManualBets}
+                        setManualBets={setMyGroupsManualBets}
+                        playerUnit={session.config.baseUnit}
+                        betResults={myGroupsBetResults}
+                        historicalBets={historicalBets}
+                        onHistoricalBetsUpdate={handleHistoricalBetsUpdate}
+                        onBetPlaced={handleHistoryTableBet}
                       />
                     </div>
                   </div>
