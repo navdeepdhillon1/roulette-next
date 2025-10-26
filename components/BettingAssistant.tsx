@@ -1486,7 +1486,12 @@ const newBet: BetRecord = {
             <RightSideLayout
               session={session}
               spinHistory={spinHistory
-                .filter(s => !(s as any).isDealerChange && !(s as any).isCardStart && !(s as any).isCardEnd)
+                .filter(s => {
+                  // Filter out notification spins (dealer change, card start/end)
+                  if ((s as any).isDealerChange || (s as any).isCardStart || (s as any).isCardEnd) return false
+                  // Filter out invalid numbers (only keep 0-36)
+                  return s.number >= 0 && s.number <= 36
+                })
                 .map(s => s.number)
               }
             />
