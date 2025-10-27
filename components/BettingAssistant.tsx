@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import Navigation from './Navigation'
 import SessionSetup from './SessionSetup'
 import BetCardDashboard from './BetCardDashboard'
@@ -230,6 +231,14 @@ export default function BettingAssistant() {
   // My Groups betting state - persists across layout switches
   const [myGroupsManualBets, setMyGroupsManualBets] = useState<Record<string, string>>({})
   const [myGroupsBetResults, setMyGroupsBetResults] = useState<Record<string, { status: 'win' | 'loss', amount: string } | null>>({})
+
+  // Help modal state
+  const [showBettingHelpModal, setShowBettingHelpModal] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleHistoricalBetsUpdate = (newBets: Record<string, any>) => {
     setHistoricalBets(newBets)
@@ -1119,6 +1128,13 @@ const newBet: BetRecord = {
                             {sessionStats.roi >= 0 ? '+' : ''}{sessionStats.roi.toFixed(1)}%
                           </span>
                         </div>
+                        <button
+                          onClick={() => setShowBettingHelpModal(true)}
+                          className="ml-2 px-2 py-0.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-semibold rounded transition-colors"
+                          title="View betting help"
+                        >
+                          Help
+                        </button>
                       </div>
                       <HistoryTable
                         spins={spinHistory.slice(0, 50).map(s => {
@@ -1270,6 +1286,13 @@ const newBet: BetRecord = {
                             {sessionStats.roi >= 0 ? '+' : ''}{sessionStats.roi.toFixed(1)}%
                           </span>
                         </div>
+                        <button
+                          onClick={() => setShowBettingHelpModal(true)}
+                          className="ml-2 px-2 py-0.5 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-semibold rounded transition-colors"
+                          title="View betting help"
+                        >
+                          Help
+                        </button>
                       </div>
                       <WheelHistory
                         spins={spinHistory.slice(0, 50).map(s => {
@@ -1645,6 +1668,171 @@ const newBet: BetRecord = {
           duration={300}
           onComplete={handleBreakComplete}
         />
+      )}
+
+      {/* Betting Help Modal */}
+      {mounted && showBettingHelpModal && createPortal(
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center p-4"
+          style={{ zIndex: 99999 }}
+          onClick={() => setShowBettingHelpModal(false)}
+        >
+          <div
+            className="bg-gray-900 rounded-xl border border-gray-700 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative"
+            style={{ zIndex: 100000 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="sticky top-0 bg-gray-900 border-b border-gray-700 p-4 flex items-center justify-between z-10">
+              <h2 className="text-xl font-bold text-white">Betting Interface Help</h2>
+              <button
+                onClick={() => setShowBettingHelpModal(false)}
+                className="text-gray-400 hover:text-white p-1 rounded hover:bg-gray-800"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-6">
+              {/* Understanding the Headers */}
+              <div className="bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-500/30 rounded-lg p-4">
+                <h3 className="text-lg font-bold text-blue-300 mb-3 flex items-center gap-2">
+                  <span className="text-2xl">📊</span>
+                  Understanding the Headers
+                </h3>
+                <div className="space-y-2 text-sm text-gray-300">
+                  <p>The stats bar at the top shows your session performance at a glance:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    <li><strong className="text-white">Bank:</strong> Your current bankroll (starting amount + all profits/losses)</li>
+                    <li><strong className="text-cyan-400">Wager:</strong> Total amount you've bet across all spins</li>
+                    <li><strong className="text-green-400/text-red-400">P/L:</strong> Profit/Loss (total returned - total wagered)</li>
+                    <li><strong className="text-green-400/text-red-400">ROI:</strong> Return on Investment percentage</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Understanding Bet Cards */}
+              <div className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-purple-500/30 rounded-lg p-4">
+                <h3 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
+                  <span className="text-2xl">🃏</span>
+                  Understanding Bet Cards (Betting Groups)
+                </h3>
+                <div className="space-y-3 text-sm text-gray-300">
+                  <p>The colored buttons below the headers represent different betting groups on the roulette table:</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="font-semibold text-white mb-1">Standard Groups:</p>
+                      <ul className="list-disc list-inside space-y-0.5 ml-2 text-xs">
+                        <li><span className="text-red-400">R</span> / <span className="text-gray-400">B</span> = Red / Black</li>
+                        <li><span className="text-purple-400">E</span> / <span className="text-cyan-400">O</span> = Even / Odd</li>
+                        <li><span className="text-amber-400">L</span> / <span className="text-gray-400">H</span> = Low (1-18) / High (19-36)</li>
+                        <li>Column: 1st, 2nd, 3rd</li>
+                        <li>Dozen: 1st (1-12), 2nd (13-24), 3rd (25-36)</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white mb-1">Alternative Groups:</p>
+                      <ul className="list-disc list-inside space-y-0.5 ml-2 text-xs">
+                        <li><span className="text-indigo-400">Alt1:</span> A / B sections</li>
+                        <li><span className="text-lime-400">Alt2:</span> AA / BB sections</li>
+                        <li><span className="text-blue-400">Alt3:</span> AAA / BBB sections</li>
+                        <li><span className="text-purple-400">E/C:</span> Edge / Center</li>
+                        <li><span className="text-red-400">Six:</span> 1st-6th (groups of 6 numbers)</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <p className="text-yellow-300 text-xs mt-2">💡 Click the 🔍 icon on any column header to view the table layout for that betting group</p>
+                </div>
+              </div>
+
+              {/* How to Place Bets */}
+              <div className="bg-gradient-to-r from-green-900/20 to-teal-900/20 border border-green-500/30 rounded-lg p-4">
+                <h3 className="text-lg font-bold text-green-300 mb-3 flex items-center gap-2">
+                  <span className="text-2xl">💰</span>
+                  How to Place Bets
+                </h3>
+                <div className="space-y-2 text-sm text-gray-300">
+                  <div className="bg-gray-800/50 rounded p-3 space-y-2">
+                    <p className="font-semibold text-white">📍 Step 1: Click a bet card (colored button)</p>
+                    <p className="ml-4">Single click adds your base bet amount to that group. A yellow badge will show your bet amount.</p>
+                  </div>
+                  <div className="bg-gray-800/50 rounded p-3 space-y-2">
+                    <p className="font-semibold text-white">📍 Step 2: View your total stake</p>
+                    <p className="ml-4">The "Total:" under the "Clear" button shows your combined bet across all groups.</p>
+                  </div>
+                  <div className="bg-gray-800/50 rounded p-3 space-y-2">
+                    <p className="font-semibold text-white">📍 Step 3: Spin lands</p>
+                    <p className="ml-4">After recording a number, cards flash <span className="text-green-400">green (win)</span> or <span className="text-red-400">red (loss)</span> showing P/L amounts.</p>
+                  </div>
+                  <p className="text-cyan-300 text-xs mt-2">⚡ You can bet on multiple groups simultaneously for complex strategies!</p>
+                </div>
+              </div>
+
+              {/* How to Increase Bets */}
+              <div className="bg-gradient-to-r from-orange-900/20 to-yellow-900/20 border border-orange-500/30 rounded-lg p-4">
+                <h3 className="text-lg font-bold text-orange-300 mb-3 flex items-center gap-2">
+                  <span className="text-2xl">📈</span>
+                  How to Increase Bets
+                </h3>
+                <div className="space-y-2 text-sm text-gray-300">
+                  <div className="bg-gray-800/50 rounded p-3">
+                    <p className="font-semibold text-white mb-1">🖱️ Single Click:</p>
+                    <p className="ml-4">Adds your base bet unit to the group (e.g., $10 → $20 → $30)</p>
+                  </div>
+                  <div className="bg-gray-800/50 rounded p-3">
+                    <p className="font-semibold text-white mb-1">🖱️🖱️ Double Click:</p>
+                    <p className="ml-4">Doubles your current bet on that group (e.g., $10 → $20 → $40 → $80)</p>
+                  </div>
+                  <p className="text-yellow-300 text-xs mt-2">💡 Use double-click for aggressive progressions like Martingale</p>
+                </div>
+              </div>
+
+              {/* How to Clear Bets */}
+              <div className="bg-gradient-to-r from-red-900/20 to-pink-900/20 border border-red-500/30 rounded-lg p-4">
+                <h3 className="text-lg font-bold text-red-300 mb-3 flex items-center gap-2">
+                  <span className="text-2xl">🗑️</span>
+                  How to Clear Bets
+                </h3>
+                <div className="space-y-2 text-sm text-gray-300">
+                  <div className="bg-gray-800/50 rounded p-3">
+                    <p className="font-semibold text-white mb-1">Click the "Clear" button</p>
+                    <p className="ml-4">Appears in the "NEXT BET" row when you have active bets. Removes all pending bets before the spin.</p>
+                  </div>
+                  <p className="text-red-300 text-xs mt-2">⚠️ You cannot place or clear bets while results are displaying (3 second flash)</p>
+                </div>
+              </div>
+
+              {/* Pro Tips */}
+              <div className="bg-gradient-to-r from-indigo-900/20 to-blue-900/20 border border-indigo-500/30 rounded-lg p-4">
+                <h3 className="text-lg font-bold text-indigo-300 mb-3 flex items-center gap-2">
+                  <span className="text-2xl">✨</span>
+                  Pro Tips
+                </h3>
+                <ul className="list-disc list-inside space-y-1 text-sm text-gray-300 ml-4">
+                  <li>Click column headers with 🔍 to see table layouts</li>
+                  <li>Bet on multiple groups to hedge or cover more numbers</li>
+                  <li>Watch the "Wheel Pos" column to track wheel sector patterns</li>
+                  <li>Your bets persist until results show, then auto-clear after 3 seconds</li>
+                  <li>Use the base bet selector to quickly change your betting unit</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-gray-900 border-t border-gray-700 p-4 flex justify-end">
+              <button
+                onClick={() => setShowBettingHelpModal(false)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+              >
+                Got it!
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </>
   )
