@@ -815,7 +815,8 @@ const newBet: BetRecord = {
 )}
       {viewMode === 'activeCard' && session && (
         <div className="space-y-2">
-          {/* Full-Width Card Info Bar at Top */}
+          {/* Full-Width Card Info Bar at Top - Only show when using card system */}
+          {session.config.useCards && (
           <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg border border-cyan-500/30 p-4 shadow-2xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
@@ -852,6 +853,7 @@ const newBet: BetRecord = {
               )}
             </div>
           </div>
+          )}
 
           {/* Main Content Area */}
           <div className="flex gap-2 min-h-screen">
