@@ -187,8 +187,8 @@ export default function HistoryTable({
     return wins
   }
 
-  // Track the last processed spin to avoid duplicate processing
-  const [lastProcessedSpinKey, setLastProcessedSpinKey] = React.useState<string | null>(null)
+  // Track the last processed spin count to avoid duplicate processing
+  const [lastProcessedCount, setLastProcessedCount] = React.useState<number>(0)
 
   // Use a ref to track current bets without triggering re-renders
   const betsRef = React.useRef(bets)
@@ -199,21 +199,22 @@ export default function HistoryTable({
   // When a new spin is added, calculate results
   // IMPORTANT: Only depends on spins.length, NOT on bets
   React.useEffect(() => {
-    if (spins.length > 0 && !showResults) {
+    if (spins.length > 0 && spins.length > lastProcessedCount && !showResults) {
       const latestSpin = spins[0]
-      const spinKey = new Date(latestSpin.created_at).getTime().toString()
+      // Use spin ID as key (more stable than timestamp)
+      const spinKey = latestSpin.id || latestSpin.spin_number?.toString() || new Date(latestSpin.created_at).getTime().toString()
 
       // Get current bets from ref
       const currentBets = betsRef.current
 
-      // Only process if this is a NEW spin we haven't processed yet AND we have bets
-      if (spinKey !== lastProcessedSpinKey && Object.keys(currentBets).length > 0) {
+      // Only process if we have bets
+      if (Object.keys(currentBets).length > 0) {
         const calcResults = calculatePayouts(latestSpin.number)
         setResults(calcResults)
         setShowResults(true)
-        setLastProcessedSpinKey(spinKey)
+        setLastProcessedCount(spins.length)
 
-        console.log('Storing bet results for spin:', spinKey, 'number:', latestSpin.number, calcResults)
+        console.log('Storing bet results for spin ID:', spinKey, 'number:', latestSpin.number, calcResults)
 
         // Update historical bets through callback
         if (onHistoricalBetsUpdate) {
@@ -251,7 +252,7 @@ export default function HistoryTable({
         }, 3000)
       }
     }
-  }, [spins.length, showResults, lastProcessedSpinKey, onBetPlaced, onHistoricalBetsUpdate, historicalBets])
+  }, [spins.length, showResults, lastProcessedCount, onBetPlaced, onHistoricalBetsUpdate, historicalBets])
 
   const clearBets = () => {
     setBets({})
@@ -537,12 +538,12 @@ export default function HistoryTable({
             const sixGroup = num === 0 ? '-' : num <= 6 ? '1st' : num <= 12 ? '2nd' : num <= 18 ? '3rd' : num <= 24 ? '4th' : num <= 30 ? '5th' : '6th'
             const wheelPosition = WHEEL_ORDER.indexOf(num)
 
-            // Check if we have bet results for this spin - use timestamp as key
-            const spinKey = new Date(spin.created_at).getTime().toString()
+            // Check if we have bet results for this spin - use spin ID as key
+            const spinKey = spin.id || spin.spin_number?.toString() || new Date(spin.created_at).getTime().toString()
             const spinBetData = historicalBets[spinKey]
 
-            if (spinBetData) {
-              console.log('Found bet data for spin:', spinKey, 'number:', spin.number, spinBetData)
+            if (spinBetData && index === 0) {
+              console.log('Found bet data for spin ID:', spinKey, 'number:', spin.number, spinBetData)
             }
 
             // Helper to render cell with optional P/L badge
