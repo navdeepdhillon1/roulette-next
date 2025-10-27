@@ -115,27 +115,51 @@ export default function GroupSelector({
   const [viewingGroup, setViewingGroup] = useState<{type: 'table' | 'wheel' | 'custom', id: string, name: string, numbers: number[]} | null>(null)
   const [viewingTableGroup, setViewingTableGroup] = useState<'dozen' | 'column' | 'color' | 'evenOdd' | 'lowHigh' | 'alt1' | 'alt2' | 'alt3' | 'edgeCenter' | 'six' | null>(null)
   const [viewingWheelGroup, setViewingWheelGroup] = useState<'vois-orph-tier' | 'voisins-nonvoisins' | 'wheel-quarters' | 'ab-split' | 'aabb-split' | 'aaabbb-split' | 'a6b6-split' | 'a9b9-split' | 'right-left' | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   // Load custom groups on mount
   useEffect(() => {
     const loadSavedGroups = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      const loaded = await loadCustomGroups(user?.id)
-      setCustomGroups(loaded)
+      try {
+        setIsLoading(true)
+        console.log('📂 Loading custom groups...')
+        const { data: { user } } = await supabase.auth.getUser()
+        const loaded = await loadCustomGroups(user?.id)
+        console.log('✅ Loaded custom groups:', loaded)
+        setCustomGroups(loaded)
+      } catch (error) {
+        console.error('❌ Failed to load custom groups:', error)
+      } finally {
+        setIsLoading(false)
+      }
     }
     loadSavedGroups()
   }, [])
 
-  // Save custom groups whenever they change
+  // Save custom groups whenever they change (but skip initial load)
   useEffect(() => {
+    // Skip if still loading or if this is the initial load
+    if (isLoading) return
+
     const saveGroups = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      await saveCustomGroups(customGroups, user?.id)
+      try {
+        setSaveStatus('saving')
+        console.log('💾 Saving custom groups:', customGroups)
+        const { data: { user } } = await supabase.auth.getUser()
+        await saveCustomGroups(customGroups, user?.id)
+        console.log('✅ Custom groups saved successfully')
+        setSaveStatus('saved')
+        setTimeout(() => setSaveStatus('idle'), 2000)
+      } catch (error) {
+        console.error('❌ Failed to save custom groups:', error)
+        setSaveStatus('error')
+        setTimeout(() => setSaveStatus('idle'), 3000)
+      }
     }
-    if (customGroups.length > 0 || localStorage.getItem('roulette_custom_groups')) {
-      saveGroups()
-    }
-  }, [customGroups])
+
+    saveGroups()
+  }, [customGroups, isLoading])
 
   const isGroupSelected = (type: 'table' | 'wheel' | 'custom', id: string) => {
     return selectedGroups.some(g => g.type === type && g.id === id)
@@ -333,9 +357,30 @@ export default function GroupSelector({
 
         {/* Custom Groups */}
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <h4 className="font-bold text-yellow-400 mb-3">Custom Groups</h4>
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-bold text-yellow-400">Custom Groups</h4>
+            {saveStatus !== 'idle' && (
+              <span className={`text-xs px-2 py-1 rounded ${
+                saveStatus === 'saving' ? 'bg-blue-900/50 text-blue-300' :
+                saveStatus === 'saved' ? 'bg-green-900/50 text-green-300' :
+                'bg-red-900/50 text-red-300'
+              }`}>
+                {saveStatus === 'saving' ? '💾 Saving...' :
+                 saveStatus === 'saved' ? '✅ Saved' :
+                 '❌ Error'}
+              </span>
+            )}
+          </div>
           <div className="space-y-2 mb-3">
-            {customGroups.map(group => (
+            {isLoading ? (
+              <div className="text-center py-4 text-gray-400 text-sm">
+                Loading saved groups...
+              </div>
+            ) : customGroups.length === 0 ? (
+              <div className="text-center py-2 text-gray-400 text-xs italic">
+                No custom groups yet. Create one below!
+              </div>
+            ) : customGroups.map(group => (
               <div
                 key={group.id}
                 className="flex items-center justify-between hover:bg-gray-700/50 p-2 rounded transition-colors"
