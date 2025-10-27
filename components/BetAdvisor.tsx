@@ -787,11 +787,29 @@ export default function BetAdvisor() {
             </div>
 
             {/* Hot/Cold Alerts Grid */}
-            {(getHotColdGroups.hot.length > 0 || getHotColdGroups.cold.length > 0) && (
-              <div className="bg-gray-900/50 rounded-xl border border-gray-700/50 p-4 mb-6">
-                <div className="text-sm font-semibold text-gray-300 mb-3">
-                  📊 ALERTS (Last 20 Spins)
+            <div className="bg-gray-900/50 rounded-xl border border-gray-700/50 p-4 mb-6">
+              <div className="text-sm font-semibold text-gray-300 mb-3">
+                📊 ALERTS (Last 20 Spins)
+              </div>
+
+              {/* Show placeholder when not enough spins */}
+              {numericSpins.length < 5 ? (
+                <div className="bg-gradient-to-r from-yellow-900/20 to-orange-900/20 border border-yellow-500/30 rounded-lg p-6 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="text-4xl">⚡</div>
+                    <div className="text-yellow-400 font-bold text-lg">
+                      Alerts Require Spin Data
+                    </div>
+                    <div className="text-gray-400 text-sm max-w-md">
+                      Add at least <span className="text-yellow-400 font-semibold">5 spins</span> to see hot/cold pattern alerts.
+                      Best results with <span className="text-yellow-400 font-semibold">20+ spins</span> for accurate analysis.
+                    </div>
+                    <div className="mt-2 text-xs text-gray-500">
+                      Current spins: <span className="text-yellow-400 font-semibold">{numericSpins.length}</span>
+                    </div>
+                  </div>
                 </div>
+              ) : (
                 <div className="grid grid-cols-2 gap-4">
                   {/* Hot Groups - Left Column */}
                   <div className="space-y-3">
@@ -869,8 +887,8 @@ export default function BetAdvisor() {
                     )}
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {/* Toppers Content */}
             <div className="space-y-6">
