@@ -49,6 +49,7 @@ interface GameControlBarProps {
   currentView?: 'layout' | 'wheelLayout' | 'my-groups'
   onViewChange?: (view: 'layout' | 'wheelLayout' | 'my-groups') => void
   hasSelectedGroups?: boolean  // Whether user has configured custom groups
+  useCards?: boolean  // Whether session uses structured card system
 }
 
 export default function GameControlBar({
@@ -67,7 +68,8 @@ export default function GameControlBar({
   onCardEnd,
   currentView,
   onViewChange,
-  hasSelectedGroups = false
+  hasSelectedGroups = false,
+  useCards = true
 }: GameControlBarProps) {
   const [cardTrackingEnabled, setCardTrackingEnabled] = useState(false)
 
@@ -192,8 +194,8 @@ export default function GameControlBar({
             </select>
           )}
 
-          {/* Card Tracking Toggle */}
-          {onCardStart && onCardEnd && (
+          {/* Card Tracking Toggle - Only show when NOT using structured card system */}
+          {!useCards && onCardStart && onCardEnd && (
             <button
               onClick={() => setCardTrackingEnabled(!cardTrackingEnabled)}
               className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-all flex items-center gap-2 border ${
@@ -201,7 +203,7 @@ export default function GameControlBar({
                   ? 'bg-green-600 hover:bg-green-700 text-white border-green-500'
                   : 'bg-gray-900 hover:bg-gray-700 text-gray-300 border-gray-600'
               }`}
-              title="Toggle card tracking on/off"
+              title="Toggle manual card tracking on/off for session segmentation"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />

@@ -882,6 +882,7 @@ const newBet: BetRecord = {
                     currentView={tableView}
                     onViewChange={setTableView}
                     hasSelectedGroups={session.config.selectedGroups !== undefined && session.config.selectedGroups.length > 0}
+                    useCards={session.config.useCards}
                   />
 
                   {/* Roulette Table Layout */}
@@ -1132,6 +1133,7 @@ const newBet: BetRecord = {
                     currentView={tableView}
                     onViewChange={setTableView}
                     hasSelectedGroups={session.config.selectedGroups !== undefined && session.config.selectedGroups.length > 0}
+                    useCards={session.config.useCards}
                   />
 
                   <WheelLayout
@@ -1283,6 +1285,7 @@ const newBet: BetRecord = {
                     currentView={tableView}
                     onViewChange={setTableView}
                     hasSelectedGroups={session.config.selectedGroups !== undefined && session.config.selectedGroups.length > 0}
+                    useCards={session.config.useCards}
                   />
 
                   {/* Roulette Table Layout */}
