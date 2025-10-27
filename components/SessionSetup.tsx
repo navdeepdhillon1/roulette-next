@@ -1241,6 +1241,7 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
               </div>
 
               {useCards && (
+              <>
               <div className="grid grid-cols-2 gap-2 mb-2">
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Card Value (% of Bankroll)</label>
@@ -1320,6 +1321,7 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
                   Each card worth {cardPercent}% of ${bankroll} = ${cardTarget}
                 </p>
               </div>
+              </>
               )}
             </div>
           </div>
