@@ -56,6 +56,28 @@ export default function DealerStats({ session, spinHistory: propSpinHistory }: D
   const { spinHistory: contextSpinHistory, sessionStats } = useBettingData()
   const spinHistory = propSpinHistory || contextSpinHistory
 
+  // Helper: Get dealer name from session config
+  const getDealerName = (dealerId: number): string => {
+    // If we have session config with dealer info
+    if (session?.config) {
+      // If this is dealer 1 and we have a current dealer name, use it
+      if (dealerId === 1 && session.config.dealerName) {
+        return session.config.dealerName
+      }
+
+      // If we have available dealers list, try to map by index
+      if (session.config.availableDealers && session.config.availableDealers.length > 0) {
+        const dealer = session.config.availableDealers[dealerId - 1]
+        if (dealer) {
+          return dealer.nickname || dealer.name
+        }
+      }
+    }
+
+    // Fallback to generic label
+    return `Dealer ${dealerId}`
+  }
+
   // Helper: Get wheel position of a number
   const getWheelPosition = (num: number): number => {
     return WHEEL_ORDER.indexOf(num)
@@ -359,7 +381,7 @@ export default function DealerStats({ session, spinHistory: propSpinHistory }: D
                       : 'bg-gray-800/20 border-gray-600'
                   }`}
                 >
-                  <div className="text-sm text-gray-400 mb-1">Dealer {dealerId}</div>
+                  <div className="text-sm text-gray-400 mb-1">{getDealerName(dealerId)}</div>
                   <div className="text-3xl font-bold text-white">{totalSpins}</div>
                   <div className="text-xs text-gray-500 mt-2">{percentage}% of spins</div>
                 </div>
@@ -377,7 +399,7 @@ export default function DealerStats({ session, spinHistory: propSpinHistory }: D
                   <th className="text-left p-3 text-sm font-bold text-gray-300 bg-gray-700/50">Group</th>
                   {[1, 2, 3, 4, 5].map((dealerId) => (
                     <th key={dealerId} className="text-center p-3 text-sm font-bold text-white bg-gray-700/50">
-                      Dealer {dealerId}
+                      {getDealerName(dealerId)}
                     </th>
                   ))}
                 </tr>
@@ -605,7 +627,7 @@ export default function DealerStats({ session, spinHistory: propSpinHistory }: D
         >
           <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
             <Disc className="text-cyan-400" />
-            Dealer {dealer.dealerId} - Wheel Analysis
+            {getDealerName(dealer.dealerId)} - Wheel Analysis
           </h3>
 
           <div className="grid grid-cols-2 gap-6">
@@ -833,15 +855,15 @@ export default function DealerStats({ session, spinHistory: propSpinHistory }: D
               return (
                 <>
                   <div>
-                    • <strong>Most Active:</strong> Dealer {mostActiveDealer.dealerId} with{' '}
+                    • <strong>Most Active:</strong> {getDealerName(mostActiveDealer.dealerId)} with{' '}
                     {mostActiveDealer.totalSpins} spins
                   </div>
                   <div>
-                    • <strong>Clustering Alert:</strong> Dealer {highestClustering.dealerId} shows{' '}
+                    • <strong>Clustering Alert:</strong> {getDealerName(highestClustering.dealerId)} shows{' '}
                     {highestClustering.wheelMetrics.sequentialPatterns.toFixed(1)}% sequential hits
                   </div>
                   <div>
-                    • <strong>Wheel Bias:</strong> Dealer {mostSkewedDealer.dealerId} shows notable wheel group variance
+                    • <strong>Wheel Bias:</strong> {getDealerName(mostSkewedDealer.dealerId)} shows notable wheel group variance
                   </div>
                   <div className="text-xs text-gray-400 mt-3">
                     Note: Wheel patterns become statistically significant with 100+ spins per dealer. Focus on Voisins/Tiers/Orphelins groups as they represent physical wheel sectors.
