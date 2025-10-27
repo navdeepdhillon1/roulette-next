@@ -464,6 +464,125 @@ export default function BetAdvisor() {
   const wheelA6B6 = useMemo(() => calculateRace(numericSpins, [WHEEL_A6, WHEEL_B6], ['A6 Pattern', 'B6 Pattern'], ['#06B6D4', '#F59E0B'], 0.5), [numericSpins]);
   const wheelA9B9 = useMemo(() => calculateRace(numericSpins, [WHEEL_A9, WHEEL_B9], ['A9 Pattern', 'B9 Pattern'], ['#8B5CF6', '#14B8A6'], 0.5), [numericSpins]);
 
+  // Hot/Cold Analysis for current tab
+  const getHotColdGroups = useMemo(() => {
+    const WINDOW = 20;
+    const recentSpins = numericSpins.slice(0, Math.min(WINDOW, numericSpins.length));
+
+    if (recentSpins.length < 5) return { hot: [], cold: [] };
+
+    let groups: Array<{ name: string; numbers: number[]; color: string }> = [];
+
+    // Determine which groups to analyze based on active tab
+    if (toppersTab === 'table-common') {
+      groups = [
+        { name: 'RED', numbers: RED_NUMBERS, color: '#EF4444' },
+        { name: 'BLACK', numbers: BLACK_NUMBERS, color: '#6B7280' },
+        { name: 'ODD', numbers: ODD_NUMBERS, color: '#F97316' },
+        { name: 'EVEN', numbers: EVEN_NUMBERS, color: '#8B5CF6' },
+        { name: 'LOW', numbers: LOW_NUMBERS, color: '#3B82F6' },
+        { name: 'HIGH', numbers: HIGH_NUMBERS, color: '#14B8A6' },
+        { name: 'D1', numbers: DOZEN1, color: '#3B82F6' },
+        { name: 'D2', numbers: DOZEN2, color: '#8B5CF6' },
+        { name: 'D3', numbers: DOZEN3, color: '#EC4899' },
+        { name: 'C1', numbers: COL1, color: '#06B6D4' },
+        { name: 'C2', numbers: COL2, color: '#10B981' },
+        { name: 'C3', numbers: COL3, color: '#84CC16' },
+      ];
+    } else if (toppersTab === 'table-special') {
+      groups = [
+        { name: 'EDGE', numbers: EDGE_NUMBERS, color: '#F59E0B' },
+        { name: 'CENTER', numbers: CENTER_NUMBERS, color: '#8B5CF6' },
+        { name: 'A', numbers: ALT1_A, color: '#EF4444' },
+        { name: 'B', numbers: ALT1_B, color: '#3B82F6' },
+        { name: 'AA', numbers: ALT2_AA, color: '#F97316' },
+        { name: 'BB', numbers: ALT2_BB, color: '#8B5CF6' },
+        { name: 'AAA', numbers: ALT3_AAA, color: '#10B981' },
+        { name: 'BBB', numbers: ALT3_BBB, color: '#EC4899' },
+        { name: '6L-1', numbers: SIXLINE1, color: '#EF4444' },
+        { name: '6L-2', numbers: SIXLINE2, color: '#F97316' },
+        { name: '6L-3', numbers: SIXLINE3, color: '#F59E0B' },
+        { name: '6L-4', numbers: SIXLINE4, color: '#10B981' },
+        { name: '6L-5', numbers: SIXLINE5, color: '#3B82F6' },
+        { name: '6L-6', numbers: SIXLINE6, color: '#8B5CF6' },
+      ];
+    } else if (toppersTab === 'wheel-common') {
+      groups = [
+        { name: 'Voisins', numbers: VOISINS, color: '#EF4444' },
+        { name: 'Tiers', numbers: TIERS, color: '#3B82F6' },
+        { name: 'Orphelins', numbers: ORPHELINS, color: '#F59E0B' },
+        { name: 'Non-Voisins', numbers: NON_VOISINS, color: '#6B7280' },
+        { name: 'Right 18', numbers: WHEEL_RIGHT, color: '#3B82F6' },
+        { name: 'Left 18', numbers: WHEEL_LEFT, color: '#F59E0B' },
+        { name: '1st 9', numbers: WHEEL_9_1ST, color: '#EF4444' },
+        { name: '2nd 9', numbers: WHEEL_9_2ND, color: '#F97316' },
+        { name: '3rd 9', numbers: WHEEL_9_3RD, color: '#10B981' },
+        { name: '4th 9', numbers: WHEEL_9_4TH, color: '#3B82F6' },
+      ];
+    } else if (toppersTab === 'wheel-special') {
+      groups = [
+        { name: 'A Pattern', numbers: WHEEL_A, color: '#EF4444' },
+        { name: 'B Pattern', numbers: WHEEL_B, color: '#3B82F6' },
+        { name: 'AA Pattern', numbers: WHEEL_AA, color: '#F97316' },
+        { name: 'BB Pattern', numbers: WHEEL_BB, color: '#8B5CF6' },
+        { name: 'AAA Pattern', numbers: WHEEL_AAA, color: '#10B981' },
+        { name: 'BBB Pattern', numbers: WHEEL_BBB, color: '#EC4899' },
+        { name: 'A6 Pattern', numbers: WHEEL_A6, color: '#06B6D4' },
+        { name: 'B6 Pattern', numbers: WHEEL_B6, color: '#F59E0B' },
+        { name: 'A9 Pattern', numbers: WHEEL_A9, color: '#8B5CF6' },
+        { name: 'B9 Pattern', numbers: WHEEL_B9, color: '#14B8A6' },
+      ];
+    }
+
+    // Calculate metrics for each group
+    const analyzed = groups.map(group => {
+      const hits = recentSpins.filter(n => group.numbers.includes(n)).length;
+      const hitRate = hits / recentSpins.length;
+
+      // Calculate streak from most recent
+      let streak = 0;
+      for (let i = 0; i < recentSpins.length; i++) {
+        if (group.numbers.includes(recentSpins[i])) {
+          streak++;
+        } else {
+          break;
+        }
+      }
+
+      // Calculate absence (spins since last hit)
+      let absence = 0;
+      for (let i = 0; i < recentSpins.length; i++) {
+        if (group.numbers.includes(recentSpins[i])) {
+          break;
+        }
+        absence++;
+      }
+
+      return {
+        ...group,
+        hits,
+        hitRate,
+        streak,
+        absence,
+        total: recentSpins.length,
+      };
+    });
+
+    // Determine hot groups: ≥60% hit rate or 3+ streak
+    const hot = analyzed
+      .filter(g => g.hitRate >= 0.6 || g.streak >= 3)
+      .sort((a, b) => b.hitRate - a.hitRate)
+      .slice(0, 2);
+
+    // Determine cold groups: ≤30% hit rate or 5+ spins missing
+    const cold = analyzed
+      .filter(g => g.hitRate <= 0.3 || g.absence >= 5)
+      .sort((a, b) => a.hitRate - b.hitRate)
+      .slice(0, 2);
+
+    return { hot, cold };
+  }, [numericSpins, toppersTab]);
+
   // Analytics functions
   const hotGroups = SAMPLE_GROUPS.filter(g => g.metrics.badge === 'HOT' && g.metrics.volatility === 'STABLE');
   
@@ -666,7 +785,93 @@ export default function BetAdvisor() {
                 </div>
               </div>
             </div>
-            
+
+            {/* Hot/Cold Alerts Grid */}
+            {(getHotColdGroups.hot.length > 0 || getHotColdGroups.cold.length > 0) && (
+              <div className="bg-gray-900/50 rounded-xl border border-gray-700/50 p-4 mb-6">
+                <div className="text-sm font-semibold text-gray-300 mb-3">
+                  📊 ALERTS (Last 20 Spins)
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Hot Groups - Left Column */}
+                  <div className="space-y-3">
+                    {getHotColdGroups.hot.map((group, idx) => (
+                      <div
+                        key={`hot-${idx}`}
+                        className="bg-gradient-to-r from-red-900/30 to-orange-900/30 border border-red-500/30 rounded-lg p-3"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">🔥</span>
+                            <span className="font-bold text-white">{group.name}</span>
+                          </div>
+                          <span className="text-red-400 font-bold text-lg">
+                            {group.hits}/{group.total}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs">
+                          {group.streak >= 3 && (
+                            <div className="flex items-center gap-1 text-orange-400">
+                              <span>🔥</span>
+                              <span className="font-semibold">{group.streak}-spin streak</span>
+                            </div>
+                          )}
+                          <div className="text-gray-400">
+                            Hit rate: <span className="text-red-400 font-semibold">
+                              {(group.hitRate * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {getHotColdGroups.hot.length === 0 && (
+                      <div className="bg-gray-800/30 border border-gray-700/30 rounded-lg p-3 text-center text-gray-500 text-sm">
+                        No hot groups detected
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Cold Groups - Right Column */}
+                  <div className="space-y-3">
+                    {getHotColdGroups.cold.map((group, idx) => (
+                      <div
+                        key={`cold-${idx}`}
+                        className="bg-gradient-to-r from-blue-900/30 to-cyan-900/30 border border-cyan-500/30 rounded-lg p-3"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">❄️</span>
+                            <span className="font-bold text-white">{group.name}</span>
+                          </div>
+                          <span className="text-cyan-400 font-bold text-lg">
+                            {group.hits}/{group.total}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs">
+                          {group.absence >= 5 && (
+                            <div className="flex items-center gap-1 text-cyan-400">
+                              <span>❄️</span>
+                              <span className="font-semibold">{group.absence} spins ago</span>
+                            </div>
+                          )}
+                          <div className="text-gray-400">
+                            Hit rate: <span className="text-cyan-400 font-semibold">
+                              {(group.hitRate * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {getHotColdGroups.cold.length === 0 && (
+                      <div className="bg-gray-800/30 border border-gray-700/30 rounded-lg p-3 text-center text-gray-500 text-sm">
+                        No cold groups detected
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Toppers Content */}
             <div className="space-y-6">
               {toppersTab === 'table-common' && (
