@@ -76,6 +76,18 @@ export default function RouletteSystem() {
   const gameState = useGameState()
   const [analysisSection, setAnalysisSection] = useState<'patterns' | 'time' | 'streaks'>('patterns')
   const [analysisView, setAnalysisView] = useState<'common' | 'special' | 'wheel' | 'numbers'>('common');
+
+  // Help panel state
+  const [showHelp, setShowHelp] = useState<Record<string, boolean>>({
+    setup: false,
+    action: false,
+    analysis: false,
+    performance: false
+  })
+
+  const toggleHelp = (tab: string) => {
+    setShowHelp(prev => ({ ...prev, [tab]: !prev[tab] }))
+  }
   // Call hook unconditionally to follow Rules of Hooks
   const { 
     session: cloudSession, 
@@ -925,6 +937,39 @@ const openSessionSetup = () => {
                   <div className="p-6">
                     {assistantSubTab === 'setup' && (
                       <div className="max-w-2xl mx-auto space-y-6">
+                        {/* Setup Help Panel */}
+                        <div className="border border-yellow-400/30 rounded-lg overflow-hidden">
+                          <button
+                            onClick={() => toggleHelp('setup')}
+                            className="w-full px-4 py-3 bg-yellow-900/20 hover:bg-yellow-900/30 transition-colors flex items-center justify-between text-left"
+                          >
+                            <span className="text-sm font-semibold text-yellow-300 flex items-center gap-2">
+                              <span className="text-lg">💡</span>
+                              Setup Help
+                            </span>
+                            <span className="text-yellow-400 text-xl">{showHelp.setup ? '−' : '+'}</span>
+                          </button>
+                          {showHelp.setup && (
+                            <div className="bg-yellow-950/30 border-t border-yellow-400/30 p-4 text-sm text-gray-300 space-y-3">
+                              <p className="font-semibold text-yellow-300">Configure Your Session Parameters</p>
+
+                              <div className="space-y-2">
+                                <p><span className="text-yellow-400 font-semibold">💰 Starting Bankroll:</span> The total amount you're starting with. This is your session capital and determines bet sizing and risk management.</p>
+
+                                <p><span className="text-yellow-400 font-semibold">🎯 Target Profit:</span> Your profit goal for this session. When you reach this target, consider ending the session to lock in gains.</p>
+
+                                <p><span className="text-yellow-400 font-semibold">🛑 Stop Loss:</span> Maximum loss you're willing to accept. The session should end if you hit this limit to protect your bankroll.</p>
+
+                                <p><span className="text-yellow-400 font-semibold">🎲 Unit Size:</span> Your base bet amount. All betting calculations and progressions are based on this unit. Recommended: 1-2% of bankroll.</p>
+                              </div>
+
+                              <div className="bg-yellow-900/20 rounded p-3 border-l-2 border-yellow-400">
+                                <p className="text-xs text-yellow-300/80"><span className="font-bold">💡 Pro Tip:</span> Conservative bankroll management suggests: Target Profit = 50% of bankroll, Stop Loss = 50% of bankroll, Unit Size = 2% of bankroll.</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
                         <h2 className="text-2xl font-bold text-yellow-400 text-center mb-6">
                           {!session ? 'Configure Your Session' : 'Update Settings'}
                         </h2>
@@ -1002,6 +1047,43 @@ const openSessionSetup = () => {
                           >
                             Apply Settings
                           </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Action Tab Help Panel */}
+                    {assistantSubTab === 'action' && session && (
+                      <div className="mb-6 border border-cyan-400/30 rounded-lg overflow-hidden">
+                        <button
+                          onClick={() => toggleHelp('action')}
+                          className="w-full px-4 py-3 bg-cyan-900/20 hover:bg-cyan-900/30 transition-colors flex items-center justify-between text-left"
+                        >
+                          <span className="text-sm font-semibold text-cyan-300 flex items-center gap-2">
+                            <span className="text-lg">💡</span>
+                            Game Action Help
+                          </span>
+                          <span className="text-cyan-400 text-xl">{showHelp.action ? '−' : '+'}</span>
+                        </button>
+                        {showHelp.action && (
+                          <div className="bg-cyan-950/30 border-t border-cyan-400/30 p-4 text-sm text-gray-300 space-y-3">
+                            <p className="font-semibold text-cyan-300">How to Use the Tracker</p>
+
+                            <div className="space-y-2">
+                              <p><span className="text-cyan-400 font-semibold">🎯 Adding Numbers:</span> Click any number on the table/wheel or type 0-36 in the input box and press ADD. The spin will be recorded instantly.</p>
+
+                              <p><span className="text-cyan-400 font-semibold">📊 Table View:</span> Shows the traditional roulette table layout with color-coded numbers. Displays hit counts on each number - hot numbers (3+ hits) pulse with yellow rings.</p>
+
+                              <p><span className="text-cyan-400 font-semibold">🎰 Wheel View:</span> Shows the physical wheel layout with Voisins, Tiers, and Orphelins sectors. Visualize wheel-based betting patterns.</p>
+
+                              <p><span className="text-cyan-400 font-semibold">↩ Undo:</span> Remove the last spin if you made an error. Only works for local sessions.</p>
+
+                              <p><span className="text-cyan-400 font-semibold">📈 Statistics Tabs:</span> Switch between Common (red/black, dozens), Special (A/B groupings), Wheel (sectors), and Numbers (individual analysis).</p>
+                            </div>
+
+                            <div className="bg-cyan-900/20 rounded p-3 border-l-2 border-cyan-400">
+                              <p className="text-xs text-cyan-300/80"><span className="font-bold">💡 Pro Tip:</span> Watch the "Last 20" spins bar at the top - it shows recent patterns at a glance. Click any number there to quickly re-enter it.</p>
+                            </div>
+                          </div>
                         )}
                       </div>
                     )}
@@ -1275,6 +1357,39 @@ const openSessionSetup = () => {
                     )}
                     {assistantSubTab === 'performance' && session && (
                       <div className="space-y-6">
+                        {/* Performance Help Panel */}
+                        <div className="mb-6 border border-green-400/30 rounded-lg overflow-hidden">
+                          <button
+                            onClick={() => toggleHelp('performance')}
+                            className="w-full px-4 py-3 bg-green-900/20 hover:bg-green-900/30 transition-colors flex items-center justify-between text-left"
+                          >
+                            <span className="text-sm font-semibold text-green-300 flex items-center gap-2">
+                              <span className="text-lg">💡</span>
+                              Performance Help
+                            </span>
+                            <span className="text-green-400 text-xl">{showHelp.performance ? '−' : '+'}</span>
+                          </button>
+                          {showHelp.performance && (
+                            <div className="bg-green-950/30 border-t border-green-400/30 p-4 text-sm text-gray-300 space-y-3">
+                              <p className="font-semibold text-green-300">Understanding Performance Metrics</p>
+
+                              <div className="space-y-2">
+                                <p><span className="text-green-400 font-semibold">🎲 Total Spins:</span> Number of spins recorded in this session. More spins = more statistical reliability for patterns.</p>
+
+                                <p><span className="text-green-400 font-semibold">💰 Current P/L:</span> Your profit or loss for the session. Green (positive) means you're ahead, red (negative) means you're down.</p>
+
+                                <p><span className="text-green-400 font-semibold">📊 Win Rate:</span> Percentage of bets that resulted in a profit. Calculated as: (winning bets / total bets) × 100%.</p>
+
+                                <p><span className="text-green-400 font-semibold">📈 ROI:</span> Return on Investment - shows your profitability relative to bankroll. Calculated as: (P/L / starting bankroll) × 100%.</p>
+                              </div>
+
+                              <div className="bg-green-900/20 rounded p-3 border-l-2 border-green-400">
+                                <p className="text-xs text-green-300/80"><span className="font-bold">💡 Pro Tip:</span> A successful session isn't just about P/L - track your discipline. Did you follow your stop loss? Did you quit at your target? Consistency wins long-term.</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
                         <h2 className="text-2xl font-bold text-yellow-400">Session Performance</h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
@@ -1301,6 +1416,39 @@ const openSessionSetup = () => {
                     )}
 {assistantSubTab === 'analysis' && (
   <div className="space-y-6">
+  {/* Analysis Help Panel */}
+  <div className="mb-6 border border-blue-400/30 rounded-lg overflow-hidden">
+    <button
+      onClick={() => toggleHelp('analysis')}
+      className="w-full px-4 py-3 bg-blue-900/20 hover:bg-blue-900/30 transition-colors flex items-center justify-between text-left"
+    >
+      <span className="text-sm font-semibold text-blue-300 flex items-center gap-2">
+        <span className="text-lg">💡</span>
+        Analysis Help
+      </span>
+      <span className="text-blue-400 text-xl">{showHelp.analysis ? '−' : '+'}</span>
+    </button>
+    {showHelp.analysis && (
+      <div className="bg-blue-950/30 border-t border-blue-400/30 p-4 text-sm text-gray-300 space-y-3">
+        <p className="font-semibold text-blue-300">Understanding Advanced Analysis</p>
+
+        <div className="space-y-2">
+          <p><span className="text-blue-400 font-semibold">📊 Stats Tables:</span> View performance metrics across Common (red/black, dozens), Special (A/B groupings), Wheel (Voisins/Tiers/Orphelins), and Numbers (individual hit rates).</p>
+
+          <p><span className="text-blue-400 font-semibold">🎯 Pattern Detection:</span> Identifies current betting patterns - STREAK (consecutive same outcomes), ALTERNATING (back-and-forth), CHAOS (random), or DOMINANT (one side winning).</p>
+
+          <p><span className="text-blue-400 font-semibold">⏰ Time Correlation:</span> Analyzes which groups perform best at different spin counts, helping identify rhythm-based advantages.</p>
+
+          <p><span className="text-blue-400 font-semibold">📈 Streak Analysis:</span> Tracks consecutive wins/losses for betting groups, showing current streaks and historical maximums.</p>
+        </div>
+
+        <div className="bg-blue-900/20 rounded p-3 border-l-2 border-blue-400">
+          <p className="text-xs text-blue-300/80"><span className="font-bold">💡 Pro Tip:</span> Use Pattern Detection to identify when the table is "trending" vs "choppy" - adjust your strategy accordingly. Look for 3+ consecutive patterns before acting.</p>
+        </div>
+      </div>
+    )}
+  </div>
+
   {/* Stats type selector - ADD THIS NEW SECTION */}
   <div className="flex justify-between items-center mb-4">
   <div className="flex gap-2">
