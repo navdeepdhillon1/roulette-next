@@ -199,7 +199,7 @@ export default function HistoryTable({
   // When a new spin is added, calculate results
   // IMPORTANT: Only depends on spins.length, NOT on bets
   React.useEffect(() => {
-    if (spins.length > 0 && spins.length > lastProcessedCount && !showResults) {
+    if (spins.length > 0 && spins.length > lastProcessedCount) {
       const latestSpin = spins[0]
       // Use spin ID as key (more stable than timestamp)
       const spinKey = latestSpin.id || latestSpin.spin_number?.toString() || new Date(latestSpin.created_at).getTime().toString()
@@ -207,8 +207,8 @@ export default function HistoryTable({
       // Get current bets from ref
       const currentBets = betsRef.current
 
-      // Only process if we have bets
-      if (Object.keys(currentBets).length > 0) {
+      // Only process if we have bets AND this spin hasn't been processed yet
+      if (Object.keys(currentBets).length > 0 && !historicalBets[spinKey]) {
         const calcResults = calculatePayouts(latestSpin.number)
         setResults(calcResults)
         setShowResults(true)
@@ -244,15 +244,15 @@ export default function HistoryTable({
           onBetPlaced(totalWagered, totalReturned, totalPnL, currentBets, groupResults, latestSpin.number, spinTimestamp)
         }
 
-        // Auto-clear betting row after 3 seconds
+        // Auto-clear betting row after 1.5 seconds
         setTimeout(() => {
           setShowResults(false)
           setBets({})
           setResults({})
-        }, 3000)
+        }, 1500)
       }
     }
-  }, [spins.length, showResults, lastProcessedCount, onBetPlaced, onHistoricalBetsUpdate, historicalBets])
+  }, [spins.length, lastProcessedCount, onBetPlaced, onHistoricalBetsUpdate, historicalBets])
 
   const clearBets = () => {
     setBets({})
