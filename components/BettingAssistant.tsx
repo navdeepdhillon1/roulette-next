@@ -855,6 +855,49 @@ const newBet: BetRecord = {
           </div>
           )}
 
+          {/* Session Controls Bar - Only show when NOT using card system */}
+          {!session.config.useCards && (
+            <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg border border-gray-500/30 p-4 shadow-2xl">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold bg-gradient-to-r from-gray-400 to-gray-300 bg-clip-text text-transparent">
+                  🎯 Free Betting Session
+                </h2>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setViewMode('performance')}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg border border-blue-500/50"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Session Stats
+                  </button>
+                  <button
+                    onClick={endSession}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg border border-red-500/50"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    End Session
+                  </button>
+                  <button
+                    onClick={() => {
+                      endSession()
+                      setViewMode('setup')
+                    }}
+                    className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg border border-purple-500/50"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Restart with New Settings
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Main Content Area */}
           <div className="flex gap-2 min-h-screen">
             {/* Left Side: Table View with Spin History - Takes up left half */}
