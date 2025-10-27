@@ -245,7 +245,9 @@ const openSessionSetup = () => {
     } else {
       // Local storage
       const properties = getNumberProperties(num)
+      const spinId = `local-spin-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
       const newSpin: Spin = {
+        id: spinId,
         ...properties,
         session_id: localSession?.id || '',
         spin_number: localSpins.length + 1,

@@ -209,12 +209,14 @@ export default function HistoryTable({
 
       // Only process if we have bets AND this spin hasn't been processed yet
       if (Object.keys(currentBets).length > 0 && !historicalBets[spinKey]) {
+        console.log('✅ Processing bets for spin:', { spinKey, number: latestSpin.number, bets: currentBets })
+
         const calcResults = calculatePayouts(latestSpin.number)
         setResults(calcResults)
         setShowResults(true)
         setLastProcessedCount(spins.length)
 
-        console.log('Storing bet results for spin ID:', spinKey, 'number:', latestSpin.number, calcResults)
+        console.log('✅ Bet results calculated:', { spinKey, results: calcResults })
 
         // Update historical bets through callback
         if (onHistoricalBetsUpdate) {
@@ -222,6 +224,7 @@ export default function HistoryTable({
             ...historicalBets,
             [spinKey]: { bets: { ...currentBets }, results: calcResults }
           }
+          console.log('✅ Updating historicalBets:', { spinKey, totalKeys: Object.keys(updatedBets).length })
           onHistoricalBetsUpdate(updatedBets)
         }
 
@@ -542,8 +545,13 @@ export default function HistoryTable({
             const spinKey = spin.id || spin.spin_number?.toString() || new Date(spin.created_at).getTime().toString()
             const spinBetData = historicalBets[spinKey]
 
-            if (spinBetData && index === 0) {
-              console.log('Found bet data for spin ID:', spinKey, 'number:', spin.number, spinBetData)
+            if (index === 0) {
+              console.log('🔍 Checking for bet data:', {
+                spinKey,
+                spinNumber: spin.number,
+                hasData: !!spinBetData,
+                allKeys: Object.keys(historicalBets)
+              })
             }
 
             // Helper to render cell with optional P/L badge
