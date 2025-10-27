@@ -194,15 +194,23 @@ export default function WheelHistoryTable({
     const hasNewSpin = spins.length > prevSpinCountRef.current
     prevSpinCountRef.current = spins.length
 
-    if (hasNewSpin && Object.keys(betsRef.current).length > 0 && !showResults) {
+    if (hasNewSpin && Object.keys(betsRef.current).length > 0) {
       const latestSpin = spins[0]
       const currentBets = betsRef.current
+
+      // Use spin ID as key (more stable than timestamp)
+      const spinKey = latestSpin.id || latestSpin.spin_number?.toString() || new Date(latestSpin.created_at).getTime().toString()
+
+      // Only process if this spin hasn't been processed yet (prevents double-processing)
+      if (historicalBets[spinKey]) {
+        return
+      }
+
       const calcResults = calculateResults(latestSpin.number)
       setResults(calcResults)
       setShowResults(true)
 
       // Store bet results using callback
-      const spinKey = new Date(latestSpin.created_at).getTime().toString()
       if (onHistoricalBetsUpdate) {
         const updatedBets = {
           ...historicalBets,
@@ -232,15 +240,15 @@ export default function WheelHistoryTable({
         onBetPlaced(totalWagered, totalReturned, totalPnL, currentBets, groupResults, latestSpin.number, spinTimestamp)
       }
 
-      // Auto-clear after 3 seconds
+      // Auto-clear after 1.5 seconds
       setTimeout(() => {
         setShowResults(false)
         setBets({})
         setResults({})
-      }, 3000)
+      }, 1500)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spins.length, showResults])
+  }, [spins.length, historicalBets])
 
   const clearBets = () => {
     setBets({})
@@ -545,8 +553,8 @@ export default function WheelHistoryTable({
               else if (is3rdQ) quarter = '3rd Q'
               else if (is4thQ) quarter = '4th Q'
 
-              // Check if we have bet results for this spin
-              const spinKey = new Date(spin.created_at).getTime().toString()
+              // Check if we have bet results for this spin - use spin ID as key
+              const spinKey = spin.id || spin.spin_number?.toString() || new Date(spin.created_at).getTime().toString()
               const spinBetData = historicalBets[spinKey]
 
               // Helper to render cell with P/L badge
