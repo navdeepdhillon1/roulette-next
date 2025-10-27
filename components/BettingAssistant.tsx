@@ -860,7 +860,7 @@ const newBet: BetRecord = {
             <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg border border-gray-500/30 p-4 shadow-2xl">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold bg-gradient-to-r from-gray-400 to-gray-300 bg-clip-text text-transparent">
-                  🎯 Free Betting Session
+                  🎯 Cards Free Betting Session
                 </h2>
                 <div className="flex items-center gap-3">
                   <button
