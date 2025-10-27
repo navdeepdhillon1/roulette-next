@@ -591,7 +591,7 @@ const openSessionSetup = () => {
 
   return (
     <div className="text-white">
-      <div className="max-w-7xl mx-auto p-4">
+      <div className="max-w-[1920px] mx-auto p-4">
         {/* Casino-style Title */}
         <div className="text-center mb-6 relative">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent blur-3xl"></div>
