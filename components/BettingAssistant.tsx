@@ -1753,7 +1753,7 @@ const newBet: BetRecord = {
                   Understanding Bet Cards (Betting Groups)
                 </h3>
                 <div className="space-y-3 text-sm text-gray-300">
-                  <p>The colored buttons below the headers represent different betting groups on the roulette table:</p>
+                  <p>The grey buttons in the "NEXT BET" row represent different betting groups. They turn colored when you place bets on them:</p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <p className="font-semibold text-white mb-1">Standard Groups:</p>
@@ -1788,8 +1788,8 @@ const newBet: BetRecord = {
                 </h3>
                 <div className="space-y-2 text-sm text-gray-300">
                   <div className="bg-gray-800/50 rounded p-3 space-y-2">
-                    <p className="font-semibold text-white">📍 Step 1: Click a bet card (colored button)</p>
-                    <p className="ml-4">Single click adds your base bet amount to that group. A yellow badge will show your bet amount.</p>
+                    <p className="font-semibold text-white">📍 Step 1: Click a bet card (grey button in NEXT BET row)</p>
+                    <p className="ml-4">Single click adds your base bet amount to that group. The button turns colored and a yellow badge shows your bet amount.</p>
                   </div>
                   <div className="bg-gray-800/50 rounded p-3 space-y-2">
                     <p className="font-semibold text-white">📍 Step 2: View your total stake</p>
