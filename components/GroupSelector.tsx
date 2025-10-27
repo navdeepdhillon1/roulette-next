@@ -289,7 +289,8 @@ export default function GroupSelector({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Table Groups */}
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <h4 className="font-bold text-cyan-400 mb-3">Table Groups</h4>
+          <h4 className="font-bold text-cyan-400 mb-1">Table Groups</h4>
+          <p className="text-xs text-gray-400 mb-3">Default groups organized by table layout. Track both formats while playing.</p>
           <div className="space-y-2">
             {TABLE_GROUPS.map(group => (
               <div
@@ -322,7 +323,8 @@ export default function GroupSelector({
 
         {/* Wheel Groups */}
         <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-          <h4 className="font-bold text-purple-400 mb-3">Wheel Groups</h4>
+          <h4 className="font-bold text-purple-400 mb-1">Wheel Groups</h4>
+          <p className="text-xs text-gray-400 mb-3">Default groups organized by wheel position. Keep an eye on both while playing.</p>
           <div className="space-y-2">
             {WHEEL_GROUPS.map(group => (
               <div

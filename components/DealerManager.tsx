@@ -128,7 +128,7 @@ export default function DealerManager({
     return (
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map((star) => (
-          <span key={star} className={star <= rating ? 'text-yellow-500' : 'text-gray-300'}>
+          <span key={star} className={star <= rating ? 'text-yellow-400' : 'text-gray-500'}>
             ★
           </span>
         ))}
@@ -142,7 +142,7 @@ export default function DealerManager({
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Dealers at {casinoName}</h2>
-          <p className="text-sm text-gray-500">Track dealer performance and identify patterns</p>
+          <p className="text-sm text-gray-400">Track dealer performance and identify patterns</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -182,34 +182,34 @@ export default function DealerManager({
 
       {/* Add/Edit Form */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded-lg space-y-4">
+        <form onSubmit={handleSubmit} className="bg-gray-900/30 border border-gray-700 p-4 rounded-lg space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Dealer Name *</label>
+              <label className="block text-sm font-medium mb-1 text-gray-300">Dealer Name *</label>
               <input
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Nickname</label>
+              <label className="block text-sm font-medium mb-1 text-gray-300">Nickname</label>
               <input
                 type="text"
                 value={formData.nickname}
                 onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
                 placeholder="Fast John, Lucky Maria"
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Gender</label>
+              <label className="block text-sm font-medium mb-1 text-gray-300">Gender</label>
               <select
                 value={formData.gender || ''}
                 onChange={(e) =>
@@ -220,7 +220,7 @@ export default function DealerManager({
                       : undefined,
                   })
                 }
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-blue-500 focus:outline-none"
               >
                 <option value="">Not specified</option>
                 <option value="male">Male</option>
@@ -230,41 +230,41 @@ export default function DealerManager({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Typical Shift</label>
+              <label className="block text-sm font-medium mb-1 text-gray-300">Typical Shift</label>
               <input
                 type="text"
                 value={formData.typical_shift}
                 onChange={(e) => setFormData({ ...formData, typical_shift: e.target.value })}
                 placeholder="Nights, Weekends, Mon-Fri"
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Appearance</label>
+            <label className="block text-sm font-medium mb-1 text-gray-300">Appearance</label>
             <input
               type="text"
               value={formData.appearance}
               onChange={(e) => setFormData({ ...formData, appearance: e.target.value })}
               placeholder="Blonde hair, blue shirt"
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Notes</label>
+            <label className="block text-sm font-medium mb-1 text-gray-300">Notes</label>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-blue-500 focus:outline-none"
               rows={2}
               placeholder="Very fast dealer, friendly, chatty, etc."
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Rating (1-5 stars)</label>
+            <label className="block text-sm font-medium mb-1 text-gray-300">Rating (1-5 stars)</label>
             <select
               value={formData.rating || ''}
               onChange={(e) =>
@@ -273,7 +273,7 @@ export default function DealerManager({
                   rating: e.target.value ? parseInt(e.target.value) : undefined,
                 })
               }
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:border-blue-500 focus:outline-none"
             >
               <option value="">No rating</option>
               <option value="1">1 - Poor</option>
@@ -304,9 +304,9 @@ export default function DealerManager({
 
       {/* Dealer List */}
       {loading ? (
-        <div className="text-center py-8 text-gray-500">Loading dealers...</div>
+        <div className="text-center py-8 text-gray-400">Loading dealers...</div>
       ) : dealers.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-400">
           No dealers found. Add your first dealer to start tracking!
         </div>
       ) : (
@@ -314,16 +314,16 @@ export default function DealerManager({
           {dealers.map((dealer) => (
             <div
               key={dealer.id}
-              className={`bg-white border rounded-lg p-4 hover:shadow-md transition-shadow ${
-                selectedDealerId === dealer.id ? 'border-blue-500 border-2' : ''
+              className={`bg-gray-800/70 border rounded-lg p-4 hover:shadow-lg hover:bg-gray-800 transition-all ${
+                selectedDealerId === dealer.id ? 'border-blue-500 border-2' : 'border-gray-700'
               }`}
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-lg">{dealer.name}</h3>
+                    <h3 className="font-bold text-lg text-white">{dealer.name}</h3>
                     {dealer.nickname && (
-                      <span className="text-sm text-gray-500 italic">"{dealer.nickname}"</span>
+                      <span className="text-sm text-gray-400 italic">"{dealer.nickname}"</span>
                     )}
                   </div>
 
@@ -331,7 +331,7 @@ export default function DealerManager({
                     {renderStars(dealer.rating)}
                   </div>
 
-                  <div className="mt-2 text-sm text-gray-600 space-y-1">
+                  <div className="mt-2 text-sm text-gray-300 space-y-1">
                     {dealer.gender && (
                       <div className="capitalize">
                         {dealer.gender === 'male' ? '👨' : dealer.gender === 'female' ? '👩' : '🧑'}{' '}
@@ -340,25 +340,25 @@ export default function DealerManager({
                     )}
                     {dealer.appearance && <div>👤 {dealer.appearance}</div>}
                     {dealer.typical_shift && <div>🕐 {dealer.typical_shift}</div>}
-                    {dealer.notes && <div className="text-gray-500 italic">{dealer.notes}</div>}
+                    {dealer.notes && <div className="text-gray-400 italic">{dealer.notes}</div>}
                   </div>
 
                   <div className="mt-3 flex gap-4 text-sm">
                     <div>
-                      <span className="text-gray-500">Spins:</span>{' '}
-                      <span className="font-semibold">{dealer.total_spins}</span>
+                      <span className="text-gray-400">Spins:</span>{' '}
+                      <span className="font-semibold text-white">{dealer.total_spins}</span>
                     </div>
                     <div>
-                      <span className="text-gray-500">Win Rate:</span>{' '}
-                      <span className="font-semibold">
+                      <span className="text-gray-400">Win Rate:</span>{' '}
+                      <span className="font-semibold text-white">
                         {dealer.win_rate ? `${dealer.win_rate.toFixed(1)}%` : 'N/A'}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-500">Profit:</span>{' '}
+                      <span className="text-gray-400">Profit:</span>{' '}
                       <span
                         className={`font-semibold ${
-                          dealer.total_profit >= 0 ? 'text-green-600' : 'text-red-600'
+                          dealer.total_profit >= 0 ? 'text-green-400' : 'text-red-400'
                         }`}
                       >
                         ${dealer.total_profit.toFixed(2)}
