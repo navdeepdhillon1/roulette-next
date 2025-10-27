@@ -47,8 +47,14 @@ interface DealerMetrics {
   wheelMetrics: WheelMetrics
 }
 
-export default function DealerStats() {
-  const { spinHistory, sessionStats } = useBettingData()
+interface DealerStatsProps {
+  session?: any
+  spinHistory?: number[]
+}
+
+export default function DealerStats({ session, spinHistory: propSpinHistory }: DealerStatsProps) {
+  const { spinHistory: contextSpinHistory, sessionStats } = useBettingData()
+  const spinHistory = propSpinHistory || contextSpinHistory
 
   // Helper: Get wheel position of a number
   const getWheelPosition = (num: number): number => {
@@ -200,8 +206,109 @@ export default function DealerStats() {
 
   const [overviewTab, setOverviewTab] = useState<'summary' | 'compare'>('summary')
 
+  // Calculate session duration and spins per hour
+  const sessionMetrics = useMemo(() => {
+    if (!session) return null
+
+    const startTime = session.startTime || session.createdAt
+    const endTime = session.endTime || new Date().toISOString()
+
+    if (!startTime) return null
+
+    const start = new Date(startTime)
+    const end = new Date(endTime)
+    const durationMs = end.getTime() - start.getTime()
+    const durationHours = durationMs / (1000 * 60 * 60)
+    const totalSpins = spinHistory.length
+    const spinsPerHour = durationHours > 0 ? totalSpins / durationHours : 0
+
+    return {
+      startTime: start,
+      endTime: session.endTime ? end : null,
+      durationMs,
+      durationHours,
+      totalSpins,
+      spinsPerHour
+    }
+  }, [session, spinHistory])
+
+  // Format duration as HH:MM:SS
+  const formatDuration = (ms: number) => {
+    const seconds = Math.floor(ms / 1000)
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${secs}s`
+    } else if (minutes > 0) {
+      return `${minutes}m ${secs}s`
+    } else {
+      return `${secs}s`
+    }
+  }
+
   return (
     <div className="space-y-6 p-6">
+      {/* Session Context Header */}
+      {session && session.config && sessionMetrics && (
+        <div className="bg-gradient-to-r from-cyan-900/30 to-blue-900/30 rounded-xl border border-cyan-500/30 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Target className="text-cyan-400" size={24} />
+            <h2 className="text-2xl font-bold text-white">Current Session</h2>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Casino & Dealer Info */}
+            <div className="bg-black/20 rounded-lg p-3">
+              <div className="text-xs text-gray-400 mb-1">Casino</div>
+              <div className="text-lg font-bold text-white truncate">
+                {session.config.casinoName || 'Not Set'}
+              </div>
+            </div>
+
+            <div className="bg-black/20 rounded-lg p-3">
+              <div className="text-xs text-gray-400 mb-1">Dealer</div>
+              <div className="text-lg font-bold text-cyan-400 truncate">
+                {session.config.dealerName || 'Not Set'}
+              </div>
+              {session.config.dealerId && (
+                <div className="text-xs text-gray-500">ID: {session.config.dealerId}</div>
+              )}
+            </div>
+
+            {/* Session Timing */}
+            <div className="bg-black/20 rounded-lg p-3">
+              <div className="text-xs text-gray-400 mb-1">Duration</div>
+              <div className="text-lg font-bold text-white">
+                {formatDuration(sessionMetrics.durationMs)}
+              </div>
+              <div className="text-xs text-gray-500">
+                Started: {sessionMetrics.startTime.toLocaleTimeString()}
+              </div>
+            </div>
+
+            {/* Spins & Rate */}
+            <div className="bg-black/20 rounded-lg p-3">
+              <div className="text-xs text-gray-400 mb-1">Total Spins</div>
+              <div className="text-lg font-bold text-green-400">
+                {sessionMetrics.totalSpins}
+              </div>
+              <div className="text-xs text-gray-500">
+                {sessionMetrics.spinsPerHour.toFixed(1)} spins/hr
+              </div>
+            </div>
+          </div>
+
+          {/* Optional: Session end time if completed */}
+          {sessionMetrics.endTime && (
+            <div className="mt-3 text-xs text-gray-400 text-center">
+              Session ended: {sessionMetrics.endTime.toLocaleString()}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Overall Dealer Summary with Tabs */}
       <div className="bg-gray-800/50 rounded-xl border border-gray-700 p-6">
         <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">

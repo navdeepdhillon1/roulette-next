@@ -134,7 +134,7 @@ export default function RightSideLayout({ session, spinHistory }: RightSideLayou
             </div>
           )}
           {activeTab === 'dealers' && (
-            <DealerStats />
+            <DealerStats session={session} spinHistory={spinHistory} />
           )}
         </div>
       </div>
