@@ -873,6 +873,7 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
   const [bankroll, setBankroll] = useState(1000)
   const [stopProfit, setStopProfit] = useState(200)
   const [stopLoss, setStopLoss] = useState(300)
+  const [useCards, setUseCards] = useState(true)
   const [cardPercent, setCardPercent] = useState(5)
   const [totalCards, setTotalCards] = useState(20)
   const [betMode, setBetMode] = useState<'table' | 'wheel'>('table')
@@ -904,11 +905,16 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
   const [selectedGroups, setSelectedGroups] = useState<SelectedGroup[]>([])
 
   const cardTarget = Math.floor((bankroll * cardPercent) / 100)
-  const isValidSetup = cardPercent > 0 && cardPercent <= 10 && bankroll > 0 && stopLoss > 0 && stopProfit > 0
+  const isValidSetup = useCards
+    ? (cardPercent > 0 && cardPercent <= 10 && bankroll > 0 && stopLoss > 0 && stopProfit > 0)
+    : (bankroll > 0 && stopLoss > 0 && stopProfit > 0)
 
   const handleStart = () => {
     if (!isValidSetup) {
-      alert('Please check your settings:\n- Card % must be between 1-10%\n- All amounts must be positive')
+      const message = useCards
+        ? 'Please check your settings:\n- Card % must be between 1-10%\n- All amounts must be positive'
+        : 'Please check your settings:\n- All amounts must be positive'
+      alert(message)
       return
     }
 
@@ -917,6 +923,7 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
       stopProfit,
       stopLoss,
       timeLimit: 120,
+      useCards,
       cardTargetAmount: cardTarget,
       totalCards,
       maxBetsPerCard: 15,
@@ -1210,7 +1217,30 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
               <h3 className="text-xs font-bold text-green-300 mb-2 flex items-center gap-1.5">
                 🎴 Card Configuration
               </h3>
-              
+
+              {/* Card System Toggle */}
+              <div className="mb-3 bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-semibold text-blue-300">Enable Card System</label>
+                  <button
+                    onClick={() => setUseCards(!useCards)}
+                    className={`relative w-12 h-6 rounded-full transition-colors ${
+                      useCards ? 'bg-green-600' : 'bg-gray-600'
+                    }`}
+                  >
+                    <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                      useCards ? 'translate-x-6' : 'translate-x-0'
+                    }`} />
+                  </button>
+                </div>
+                <p className="text-[10px] text-gray-400">
+                  {useCards
+                    ? 'Break your session into small card targets for better discipline and control'
+                    : 'Bet freely with session limits only (bankroll, stop loss, profit target)'}
+                </p>
+              </div>
+
+              {useCards && (
               <div className="grid grid-cols-2 gap-2 mb-2">
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Card Value (% of Bankroll)</label>
@@ -1290,6 +1320,7 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
                   Each card worth {cardPercent}% of ${bankroll} = ${cardTarget}
                 </p>
               </div>
+              )}
             </div>
           </div>
 

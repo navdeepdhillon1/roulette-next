@@ -106,6 +106,7 @@ export interface SessionConfig {
   stopProfit: number
   stopLoss: number
   timeLimit: number
+  useCards: boolean  // Enable/disable card system
   cardTargetAmount: number
   maxBetsPerCard: number
   totalCards: number

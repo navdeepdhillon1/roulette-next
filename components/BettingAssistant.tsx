@@ -298,7 +298,8 @@ export default function BettingAssistant() {
       totalReturned: 0,
       roi: 0
     })
-    setViewMode('dashboard')
+    // Skip dashboard if cards are disabled
+    setViewMode(config.useCards ? 'dashboard' : 'activeCard')
   }
 
   const selectCard = (index: number) => {
@@ -838,15 +839,17 @@ const newBet: BetRecord = {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={backToDashboard}
-                className="px-5 py-2.5 bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 hover:from-gray-600 hover:via-gray-500 hover:to-gray-600 text-white rounded-lg font-bold transition-all flex items-center gap-2 shadow-lg border border-gray-600/50 transform hover:scale-105"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back to Dashboard
-              </button>
+              {session.config.useCards && (
+                <button
+                  onClick={backToDashboard}
+                  className="px-5 py-2.5 bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700 hover:from-gray-600 hover:via-gray-500 hover:to-gray-600 text-white rounded-lg font-bold transition-all flex items-center gap-2 shadow-lg border border-gray-600/50 transform hover:scale-105"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  Back to Dashboard
+                </button>
+              )}
             </div>
           </div>
 
