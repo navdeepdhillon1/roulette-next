@@ -25,7 +25,7 @@ const NumbersStatsTab: React.FC<NumbersStatsTabProps> = ({ history }) => {
         </div>
         <div className="bg-green-900/30 rounded p-2">
           <div className="text-gray-400">Just Hit</div>
-          <div className="font-bold text-white">{history && history.length > 0 ? history[history.length - 1] : '-'}</div>
+          <div className="font-bold text-white">{history && history.length > 0 ? history[0] : '-'}</div>
         </div>
       </div>
 

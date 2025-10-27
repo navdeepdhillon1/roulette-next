@@ -56,20 +56,20 @@ export const getNumberStats = (num: number, history: number[]): NumberStat => {
 
   // Find all positions where this number hit
   const hitPositions = history.map((n, i) => n === num ? i : -1).filter(i => i >= 0);
-  
-  // Calculate absence
-  const lastHitPosition = history.lastIndexOf(num);
-  const absence = lastHitPosition === -1 ? history.length : history.length - lastHitPosition - 1;
+
+  // Calculate absence (history is newest-first, so indexOf finds most recent)
+  const lastHitPosition = history.indexOf(num);
+  const absence = lastHitPosition === -1 ? history.length : lastHitPosition;
   
   // Calculate streaks
   let currentStreak = 0;
   let maxStreak = 0;
-  
-  // Check current streak
-  for (let i = history.length - 1; i >= 0; i--) {
+
+  // Check current streak (history is newest-first, so start from index 0)
+  for (let i = 0; i < history.length; i++) {
     if (history[i] === num) {
       currentStreak++;
-      if (i === 0 || history[i - 1] !== num) {
+      if (i === history.length - 1 || history[i + 1] !== num) {
         break;
       }
     } else {
@@ -88,14 +88,14 @@ export const getNumberStats = (num: number, history: number[]): NumberStat => {
     }
   }
   
-  // Calculate hit counts for different windows
-  const L9 = history.slice(-9).filter(n => n === num).length;
-  const L18 = history.slice(-18).filter(n => n === num).length;
-  const L27 = history.slice(-27).filter(n => n === num).length;
-  const L36 = history.slice(-36).filter(n => n === num).length;
-  const L72 = history.slice(-72).filter(n => n === num).length;
-  const L144 = history.slice(-144).filter(n => n === num).length;
-  const L288 = history.slice(-288).filter(n => n === num).length;
+  // Calculate hit counts for different windows (history is newest-first, so slice from start)
+  const L9 = history.slice(0, 9).filter(n => n === num).length;
+  const L18 = history.slice(0, 18).filter(n => n === num).length;
+  const L27 = history.slice(0, 27).filter(n => n === num).length;
+  const L36 = history.slice(0, 36).filter(n => n === num).length;
+  const L72 = history.slice(0, 72).filter(n => n === num).length;
+  const L144 = history.slice(0, 144).filter(n => n === num).length;
+  const L288 = history.slice(0, 288).filter(n => n === num).length;
   
   // Calculate percentages
   const totalSpins = Math.min(history.length, 36);
@@ -110,8 +110,8 @@ export const getNumberStats = (num: number, history: number[]): NumberStat => {
   else if (deviation < -15) temperature = 'VERY COLD';
   else if (deviation < -7) temperature = 'COLD';
   
-  // Check if just hit
-  const justHit = history.length > 0 && history[history.length - 1] === num;
+  // Check if just hit (history is newest-first, so check index 0)
+  const justHit = history.length > 0 && history[0] === num;
   
   // Calculate max absence
   const gaps: number[] = [];
