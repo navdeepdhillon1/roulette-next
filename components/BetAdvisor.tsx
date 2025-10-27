@@ -593,10 +593,9 @@ export default function BetAdvisor() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-yellow-400 via-orange-500 to-purple-500 bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-yellow-400 via-orange-500 to-purple-500 bg-clip-text text-transparent">
           📊 GAME STATS
           </h1>
-          <p className="text-gray-400">Race Analytics + Smart Filtering + Advanced Calculator</p>
         </div>
 
         {/* Main Navigation Tabs */}
@@ -636,82 +635,35 @@ export default function BetAdvisor() {
         {/* TOPPERS TAB - Race Analytics */}
         {mainTab === 'toppers' && (
           <>
-            {/* Data Source Indicator */}
-            <div className={`rounded-xl border p-4 mb-6 ${
-              spinHistory.length > 0
-                ? 'bg-green-800/30 border-green-400/30'
-                : 'bg-gray-800/50 border-yellow-400/30'
-            }`}>
-              <div className="flex items-center justify-between">
-                {spinHistory.length > 0 ? (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <span className="text-green-400 text-lg">✓</span>
-                      <h3 className="text-sm font-bold text-green-400">Using Live Session Data</h3>
-                    </div>
-                    <div className="text-sm text-green-300">
-                      {spinHistory.length} spins analyzed
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <h3 className="text-sm font-bold text-yellow-400">Demo Scenario (No Live Data Yet):</h3>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setScenario('balanced')}
-                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                          scenario === 'balanced' ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        }`}
-                      >
-                       ⚖️ Balanced
-                      </button>
-                      <button
-                        onClick={() => setScenario('red-hot')}
-                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                          scenario === 'red-hot' ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        }`}
-                      >
-                       🔥 Red Hot
-                      </button>
-                      <button
-                        onClick={() => setScenario('volatility')}
-                        className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
-                          scenario === 'volatility' ? 'bg-yellow-500 text-black' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                        }`}
-                      >
-                        ⚡ Volatile
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-            
-            {/* Toppers Sub-Tabs */}
+            {/* Toppers Sub-Tabs with Spin Count */}
             <div className="bg-gray-900/50 rounded-xl border border-gray-700/50 mb-6 overflow-hidden">
-              <div className="grid grid-cols-4">
-                {[
-                 { id: 'table-common' as const, icon: '📊', label: 'Table Common', count: 5 },
-                 { id: 'table-special' as const, icon: '⭐', label: 'Table Special', count: 5 },
-                 { id: 'wheel-common' as const, icon: '🎡', label: 'Wheel Common', count: 11 },
-                 { id: 'wheel-special' as const, icon: '🎯', label: 'Wheel Special', count: 10 },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setToppersTab(tab.id)}
-                    className={`px-4 py-4 text-sm font-semibold transition-all border-b-2 ${
-                      toppersTab === tab.id
-                        ? 'bg-cyan-500/20 border-cyan-400 text-cyan-400'
-                        : 'bg-transparent border-transparent text-gray-400 hover:bg-gray-800/50 hover:text-gray-300'
-                    }`}
-                  >
-                    <div className="flex flex-col items-center gap-1">
-                      <span className="text-xl">{tab.icon}</span>
-                      <span>{tab.label}</span>
-                      <span className="text-xs opacity-60">({tab.count})</span>
-                    </div>
-                  </button>
-                ))}
+              <div className="flex items-center">
+                <div className="grid grid-cols-4 flex-1">
+                  {[
+                   { id: 'table-common' as const, icon: '📊', label: 'Table Common' },
+                   { id: 'table-special' as const, icon: '⭐', label: 'Table Special' },
+                   { id: 'wheel-common' as const, icon: '🎡', label: 'Wheel Common' },
+                   { id: 'wheel-special' as const, icon: '🎯', label: 'Wheel Special' },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setToppersTab(tab.id)}
+                      className={`px-4 py-4 text-sm font-semibold transition-all border-b-2 ${
+                        toppersTab === tab.id
+                          ? 'bg-cyan-500/20 border-cyan-400 text-cyan-400'
+                          : 'bg-transparent border-transparent text-gray-400 hover:bg-gray-800/50 hover:text-gray-300'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-xl">{tab.icon}</span>
+                        <span>{tab.label}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div className="px-6 py-4 text-sm text-green-400 font-semibold whitespace-nowrap border-b-2 border-transparent">
+                  {spinHistory.length} spins ✓
+                </div>
               </div>
             </div>
             
