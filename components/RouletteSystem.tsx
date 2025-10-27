@@ -1293,6 +1293,9 @@ const openSessionSetup = () => {
       <WheelHistory
         spins={spins}
         selectedNumber={selectedNumber}
+        historicalBets={historicalBets}
+        onHistoricalBetsUpdate={setHistoricalBets}
+        onBetPlaced={handleBetPlaced}
       />
     </div>
     {/* Right Side: Analysis Tables */}
