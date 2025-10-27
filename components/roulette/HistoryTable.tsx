@@ -290,7 +290,7 @@ export default function HistoryTable({
   }
 
   if (spins.length === 0) {
-    return <p className="text-gray-400 text-center py-8">No spins recorded yet</p>
+    return <p className="text-gray-400 text-center py-8">Click a number to get started</p>
   }
 
   return (
