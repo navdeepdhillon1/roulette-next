@@ -159,6 +159,10 @@ export default function RouletteSystem() {
   // Bet results state - tracks win/loss AND amount temporarily for visual feedback
   const [betResults, setBetResults] = useState<Record<string, { status: 'win' | 'loss', amount: string } | null>>({})
 
+  // Session management modals
+  const [showEndSessionModal, setShowEndSessionModal] = useState(false)
+  const [showRestartSessionModal, setShowRestartSessionModal] = useState(false)
+
   // Check user authentication on mount
   useEffect(() => {
     checkUserAuth()
@@ -603,6 +607,79 @@ const openSessionSetup = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  // End Session - Archive and reset to setup
+  const handleEndSession = () => {
+    if (!session) return;
+
+    // Archive session data to localStorage
+    const archivedSessions = JSON.parse(localStorage.getItem('archivedSessions') || '[]');
+    const sessionArchive = {
+      session,
+      spins: storageMode === 'local' ? localSpins : cloudSpins,
+      betHistory,
+      finalBankroll: currentBankroll,
+      finalPnL: sessionPnL,
+      startingBankroll,
+      playerSetup,
+      archivedAt: new Date().toISOString()
+    };
+    archivedSessions.push(sessionArchive);
+    localStorage.setItem('archivedSessions', JSON.stringify(archivedSessions));
+
+    // Clear local session data
+    setLocalSession(null);
+    setLocalSpins([]);
+    setBetHistory([]);
+    setHistoricalBets({});
+    setCurrentBankroll(playerSetup.bankroll);
+    setSessionPnL(0);
+    setSessionStartTime(null);
+    setManualBets({
+      red: '', black: '', even: '', odd: '', low: '', high: '',
+      alt1_1: '', alt1_2: '', alt2_1: '', alt2_2: '', alt3_1: '', alt3_2: '',
+      edge: '', center: '', dozen1: '', dozen2: '', dozen3: '',
+      col1: '', col2: '', col3: '', six1: '', six2: '', six3: '',
+      six4: '', six5: '', six6: ''
+    });
+
+    // Clear from localStorage
+    localStorage.removeItem('currentSession');
+    localStorage.removeItem('currentSpins');
+
+    // Close modal and go to setup tab
+    setShowEndSessionModal(false);
+    setAssistantSubTab('setup');
+  };
+
+  // Restart Session - Fresh start without archiving
+  const handleRestartSession = () => {
+    if (!session) return;
+
+    // Clear all session data without archiving
+    setLocalSession(null);
+    setLocalSpins([]);
+    setBetHistory([]);
+    setHistoricalBets({});
+    setCurrentBankroll(playerSetup.bankroll);
+    setSessionPnL(0);
+    setSessionStartTime(null);
+    setManualBets({
+      red: '', black: '', even: '', odd: '', low: '', high: '',
+      alt1_1: '', alt1_2: '', alt2_1: '', alt2_2: '', alt3_1: '', alt3_2: '',
+      edge: '', center: '', dozen1: '', dozen2: '', dozen3: '',
+      col1: '', col2: '', col3: '', six1: '', six2: '', six3: '',
+      six4: '', six5: '', six6: ''
+    });
+
+    // Clear from localStorage
+    localStorage.removeItem('currentSession');
+    localStorage.removeItem('currentSpins');
+
+    // Close modal and go to setup tab
+    setShowRestartSessionModal(false);
+    setAssistantSubTab('setup');
+  };
+
   return (
     <div className="text-white">
       <div className="max-w-[1920px] mx-auto p-4">
@@ -667,8 +744,22 @@ const openSessionSetup = () => {
         )}
       </div>
 
-      {/* RIGHT: CSV Download Button */}
+      {/* RIGHT: Session Management Buttons */}
       <div className="flex items-center gap-2">
+        <button
+          onClick={() => setShowRestartSessionModal(true)}
+          className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5"
+          title="Start fresh - clears all data"
+        >
+          🔄 Restart
+        </button>
+        <button
+          onClick={() => setShowEndSessionModal(true)}
+          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5"
+          title="Archive session and return to setup"
+        >
+          💾 End Session
+        </button>
         <button
           onClick={downloadSessionCSV}
           className="px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
@@ -1573,6 +1664,103 @@ Special Bets Stats
               </div>
             )}
       </div>
+
+      {/* End Session Confirmation Modal */}
+      {showEndSessionModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-800 border-2 border-blue-500 rounded-xl p-6 max-w-md w-full mx-4">
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">💾</div>
+              <h3 className="text-xl font-bold text-white mb-2">End Session?</h3>
+              <p className="text-gray-300 text-sm">
+                This will archive your current session data and return you to the setup screen.
+              </p>
+            </div>
+
+            <div className="bg-gray-900 rounded-lg p-4 mb-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <div className="text-gray-400">Spins Recorded</div>
+                  <div className="text-white font-bold">{session?.total_spins || 0}</div>
+                </div>
+                <div>
+                  <div className="text-gray-400">Final P/L</div>
+                  <div className={`font-bold ${sessionPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {sessionPnL >= 0 ? '+' : ''}${sessionPnL.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowEndSessionModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleEndSession}
+                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all"
+              >
+                End & Archive
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Restart Session Confirmation Modal */}
+      {showRestartSessionModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-800 border-2 border-orange-500 rounded-xl p-6 max-w-md w-full mx-4">
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">🔄</div>
+              <h3 className="text-xl font-bold text-white mb-2">Restart Session?</h3>
+              <p className="text-gray-300 text-sm">
+                This will clear all current data and start fresh. This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 text-red-400 text-sm">
+                <span>⚠️</span>
+                <span className="font-semibold">Warning: Current session data will be permanently lost</span>
+              </div>
+            </div>
+
+            <div className="bg-gray-900 rounded-lg p-4 mb-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <div className="text-gray-400">Spins to Clear</div>
+                  <div className="text-white font-bold">{session?.total_spins || 0}</div>
+                </div>
+                <div>
+                  <div className="text-gray-400">Current P/L</div>
+                  <div className={`font-bold ${sessionPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {sessionPnL >= 0 ? '+' : ''}${sessionPnL.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowRestartSessionModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRestartSession}
+                className="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-all"
+              >
+                Restart Fresh
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
