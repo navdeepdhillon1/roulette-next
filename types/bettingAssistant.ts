@@ -110,8 +110,6 @@ export interface SessionConfig {
   cardTargetAmount: number
   maxBetsPerCard: number
   totalCards: number
-  betMode: 'table' | 'wheel'
-  betCategory: 'common' | 'special'
   bettingSystem: BettingSystemConfig
   selectedGroups?: SelectedGroup[]  // Groups selected for "My Groups" layout
   historyLayout?: 'table' | 'wheel' | 'my-groups'  // Current layout view

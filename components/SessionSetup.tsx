@@ -876,13 +876,18 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
   const [useCards, setUseCards] = useState(true)
   const [cardPercent, setCardPercent] = useState(5)
   const [totalCards, setTotalCards] = useState(20)
-  const [betMode, setBetMode] = useState<'table' | 'wheel'>('table')
-  const [betCategory, setBetCategory] = useState<'common' | 'special'>('common')
   const [selectedSystem, setSelectedSystem] = useState('flat')
   const [baseBet, setBaseBet] = useState(10)
   const [showSystemDetails, setShowSystemDetails] = useState<string | null>(null)
   const [showCustomBuilder, setShowCustomBuilder] = useState(false)
   const [customSystemConfig, setCustomSystemConfig] = useState<BettingSystemConfig | null>(null)
+  const [showSectionHelp, setShowSectionHelp] = useState<{
+    bankroll?: boolean
+    cardConfig?: boolean
+    customSystem?: boolean
+    location?: boolean
+    myGroups?: boolean
+  }>({})
 
   // 🆕 Location data for Elite tier cloud storage
   const [locationData, setLocationData] = useState<{
@@ -927,8 +932,6 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
       cardTargetAmount: cardTarget,
       totalCards,
       maxBetsPerCard: 15,
-      betMode,
-      betCategory,
       bettingSystem: customSystemConfig || createBettingSystemConfig(selectedSystem, baseBet),
       selectedGroups: selectedGroups.length > 0 ? selectedGroups : undefined,
       historyLayout: selectedGroups.length > 0 ? 'my-groups' : 'table',
@@ -964,50 +967,21 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
         <div className="bg-black/40 backdrop-blur rounded-lg border border-yellow-400/30 p-2 mb-3">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-gray-400 font-semibold">Setup Progress</span>
-            <span className="text-xs text-yellow-400 font-bold">4 Steps to Complete</span>
+            <span className="text-xs text-yellow-400 font-bold">3 Steps to Complete</span>
           </div>
           <div className="flex gap-1">
-            <div className="flex-1 h-1.5 bg-blue-500 rounded-full"></div>
             <div className="flex-1 h-1.5 bg-orange-500 rounded-full"></div>
+            <div className="flex-1 h-1.5 bg-cyan-500 rounded-full"></div>
             <div className="flex-1 h-1.5 bg-green-500 rounded-full"></div>
-            <div className="flex-1 h-1.5 bg-yellow-500 rounded-full"></div>
           </div>
         </div>
 
         <div className="bg-black/40 backdrop-blur rounded-lg border border-yellow-400/30 p-4 space-y-4">
-          
-          {/* STEP 1: BET TYPE */}
-          <div className="bg-gradient-to-br from-blue-900/30 to-purple-900/30 rounded-lg p-3 border border-blue-500/40">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center font-bold text-sm">1</div>
-              <h2 className="text-lg font-bold text-blue-300">Choose Bet Type</h2>
-            </div>
-            <div className="grid grid-cols-2 gap-2 mb-2">
-              <button onClick={() => setBetMode('table')} className={`p-3 rounded-lg border ${betMode === 'table' ? 'bg-blue-600 border-blue-400' : 'bg-gray-700 border-gray-600'}`}>
-                <div className="text-2xl mb-1">🎰</div>
-                <div className="text-sm font-bold text-white">Table</div>
-              </button>
-              <button onClick={() => setBetMode('wheel')} className={`p-3 rounded-lg border ${betMode === 'wheel' ? 'bg-purple-600 border-purple-400' : 'bg-gray-700 border-gray-600'}`}>
-                <div className="text-2xl mb-1">⚙️</div>
-                <div className="text-sm font-bold text-white">Wheel</div>
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => setBetCategory('common')} className={`p-2.5 rounded-lg border ${betCategory === 'common' ? 'bg-green-600 border-green-400' : 'bg-gray-700 border-gray-600'}`}>
-                <div className="text-xl mb-1">✅</div>
-                <div className="text-sm font-bold text-white">Common</div>
-              </button>
-              <button onClick={() => setBetCategory('special')} className={`p-2.5 rounded-lg border ${betCategory === 'special' ? 'bg-orange-600 border-orange-400' : 'bg-gray-700 border-gray-600'}`}>
-                <div className="text-xl mb-1">⭐</div>
-                <div className="text-sm font-bold text-white">Special</div>
-              </button>
-            </div>
-          </div>
 
-          {/* STEP 2: BETTING SYSTEM */}
+          {/* STEP 1: BETTING SYSTEM */}
           <div className="bg-gradient-to-br from-orange-900/30 to-red-900/30 rounded-lg p-3 border border-orange-500/40">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-7 h-7 rounded-full bg-orange-500 flex items-center justify-center font-bold text-sm">2</div>
+              <div className="w-7 h-7 rounded-full bg-orange-500 flex items-center justify-center font-bold text-sm">1</div>
               <h2 className="text-lg font-bold text-orange-300">Select Betting System</h2>
             </div>
 
@@ -1066,7 +1040,86 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
                   )}
                 </div>
               ))}
-              
+
+              {/* Custom System Help Details */}
+              <div className="mb-2 p-3 bg-purple-900/20 rounded-lg border border-purple-500/30">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-bold text-purple-300">🛠️ Custom Betting Systems</h4>
+                  <button
+                    onClick={() => setShowSectionHelp(prev => ({ ...prev, customSystem: !prev.customSystem }))}
+                    className="text-xs text-blue-400 underline hover:text-blue-300"
+                  >
+                    {showSectionHelp.customSystem ? 'Hide Details' : 'Show Details'}
+                  </button>
+                </div>
+
+                {showSectionHelp.customSystem && (
+                  <div className="p-3 bg-black/40 rounded-lg border border-purple-500/30">
+                    <p className="text-xs text-purple-300 font-bold mb-2">📚 What Are Custom Systems?</p>
+                    <p className="text-xs text-gray-300 mb-3">
+                      Custom systems let you design your own progression rules. Instead of using predefined systems like Martingale or Fibonacci, you control exactly what happens after wins and losses.
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-4 text-xs mb-3">
+                      <div>
+                        <p className="font-bold text-green-400 mb-2">✅ When to Use:</p>
+                        <ul className="space-y-1 text-gray-300">
+                          <li>• You have a proven strategy to test</li>
+                          <li>• Pre-built systems don't fit your style</li>
+                          <li>• You want specific risk control</li>
+                          <li>• Experimenting with new ideas</li>
+                          <li>• You understand progression risks</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <p className="font-bold text-red-400 mb-2">⚠️ Important Warnings:</p>
+                        <ul className="space-y-1 text-gray-300">
+                          <li>• Test with small bets first</li>
+                          <li>• Always set max multiplier cap</li>
+                          <li>• Aggressive progressions = high risk</li>
+                          <li>• Can drain bankroll quickly</li>
+                          <li>• No system guarantees wins</li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="p-2 bg-orange-900/30 rounded border border-orange-500/30 mb-3">
+                      <p className="text-xs text-orange-300 font-bold mb-1">💡 Design Tips:</p>
+                      <p className="text-xs text-gray-300">
+                        <span className="text-white font-bold">Conservative:</span> Keep same bet on win, increase 1x on loss, max 4x
+                        <br/><span className="text-white font-bold">Balanced:</span> Double on 2nd loss, reset on win, max 8x
+                        <br/><span className="text-white font-bold">Aggressive:</span> Double on every loss, keep same on win, max 16x
+                        <br/><span className="text-red-400 font-bold">⚠️ Very Risky:</span> Double on loss, double on win, max 32x (not recommended)
+                      </p>
+                    </div>
+
+                    <div className="p-2 bg-blue-900/30 rounded border border-blue-500/30 mb-3">
+                      <p className="text-xs text-blue-300 font-bold mb-1">🎯 Example Custom System:</p>
+                      <p className="text-xs text-gray-300">
+                        <span className="text-white font-bold">Goal:</span> Recover losses slowly while protecting wins
+                        <br/><span className="text-white font-bold">On Win:</span> Reset to base bet (lock in profits)
+                        <br/><span className="text-white font-bold">On 1st Loss:</span> Keep same (give it another chance)
+                        <br/><span className="text-white font-bold">On 2nd Loss:</span> Double (start recovery)
+                        <br/><span className="text-white font-bold">On 3rd Loss:</span> Double again (final push)
+                        <br/><span className="text-white font-bold">Max Multiplier:</span> 8x (stop at 8× base bet)
+                        <br/>→ <span className="text-green-400">Conservative recovery with controlled risk</span>
+                      </p>
+                    </div>
+
+                    <div className="p-2 bg-red-900/30 rounded border border-red-500/30">
+                      <p className="text-xs text-red-300 font-bold mb-1">🚨 Common Mistakes:</p>
+                      <ul className="space-y-1 text-xs text-gray-300">
+                        <li>• No max multiplier set → Unlimited risk</li>
+                        <li>• Doubling on both wins AND losses → Exponential growth</li>
+                        <li>• Too aggressive too quickly → Bankroll depletion</li>
+                        <li>• Not testing with small amounts first</li>
+                        <li>• Ignoring the max multiplier cap during session</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={() => setShowCustomBuilder(true)}
                 className="w-full p-6 rounded-xl border-2 border-purple-500 bg-gradient-to-r from-purple-900/40 to-pink-900/40 hover:from-purple-900/60 hover:to-pink-900/60 transition-all"
@@ -1130,13 +1183,61 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
             </div>
           </div>
 
-          {/* STEP 3: LOCATION TRACKING (Elite Tier Only) */}
+          {/* STEP 2: LOCATION TRACKING (Elite Tier Only) */}
           {hasEliteAccess ? (
             <div className="bg-gradient-to-br from-cyan-900/30 to-blue-900/30 rounded-lg p-3 border border-cyan-500/40">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 rounded-full bg-cyan-500 flex items-center justify-center font-bold text-xs">3</div>
-                <h2 className="text-lg font-bold text-cyan-300">Session Location (Elite)</h2>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-cyan-500 flex items-center justify-center font-bold text-xs">2</div>
+                  <h2 className="text-lg font-bold text-cyan-300">Session Location (Elite)</h2>
+                </div>
+                <button
+                  onClick={() => setShowSectionHelp(prev => ({ ...prev, location: !prev.location }))}
+                  className="text-xs text-blue-400 underline hover:text-blue-300"
+                >
+                  {showSectionHelp.location ? 'Hide Details' : 'Show Details'}
+                </button>
               </div>
+
+              {showSectionHelp.location && (
+                <div className="mb-3 p-3 bg-black/40 rounded-lg border border-cyan-500/30">
+                  <p className="text-xs text-cyan-300 font-bold mb-2">📍 Why Track Casino & Dealer?</p>
+                  <p className="text-xs text-gray-300 mb-3">
+                    Tracking your location and dealer helps you identify patterns across different environments and analyze performance by venue and dealer.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-4 text-xs mb-3">
+                    <div>
+                      <p className="font-bold text-green-400 mb-2">✅ Benefits:</p>
+                      <ul className="space-y-1 text-gray-300">
+                        <li>• Identify which casinos are profitable</li>
+                        <li>• Track dealer patterns over time</li>
+                        <li>• Cloud sync across devices (Elite)</li>
+                        <li>• Historical performance analytics</li>
+                        <li>• Compare venues side-by-side</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="font-bold text-orange-400 mb-2">💡 Use Cases:</p>
+                      <ul className="space-y-1 text-gray-300">
+                        <li>• "I do better at Casino A"</li>
+                        <li>• "Dealer 3 has more hot streaks"</li>
+                        <li>• "Avoid table 7 on weekends"</li>
+                        <li>• "Track performance across cities"</li>
+                        <li>• "Build dealer-specific strategies"</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="p-2 bg-cyan-900/30 rounded border border-cyan-500/30">
+                    <p className="text-xs text-cyan-300 font-bold mb-1">🔒 Elite Feature:</p>
+                    <p className="text-xs text-gray-300">
+                      Your session data is stored in the cloud and synced across all your devices. Review historical sessions, export detailed reports, and analyze trends over months or years.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <SessionLocationSelector
                 userId={userId || '9d399518-2d1d-4eb7-a5df-21f649359643'}
                 onSelect={setLocationData}
@@ -1146,10 +1247,69 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
 
           {/* STEP 3.5: SELECT GROUPS FOR MY GROUPS LAYOUT */}
           <div className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 rounded-lg p-3 border border-purple-500/40">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-full bg-purple-500 flex items-center justify-center font-bold text-xs">⭐</div>
-              <h2 className="text-lg font-bold text-purple-300">My Groups (Optional)</h2>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-purple-500 flex items-center justify-center font-bold text-xs">⭐</div>
+                <h2 className="text-lg font-bold text-purple-300">My Groups (Optional)</h2>
+              </div>
+              <button
+                onClick={() => setShowSectionHelp(prev => ({ ...prev, myGroups: !prev.myGroups }))}
+                className="text-xs text-blue-400 underline hover:text-blue-300"
+              >
+                {showSectionHelp.myGroups ? 'Hide Details' : 'Show Details'}
+              </button>
             </div>
+
+            {showSectionHelp.myGroups && (
+              <div className="mb-3 p-3 bg-black/40 rounded-lg border border-purple-500/30">
+                <p className="text-xs text-purple-300 font-bold mb-2">⭐ What Are My Groups?</p>
+                <p className="text-xs text-gray-300 mb-3">
+                  Create a custom betting matrix with only the groups you care about. Instead of seeing all 47 betting options, focus on your favorite 5-10 groups for faster betting and clearer analysis.
+                </p>
+
+                <div className="grid grid-cols-2 gap-4 text-xs mb-3">
+                  <div>
+                    <p className="font-bold text-green-400 mb-2">✅ Benefits:</p>
+                    <ul className="space-y-1 text-gray-300">
+                      <li>• Focus on proven profitable groups</li>
+                      <li>• Faster bet placement (less scrolling)</li>
+                      <li>• Cleaner analytics display</li>
+                      <li>• Perfect for strategy testing</li>
+                      <li>• Combine table + wheel groups</li>
+                      <li>• Create custom betting patterns</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-bold text-orange-400 mb-2">💡 Strategy Examples:</p>
+                    <ul className="space-y-1 text-gray-300">
+                      <li>• Color trader: Red, Black, A, B</li>
+                      <li>• Dozen hunter: Doz1, Doz2, Doz3</li>
+                      <li>• Wheel specialist: Voisins, Tiers, Orphelins</li>
+                      <li>• Mix master: Red, Dozen1, Voisins</li>
+                      <li>• Sector player: Nine groups only</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="p-2 bg-blue-900/30 rounded border border-blue-500/30 mb-2">
+                  <p className="text-xs text-blue-300 font-bold mb-1">🎯 How to Use:</p>
+                  <p className="text-xs text-gray-300">
+                    <span className="text-white font-bold">1.</span> Select up to 10 groups from Table, Wheel, or both
+                    <br/><span className="text-white font-bold">2.</span> During session, switch to "⭐ My Groups" view
+                    <br/><span className="text-white font-bold">3.</span> Place bets on your selected groups only
+                    <br/><span className="text-white font-bold">4.</span> Track performance of your custom strategy
+                  </p>
+                </div>
+
+                <div className="p-2 bg-purple-900/30 rounded border border-purple-500/30">
+                  <p className="text-xs text-purple-300 font-bold mb-1">💎 Pro Tip:</p>
+                  <p className="text-xs text-gray-300">
+                    Start with 3-5 groups you know well. Test them for 10-20 sessions. If profitable, refine your group selection. If not, try different combinations. My Groups lets you experiment systematically!
+                  </p>
+                </div>
+              </div>
+            )}
+
             <GroupSelector
               selectedGroups={selectedGroups}
               onGroupsChange={setSelectedGroups}
@@ -1157,17 +1317,59 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
             />
           </div>
 
-          {/* STEP 4: SESSION SETTINGS */}
+          {/* STEP 3: SESSION SETTINGS */}
           <div className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 rounded-lg p-3 border border-green-500/40">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center font-bold text-sm">4</div>
+              <div className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center font-bold text-sm">3</div>
               <h2 className="text-lg font-bold text-green-300">Configure Session</h2>
             </div>
             
             <div className="bg-black/30 rounded-lg p-2 mb-2">
-              <h3 className="text-xs font-bold text-green-300 mb-2 flex items-center gap-1.5">
-                💰 Bankroll & Limits
-              </h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-bold text-green-300 flex items-center gap-1.5">
+                  💰 Bankroll & Limits
+                </h3>
+                <button
+                  onClick={() => setShowSectionHelp(prev => ({ ...prev, bankroll: !prev.bankroll }))}
+                  className="text-xs text-blue-400 underline hover:text-blue-300"
+                >
+                  {showSectionHelp.bankroll ? 'Hide Details' : 'Show Details'}
+                </button>
+              </div>
+
+              {showSectionHelp.bankroll && (
+                <div className="mb-3 p-3 bg-black/40 rounded-lg border border-green-500/30">
+                  <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <p className="font-bold text-green-400 mb-2">✅ Best Practices:</p>
+                      <ul className="space-y-1 text-gray-300">
+                        <li>• Only bet money you can afford to lose</li>
+                        <li>• Stop Loss: 20-30% of bankroll</li>
+                        <li>• Profit Target: 15-25% of bankroll</li>
+                        <li>• Base Bet: 1-2% of bankroll</li>
+                        <li>• Never chase losses past stop loss</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="font-bold text-red-400 mb-2">⚠️ Common Mistakes:</p>
+                      <ul className="space-y-1 text-gray-300">
+                        <li>• Base bet too large (5%+ of bankroll)</li>
+                        <li>• No stop loss set (unlimited risk)</li>
+                        <li>• Ignoring limits during hot streaks</li>
+                        <li>• Chasing losses with bigger bets</li>
+                        <li>• Not walking away at profit target</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="mt-3 p-2 bg-blue-900/30 rounded border border-blue-500/30">
+                    <p className="text-xs text-blue-300 font-bold mb-1">📊 Example Setup:</p>
+                    <p className="text-xs text-gray-300">
+                      Bankroll: $1000 → Base Bet: $10 (1%) → Stop Loss: $300 (30%) → Profit: $200 (20%)
+                      <br/>→ <span className="text-red-400">Walk away at $700</span> or <span className="text-green-400">celebrate at $1200</span>
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="mb-2">
                 <label className="text-xs text-gray-400 mb-1 block">Base Bet Amount</label>
@@ -1214,9 +1416,72 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
             </div>
 
             <div className="bg-black/30 rounded-lg p-2">
-              <h3 className="text-xs font-bold text-green-300 mb-2 flex items-center gap-1.5">
-                🎴 Card Configuration
-              </h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-bold text-green-300 flex items-center gap-1.5">
+                  🎴 Card Configuration
+                </h3>
+                <button
+                  onClick={() => setShowSectionHelp(prev => ({ ...prev, cardConfig: !prev.cardConfig }))}
+                  className="text-xs text-blue-400 underline hover:text-blue-300"
+                >
+                  {showSectionHelp.cardConfig ? 'Hide Details' : 'Show Details'}
+                </button>
+              </div>
+
+              {showSectionHelp.cardConfig && (
+                <div className="mb-3 p-3 bg-black/40 rounded-lg border border-blue-500/30">
+                  <p className="text-xs text-blue-300 font-bold mb-2">📚 Understanding the Card System</p>
+                  <p className="text-xs text-gray-300 mb-3">
+                    The card system breaks your session into small, manageable targets. Each card is a mini-session with its own profit goal and bet limit. This enforces discipline and prevents emotional betting.
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-4 text-xs mb-3">
+                    <div>
+                      <p className="font-bold text-green-400 mb-2">✅ Benefits:</p>
+                      <ul className="space-y-1 text-gray-300">
+                        <li>• Clear profit targets (prevents greed)</li>
+                        <li>• Bet limits prevent chasing losses</li>
+                        <li>• Psychological breaks between cards</li>
+                        <li>• Track discipline and strategy adherence</li>
+                        <li>• Celebrate small wins along the way</li>
+                        <li>• Easier to walk away after failures</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="font-bold text-orange-400 mb-2">💡 Strategy Tips:</p>
+                      <ul className="space-y-1 text-gray-300">
+                        <li>• Conservative: 3-5% per card</li>
+                        <li>• Balanced: 5-7% per card</li>
+                        <li>• Aggressive: 7-10% per card</li>
+                        <li>• More cards = more chances</li>
+                        <li>• Start small, increase if winning</li>
+                        <li>• Take breaks between failed cards</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="p-2 bg-purple-900/30 rounded border border-purple-500/30 mb-3">
+                    <p className="text-xs text-purple-300 font-bold mb-1">🎯 How It Works:</p>
+                    <p className="text-xs text-gray-300">
+                      <span className="text-white font-bold">1.</span> Each card starts "locked" until previous card completes
+                      <br/><span className="text-white font-bold">2.</span> Place bets by evaluating betting trends and patterns
+                      <br/><span className="text-white font-bold">3.</span> Reach target → Card succeeds ✅ → Next card unlocks
+                      <br/><span className="text-white font-bold">4.</span> Hit max bets before target → Card fails ❌ → Next card unlocks
+                      <br/><span className="text-white font-bold">5.</span> Complete all cards or hit session limits
+                    </p>
+                  </div>
+
+                  <div className="p-2 bg-green-900/30 rounded border border-green-500/30">
+                    <p className="text-xs text-green-300 font-bold mb-1">📊 Example: Conservative Setup</p>
+                    <p className="text-xs text-gray-300">
+                      Bankroll: $1000 → Card Value: 5% ($50) → 20 Cards → Max Bets: 15 per card
+                      <br/>→ If you complete 10 cards: <span className="text-green-400 font-bold">+$500 profit (50% ROI)</span>
+                      <br/>→ If you fail 5, succeed 5: <span className="text-yellow-400 font-bold">Break even or small profit</span>
+                      <br/>→ Protection: Can only lose $50 per card × 15 bets = max risk is controlled
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Card System Toggle */}
               <div className="mb-3 bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">

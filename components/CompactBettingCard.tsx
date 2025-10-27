@@ -306,20 +306,7 @@ function FloatingBettingCard({
   onCardComplete: (pnl: number) => void
   onNumberAdded: (number: number) => void
 }) {
-// ✅ ADD THESE 3 LINES HERE (between line 308 and 309)
-console.log('🔍 SESSION CONFIG:', sessionConfig)
-console.log('🔍 betMode:', sessionConfig?.betMode)
-console.log('🔍 betCategory:', sessionConfig?.betCategory)
-
-const [bettingTab, setBettingTab] = useState<'table-common' | 'table-special' | 'wheel-common' | 'wheel-special'>('table-common')
-
-// Update tab when sessionConfig changes
-useEffect(() => {
-  if (sessionConfig?.betMode && sessionConfig?.betCategory) {
-    const tab = `${sessionConfig.betMode}-${sessionConfig.betCategory}` as 'table-common' | 'table-special' | 'wheel-common' | 'wheel-special'
-    setBettingTab(tab)
-  }
-}, [sessionConfig])
+  const [bettingTab, setBettingTab] = useState<'table-common' | 'table-special' | 'wheel-common' | 'wheel-special'>('table-common')
 
   const [position, setPosition] = useState({ 
     x: typeof window !== 'undefined' ? window.innerWidth / 2 : 800, 
@@ -367,13 +354,6 @@ useEffect(() => {
 }, [card.betsUsed, card.currentTotal])
   const [lastBets, setLastBets] = useState<Record<BetKey, number>>({} as any)
   const [matrixTab, setMatrixTab] = useState<'table-common' | 'table-special' | 'wheel-common' | 'wheel-special'>('table-common')
-  // Sync matrix tab with sessionConfig
-useEffect(() => {
-  if (sessionConfig?.betMode && sessionConfig?.betCategory) {
-    const tab = `${sessionConfig.betMode}-${sessionConfig.betCategory}` as 'table-common' | 'table-special' | 'wheel-common' | 'wheel-special'
-    setMatrixTab(tab)
-  }
-}, [sessionConfig])
   const { openCard } = useCardManager()
   const betLabels: Record<BetKey, string> = {
     red: 'Red', black: 'Black', even: 'Even', odd: 'Odd',
