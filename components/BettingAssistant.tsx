@@ -1817,6 +1817,7 @@ const newBet: BetRecord = {
                   <li>Watch the "Wheel Pos" column to track wheel sector patterns</li>
                   <li>Your bets persist until results show, then auto-clear after 3 seconds</li>
                   <li>Use the base bet selector to quickly change your betting unit</li>
+                  <li className="text-yellow-300"><strong>⚡ Playing online?</strong> Save time by using your casino site's "Favorite" feature to save your preferred betting groups for instant one-click betting during those quick time-constrained spins!</li>
                 </ul>
               </div>
             </div>
