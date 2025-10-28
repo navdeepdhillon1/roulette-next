@@ -1255,6 +1255,7 @@ export default function BettingAssistant() {
                           if ((s as any).isDealerChange) {
                             return {
                               ...s,
+                              id: s.timestamp,
                               number: -1,
                               created_at: new Date(s.timestamp).toISOString()
                             } as any
@@ -1263,12 +1264,14 @@ export default function BettingAssistant() {
                           if ((s as any).isCardStart || (s as any).isCardEnd) {
                             return {
                               ...s,
+                              id: s.timestamp,
                               number: -1,
                               created_at: new Date(s.timestamp).toISOString()
                             } as any
                           }
                           // Otherwise, process normally
                           return {
+                            id: s.timestamp,
                             ...getNumberProperties(s.number),
                             session_id: s.sessionId || '',
                             spin_number: 0,
@@ -1413,6 +1416,7 @@ export default function BettingAssistant() {
                           if ((s as any).isDealerChange) {
                             return {
                               ...s,
+                              id: s.timestamp,
                               number: -1,
                               created_at: new Date(s.timestamp).toISOString()
                             } as any
@@ -1421,12 +1425,14 @@ export default function BettingAssistant() {
                           if ((s as any).isCardStart || (s as any).isCardEnd) {
                             return {
                               ...s,
+                              id: s.timestamp,
                               number: -1,
                               created_at: new Date(s.timestamp).toISOString()
                             } as any
                           }
                           // Otherwise, process normally
                           return {
+                            id: s.timestamp,
                             ...getNumberProperties(s.number),
                             session_id: s.sessionId || '',
                             spin_number: 0,
@@ -1665,6 +1671,7 @@ export default function BettingAssistant() {
                           if ((s as any).isDealerChange) {
                             return {
                               ...s,
+                              id: s.timestamp,
                               number: -1,
                               created_at: new Date(s.timestamp).toISOString()
                             } as any
@@ -1673,12 +1680,14 @@ export default function BettingAssistant() {
                           if ((s as any).isCardStart || (s as any).isCardEnd) {
                             return {
                               ...s,
+                              id: s.timestamp,
                               number: -1,
                               created_at: new Date(s.timestamp).toISOString()
                             } as any
                           }
                           // Otherwise, process normally
                           return {
+                            id: s.timestamp,
                             ...getNumberProperties(s.number),
                             session_id: s.sessionId || '',
                             spin_number: 0,
