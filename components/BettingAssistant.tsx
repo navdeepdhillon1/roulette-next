@@ -667,6 +667,74 @@ export default function BettingAssistant() {
         ? ((newSession.totalReturned - newSession.totalWagered) / newSession.totalWagered) * 100
         : 0
     })
+
+    // ✅ Save to Supabase (if user logged in and session exists)
+    if (userId && supabaseSessionId) {
+      // Run async saves in background (non-blocking)
+      (async () => {
+        try {
+          // Increment step counter
+          const currentStepNumber = stepCounter + 1
+          setStepCounter(currentStepNumber)
+
+          // 1. Save bet step
+          const stepResult = await saveBettingCardStep(
+            userId,
+            supabaseSessionId,
+            currentCard.id,
+            newBet,
+            currentStepNumber,
+            session.config.dealerId || undefined,
+            undefined, // suggestedAction
+            undefined, // suggestedSide
+            undefined, // confidence
+            undefined, // reasons
+            undefined  // followedSuggestion
+          )
+
+          if ('error' in stepResult) {
+            console.error('[Bet Assistant] ⚠️ Failed to save bet step:', stepResult.error)
+          } else {
+            console.log('[Bet Assistant] ✅ Bet step saved')
+          }
+
+          // 2. Update card totals
+          const cardResult = await updateBettingCard(
+            supabaseSessionId,
+            currentCard.cardNumber,
+            {
+              currentTotal: updatedCard.currentTotal,
+              betsUsed: updatedCard.betsUsed,
+              status: updatedCard.status
+            }
+          )
+
+          if ('error' in cardResult) {
+            console.error('[Bet Assistant] ⚠️ Failed to update card:', cardResult.error)
+          } else {
+            console.log('[Bet Assistant] ✅ Card updated')
+          }
+
+          // 3. Update session totals
+          const sessionResult = await updateBettingSession(
+            supabaseSessionId,
+            {
+              currentBankroll: newSession.currentBankroll,
+              totalWagered: newSession.totalWagered,
+              totalReturned: newSession.totalReturned
+            }
+          )
+
+          if ('error' in sessionResult) {
+            console.error('[Bet Assistant] ⚠️ Failed to update session:', sessionResult.error)
+          } else {
+            console.log('[Bet Assistant] ✅ Session updated')
+          }
+        } catch (error) {
+          console.error('[Bet Assistant] ⚠️ Supabase error (non-fatal):', error)
+        }
+      })()
+    }
   }
 
   // ❌ REMOVED: Dead placeBet() function - was never called
