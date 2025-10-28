@@ -35,10 +35,20 @@ export const saveCustomGroupsToSupabase = async (groups: CustomGroup[], userId: 
         onConflict: 'user_id'
       })
 
-    if (error) throw error
+    if (error) {
+      // Silently ignore table-not-found errors (table not created yet)
+      if (error.message?.includes('Could not find the table')) {
+        console.log('Custom groups table not found - using localStorage only')
+        return { success: false, error: 'table_not_found' }
+      }
+      throw error
+    }
     return { success: true }
   } catch (error) {
-    console.error('Failed to save custom groups to Supabase:', error)
+    // Only log non-table-not-found errors
+    if (!(error as any)?.message?.includes('Could not find the table')) {
+      console.error('Failed to save custom groups to Supabase:', error)
+    }
     return { success: false, error }
   }
 }
@@ -52,6 +62,11 @@ export const loadCustomGroupsFromSupabase = async (userId: string): Promise<Cust
       .single()
 
     if (error) {
+      // Silently handle table-not-found errors
+      if (error.message?.includes('Could not find the table')) {
+        console.log('Custom groups table not found - using localStorage only')
+        return []
+      }
       if (error.code === 'PGRST116') {
         // No data found, return empty array
         return []
@@ -61,7 +76,10 @@ export const loadCustomGroupsFromSupabase = async (userId: string): Promise<Cust
 
     return data?.groups || []
   } catch (error) {
-    console.error('Failed to load custom groups from Supabase:', error)
+    // Only log non-table-not-found errors
+    if (!(error as any)?.message?.includes('Could not find the table')) {
+      console.error('Failed to load custom groups from Supabase:', error)
+    }
     return []
   }
 }
