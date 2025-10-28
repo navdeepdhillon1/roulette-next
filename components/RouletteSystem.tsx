@@ -651,9 +651,11 @@ const openSessionSetup = () => {
     localStorage.removeItem('currentSession');
     localStorage.removeItem('currentSpins');
 
-    // Close modal and go to setup tab
+    // Close modal
     setShowEndSessionModal(false);
-    setAssistantSubTab('setup');
+
+    // Force page reload to ensure clean state
+    window.location.reload();
   };
 
   // Restart Session - Fresh start without archiving
@@ -680,9 +682,11 @@ const openSessionSetup = () => {
     localStorage.removeItem('currentSession');
     localStorage.removeItem('currentSpins');
 
-    // Close modal and go to setup tab
+    // Close modal
     setShowRestartSessionModal(false);
-    setAssistantSubTab('setup');
+
+    // Force page reload to ensure clean state
+    window.location.reload();
   };
 
   return (
