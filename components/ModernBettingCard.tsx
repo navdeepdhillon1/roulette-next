@@ -23,15 +23,15 @@ export default function ModernBettingCard({
   const [manualBets, setManualBets] = useState<Record<string, string>>({})
   const [betResults, setBetResults] = useState<Record<string, { status: 'win' | 'loss', amount: string } | null>>({})
 
-  // Extract spin history from card bets
-  const spinHistory = card.bets.map(bet => ({
-    number: bet.numberHit,
+  // Extract spin history from card bets (with safety checks)
+  const spinHistory = (card.bets || []).map(bet => ({
+    number: bet.numberHit || 0,
     timestamp: Date.now(),
     sessionId: sessionState.id,
     cardId: card.id
   }))
 
-  const spinNumbers = card.bets.map(bet => bet.numberHit)
+  const spinNumbers = (card.bets || []).map(bet => bet.numberHit || 0)
 
   return (
     <div className="fixed inset-0 z-50 bg-gray-900 overflow-hidden">
@@ -77,10 +77,10 @@ export default function ModernBettingCard({
               onDealerChange={() => {}}
               spinHistory={spinHistory}
               sessionStats={{
-                totalSpins: card.bets.length,
+                totalSpins: card.bets?.length || 0,
                 totalWagered: 0,
                 totalReturned: 0,
-                currentBankroll: sessionState.currentBankroll,
+                currentBankroll: sessionState.currentBankroll || 0,
                 roi: 0
               }}
               currentView={currentView}
@@ -97,18 +97,28 @@ export default function ModernBettingCard({
 
           {/* Betting Area */}
           <div className="flex-1 overflow-y-auto p-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-            {currentView === 'my-groups' && sessionState.config.selectedGroups ? (
+            {currentView === 'my-groups' && sessionState.config?.selectedGroups && sessionState.config.selectedGroups.length > 0 ? (
               <MyGroupsBettingCards
                 selectedGroups={sessionState.config.selectedGroups}
                 manualBets={manualBets}
                 setManualBets={setManualBets}
-                playerUnit={sessionState.config.bettingSystem.baseBet}
+                playerUnit={sessionState.config.bettingSystem?.baseBet || 10}
                 betResults={betResults}
               />
             ) : (
               <div className="text-center text-gray-400 py-12">
-                <p className="text-lg mb-2">Betting interface for {currentView}</p>
-                <p className="text-sm">Select "My Groups" view or customize your betting layout</p>
+                <div className="bg-yellow-900/20 border border-yellow-600/30 rounded-lg p-6 max-w-md mx-auto">
+                  <p className="text-lg mb-2 text-yellow-400">⚠️ Betting Layout Not Configured</p>
+                  <p className="text-sm text-gray-300 mb-4">
+                    You need to select betting groups in the session setup to use this interface.
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Current view: <span className="font-bold">{currentView}</span>
+                  </p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    For now, you can view stats on the right sidebar →
+                  </p>
+                </div>
               </div>
             )}
           </div>
