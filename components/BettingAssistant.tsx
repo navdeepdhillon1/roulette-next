@@ -4,7 +4,7 @@
 import React, { useState } from 'react'
 import SessionSetup from './SessionSetup'
 import BetCardDashboard from './BetCardDashboard'
-import CompactBettingCard from './CompactBettingCard'
+import ModernBettingCard from './ModernBettingCard'
 import BetAdvisor from './BetAdvisor'
 import { CardSuccessCelebration, CardFailureModal, BreakTimerModal } from './CardCelebration'
 import type { SessionState, SessionConfig, BetCard, BetRecord, BettingSystemConfig } from '../types/bettingAssistant'
@@ -263,29 +263,11 @@ const newBet: BetRecord = {
   />
 )}
       {viewMode === 'activeCard' && session && (
-  <>
-    <div className="opacity-50 pointer-events-none">
-      <BetCardDashboard 
-        session={session} 
-        onSelectCard={() => {}} 
-        onEndSession={() => {}}
-        onOpenAdvisor={() => {}}      // ✅ ADD THIS
-        onOpenPerformance={() => {}}  // ✅ ADD THIS
-      />
-    </div>
-          
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-
-            <CompactBettingCard 
-              card={session.cards[session.currentCardIndex]}
-              bettingSystem={session.config.bettingSystem}
-              sessionConfig={session.config} 
-              onPlaceBet={placeBet}
-              onCardComplete={handleCardComplete} // ✅ ADDED THIS
-              onBack={backToDashboard}
-            />
-          </div>
-        </>
+        <ModernBettingCard
+          card={session.cards[session.currentCardIndex]}
+          sessionState={session}
+          onBack={backToDashboard}
+        />
       )}
 
       {viewMode === 'advisor' && session && (
