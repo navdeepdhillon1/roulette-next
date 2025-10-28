@@ -613,7 +613,7 @@ const openSessionSetup = () => {
   };
 
   // End Session - Archive and reset to setup
-  const handleEndSession = () => {
+  const handleEndSession = async () => {
     if (!session) return;
 
     // Archive session data to localStorage
@@ -630,6 +630,11 @@ const openSessionSetup = () => {
     };
     archivedSessions.push(sessionArchive);
     localStorage.setItem('archivedSessions', JSON.stringify(archivedSessions));
+
+    // If in cloud mode, reset cloud session first
+    if (storageMode === 'cloud') {
+      await resetCloudSession();
+    }
 
     // Clear local session data
     setLocalSession(null);
@@ -659,8 +664,13 @@ const openSessionSetup = () => {
   };
 
   // Restart Session - Fresh start without archiving
-  const handleRestartSession = () => {
+  const handleRestartSession = async () => {
     if (!session) return;
+
+    // If in cloud mode, reset cloud session first
+    if (storageMode === 'cloud') {
+      await resetCloudSession();
+    }
 
     // Clear all session data without archiving
     setLocalSession(null);
