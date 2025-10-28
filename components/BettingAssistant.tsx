@@ -24,6 +24,15 @@ import WheelHistory from './WheelHistory'
 import MyGroupsLayout from './MyGroupsLayout'
 import GameControlBar from './GameControlBar'
 import { getNumberProperties, RED_NUMBERS } from '@/lib/roulette-logic'
+import { supabase } from '@/lib/supabase'
+import {
+  createBettingSession,
+  updateBettingSession,
+  createBettingCards,
+  updateBettingCard,
+  saveBettingCardStep,
+  loadBettingSession,
+} from '@/lib/bettingAssistantStorage'
 
 function updateBettingSystem(config: BettingSystemConfig, outcome: 'win' | 'loss'): BettingSystemConfig {
   const consecutiveWins = outcome === 'win' ? config.consecutiveWins + 1 : 0
@@ -218,6 +227,11 @@ export default function BettingAssistant() {
   const [currentDealer, setCurrentDealer] = useState(1)
   const [previousDealer, setPreviousDealer] = useState(1)
 
+  // ✅ Supabase integration states
+  const [userId, setUserId] = useState<string | null>(null)
+  const [supabaseSessionId, setSupabaseSessionId] = useState<string | null>(null)
+  const [stepCounter, setStepCounter] = useState(0) // Track sequential steps
+
   // ✅ NEW: Celebration states
   const [showSuccessCelebration, setShowSuccessCelebration] = useState(false)
   const [showFailureCelebration, setShowFailureCelebration] = useState(false)
@@ -236,8 +250,21 @@ export default function BettingAssistant() {
   const [showBettingHelpModal, setShowBettingHelpModal] = useState(false)
   const [mounted, setMounted] = useState(false)
 
+  // ✅ Get authenticated user on mount
   useEffect(() => {
     setMounted(true)
+
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+        console.log('[Betting Assistant] User authenticated:', user.id)
+      } else {
+        console.log('[Betting Assistant] No user logged in - running in local mode')
+      }
+    }
+
+    getUser()
   }, [])
 
   const handleHistoricalBetsUpdate = (newBets: Record<string, any>) => {
@@ -604,91 +631,9 @@ export default function BettingAssistant() {
     })
   }
 
-  const placeBet = (
-    betType: string, 
-    betAmount: number, 
-    outcome: 'win' | 'loss', 
-    winAmount: number, 
-    numberHit: number,
-    bettingMatrix: Record<string, number>,  // ✅ ADD THIS LINE
-    groupResults: Record<string, number>     // ✅ ADD THIS LINE
-  ) => {
-    if (!session) return
+  // ❌ REMOVED: Dead placeBet() function - was never called
+  // ✅ Using handleHistoryTableBet() instead (see above)
 
-    const currentCard = session.cards[session.currentCardIndex]
-    // ✅ COMPLETE newBet with matrix data:
-const newBet: BetRecord = {
-  id: `bet-${Date.now()}`,
-  timestamp: Date.now(),
-  betType,
-  betAmount,
-  outcome,
-  winAmount,
-  numberHit,
-  cardId: currentCard.id,
-  betNumber: currentCard.betsUsed + 1,
-  runningCardTotal: currentCard.currentTotal + (outcome === 'win' ? winAmount - betAmount : -betAmount),
-  runningBankroll: session.currentBankroll + (outcome === 'win' ? winAmount - betAmount : -betAmount),
-  bets: bettingMatrix as any,       // ✅ STORE MATRIX
-  spinNumber: numberHit,
-  results: groupResults as any,       // ✅ STORE RESULTS
-  totalPnL: outcome === 'win' ? winAmount - betAmount : -betAmount,
-}
-    
-    addSpin({
-      number: numberHit,
-      timestamp: Date.now(),
-      sessionId: session.id,
-      cardId: currentCard.id
-    })
-    
-    const updatedCard = {
-      ...currentCard,
-      bets: [...currentCard.bets, newBet],
-      currentTotal: newBet.runningCardTotal,
-      betsUsed: currentCard.betsUsed + 1,
-    }
-
-    // ✅ UPDATED: Check for completion or failure
-    if (updatedCard.currentTotal >= updatedCard.target) {
-      updatedCard.status = 'completed'
-      // Don't unlock next card yet - wait for user to continue
-    } else if (updatedCard.betsUsed >= updatedCard.maxBets) {
-      updatedCard.status = 'failed'
-      // Trigger failure modal
-      setTimeout(() => handleCardFailure(), 500)
-    }
-
-    const updatedCards = [...session.cards]
-    updatedCards[session.currentCardIndex] = updatedCard
-
-    const updatedSystem = updateBettingSystem(session.config.bettingSystem, outcome)
-
-    const newSession = {
-      ...session,
-      cards: updatedCards,
-      currentBankroll: newBet.runningBankroll,
-      totalWagered: session.totalWagered + betAmount,
-      totalReturned: session.totalReturned + (outcome === 'win' ? winAmount : 0),
-      config: {
-        ...session.config,
-        bettingSystem: updatedSystem
-      }
-    }
-    
-    setSession(newSession)
-    
-    updateSessionStats({
-      currentBankroll: newBet.runningBankroll,
-      totalSpins: newSession.cards.reduce((sum, card) => sum + card.bets.length, 0),
-      totalWagered: newSession.totalWagered,
-      totalReturned: newSession.totalReturned,
-      roi: newSession.totalWagered > 0 
-        ? ((newSession.totalReturned - newSession.totalWagered) / newSession.totalWagered) * 100 
-        : 0
-    })
-  }
-  
   const endSession = () => {
     setSession(null)
     setViewMode('intro')
