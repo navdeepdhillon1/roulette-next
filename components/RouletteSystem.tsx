@@ -212,7 +212,12 @@ const openSessionSetup = () => {
       }
       setLocalSession(newSession)
       setLocalSpins([])
+      setBetHistory([])
+      setHistoricalBets({})
+
+      // Clear and reset localStorage
       localStorage.setItem('currentSession', JSON.stringify(newSession))
+      localStorage.setItem('currentSpins', JSON.stringify([]))
     }
     
     // Set financial tracking with user's configured values
