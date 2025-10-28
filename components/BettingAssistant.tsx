@@ -741,9 +741,38 @@ export default function BettingAssistant() {
   // ✅ Using handleHistoryTableBet() instead (see above)
 
   const endSession = () => {
+    // ✅ Save session completion to Supabase (if user logged in and session exists)
+    if (userId && supabaseSessionId && session) {
+      // Run async save in background (non-blocking)
+      (async () => {
+        try {
+          const result = await updateBettingSession(
+            supabaseSessionId,
+            {
+              status: 'completed',
+              currentBankroll: session.currentBankroll,
+              totalWagered: session.totalWagered,
+              totalReturned: session.totalReturned
+            }
+          )
+
+          if ('error' in result) {
+            console.error('[Bet Assistant] ⚠️ Failed to complete session:', result.error)
+          } else {
+            console.log('[Bet Assistant] ✅ Session marked as completed in Supabase')
+          }
+        } catch (error) {
+          console.error('[Bet Assistant] ⚠️ Supabase error (non-fatal):', error)
+        }
+      })()
+    }
+
+    // Reset local state
     setSession(null)
     setViewMode('intro')
-    
+    setSupabaseSessionId(null) // Clear Supabase session ID
+    setStepCounter(0) // Reset step counter
+
     updateSessionStats({
       totalSpins: 0,
       totalWagered: 0,
