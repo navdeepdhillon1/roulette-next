@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import Link from 'next/link'
 import Navigation from '@/components/Navigation'
 
@@ -91,8 +92,33 @@ const articles = [
 ]
 
 export default function LearnPage() {
+  const [selectedCategory, setSelectedCategory] = React.useState<string>('All')
+  const [searchQuery, setSearchQuery] = React.useState<string>('')
+
   const featuredArticles = articles.filter(a => a.featured)
-  const recentArticles = articles
+
+  // Filter by category first
+  let filteredArticles = selectedCategory === 'All'
+    ? articles
+    : articles.filter(a => a.category === selectedCategory)
+
+  // Then filter by search query
+  if (searchQuery.trim()) {
+    const query = searchQuery.toLowerCase()
+    filteredArticles = filteredArticles.filter(a =>
+      a.title.toLowerCase().includes(query) ||
+      a.excerpt.toLowerCase().includes(query) ||
+      a.category.toLowerCase().includes(query)
+    )
+  }
+
+  const categories = ['All', 'How-To Guides', 'Fundamentals', 'Strategy', 'Psychology', 'Data Analysis']
+
+  // Get article count for each category
+  const getCategoryCount = (cat: string) => {
+    if (cat === 'All') return articles.length
+    return articles.filter(a => a.category === cat).length
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900">
@@ -104,26 +130,75 @@ export default function LearnPage() {
           <h1 className="text-5xl font-bold bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 bg-clip-text text-transparent mb-4">
             Learning Center
           </h1>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+          <p className="text-gray-400 text-lg max-w-2xl mx-auto mb-8">
             Deep dives into roulette strategy, probability, psychology, and data analysis.
             Learn how to think like a statistician, not a gambler.
           </p>
+
+          {/* Search Bar */}
+          <div className="max-w-2xl mx-auto">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search articles by title, topic, or keyword..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-6 py-3 pl-12 rounded-lg bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400 transition-all"
+              />
+              <svg
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Categories */}
         <div className="flex gap-3 justify-center mb-12 flex-wrap">
-          {['All', 'How-To Guides', 'Fundamentals', 'Strategy', 'Psychology', 'Data Analysis'].map((cat) => (
-            <button
-              key={cat}
-              className="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition-all border border-gray-700 hover:border-yellow-400/50"
-            >
-              {cat}
-            </button>
-          ))}
+          {categories.map((cat) => {
+            const count = getCategoryCount(cat)
+            return (
+              <button
+                key={cat}
+                onClick={() => {
+                  setSelectedCategory(cat)
+                  setSearchQuery('') // Clear search when switching categories
+                }}
+                className={`px-4 py-2 rounded-lg transition-all border flex items-center gap-2 ${
+                  selectedCategory === cat
+                    ? 'bg-yellow-400 text-black border-yellow-400 font-bold'
+                    : 'bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border-gray-700 hover:border-yellow-400/50'
+                }`}
+              >
+                <span>{cat}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  selectedCategory === cat
+                    ? 'bg-black/20 text-black'
+                    : 'bg-gray-700 text-gray-400'
+                }`}>
+                  {count}
+                </span>
+              </button>
+            )
+          })}
         </div>
 
-        {/* Featured Articles */}
-        {featuredArticles.length > 0 && (
+        {/* Featured Articles - Only show when not searching */}
+        {!searchQuery && featuredArticles.length > 0 && (
           <div className="mb-16">
             <h2 className="text-2xl font-bold text-yellow-400 mb-6 flex items-center gap-2">
               <span>⭐</span> Featured Articles
@@ -163,11 +238,19 @@ export default function LearnPage() {
 
         {/* All Articles */}
         <div>
-          <h2 className="text-2xl font-bold text-yellow-400 mb-6 flex items-center gap-2">
-            <span>📚</span> All Articles
-          </h2>
-          <div className="space-y-4">
-            {recentArticles.map((article) => (
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-yellow-400 flex items-center gap-2">
+              <span>📚</span> {searchQuery ? 'Search Results' : (selectedCategory === 'All' ? 'All Articles' : `${selectedCategory} Articles`)}
+            </h2>
+            {(searchQuery || selectedCategory !== 'All') && (
+              <span className="text-gray-400 text-sm">
+                {filteredArticles.length} {filteredArticles.length === 1 ? 'article' : 'articles'} found
+              </span>
+            )}
+          </div>
+          {filteredArticles.length > 0 ? (
+            <div className="space-y-4">
+              {filteredArticles.map((article) => (
               <Link
                 key={article.slug}
                 href={`/learn/${article.slug}`}
@@ -198,8 +281,27 @@ export default function LearnPage() {
                   </div>
                 </article>
               </Link>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-400 text-lg mb-4">
+                {searchQuery
+                  ? `No articles found for "${searchQuery}"`
+                  : `No articles found in this category yet.`
+                }
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery('')
+                  setSelectedCategory('All')
+                }}
+                className="text-yellow-400 hover:underline"
+              >
+                {searchQuery ? 'Clear search' : 'View all articles'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Call to Action */}
