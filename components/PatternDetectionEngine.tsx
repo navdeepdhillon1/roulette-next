@@ -24,6 +24,7 @@ export default function PatternDetectionEngine({ spinHistory }: { spinHistory: n
   const [sortBy, setSortBy] = useState<SortBy>('confidence');
   const [filterBy, setFilterBy] = useState<FilterBy>('all');
   const [patterns, setPatterns] = useState<GroupAnalysis[]>([]);
+  const [showHelp, setShowHelp] = useState(false);
 
   const RED_NUMBERS = [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36];
 
@@ -471,11 +472,236 @@ export default function PatternDetectionEngine({ spinHistory }: { spinHistory: n
             🎯 Pattern Detection Engine
           </h2>
           <div className="flex items-center gap-4 text-white">
+            <button
+              onClick={() => setShowHelp(!showHelp)}
+              className={`text-sm px-3 py-1 rounded-full font-bold transition-all ${
+                showHelp
+                  ? 'bg-yellow-500 text-gray-900 hover:bg-yellow-400'
+                  : 'bg-gray-700 hover:bg-gray-600'
+              }`}
+            >
+              {showHelp ? '❌ Close Help' : '❓ Help'}
+            </button>
             <span className="text-sm bg-green-500 px-3 py-1 rounded-full font-bold">⚡ LIVE</span>
             <span className="text-sm">Spin #{spinHistory.length}</span>
           </div>
         </div>
       </Card>
+
+      {/* Help Documentation */}
+      {showHelp && (
+        <Card className="p-6 bg-gradient-to-br from-gray-900 to-gray-800 border-yellow-500 border-2">
+          <h3 className="text-2xl font-bold text-yellow-400 mb-4">📚 How to Use Pattern Detection Engine</h3>
+
+          <div className="space-y-6 text-white">
+            {/* Overview */}
+            <div>
+              <h4 className="text-lg font-bold text-cyan-400 mb-2">🎯 What is this?</h4>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                The Pattern Detection Engine analyzes your spin history across <strong>47 different betting groups</strong> (26 table-based + 21 wheel-based).
+                It identifies patterns, calculates confidence levels, and provides actionable recommendations for your betting strategy.
+              </p>
+            </div>
+
+            {/* Three Tabs */}
+            <div>
+              <h4 className="text-lg font-bold text-cyan-400 mb-2">📑 Three Views</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <Card className="p-3 bg-green-900/30 border-green-600">
+                  <div className="text-sm font-bold text-green-400 mb-1">🔥 Priority</div>
+                  <div className="text-xs text-gray-300">Shows TOP 3 highest confidence patterns. Focus here for best plays.</div>
+                </Card>
+                <Card className="p-3 bg-cyan-900/30 border-cyan-600">
+                  <div className="text-sm font-bold text-cyan-400 mb-1">📊 Table Bets</div>
+                  <div className="text-xs text-gray-300">Classic betting groups: Color, Even/Odd, Dozens, Columns, and alternative patterns.</div>
+                </Card>
+                <Card className="p-3 bg-purple-900/30 border-purple-600">
+                  <div className="text-sm font-bold text-purple-400 mb-1">🎡 Wheel Bets</div>
+                  <div className="text-xs text-gray-300">Wheel-based groups: Voisins, Orphelins, Tiers, A/B patterns, and sectors.</div>
+                </Card>
+              </div>
+            </div>
+
+            {/* Pattern Types */}
+            <div>
+              <h4 className="text-lg font-bold text-cyan-400 mb-2">🎨 Pattern Types</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                <div className="flex items-start gap-2 bg-gray-800 p-2 rounded">
+                  <span className="text-2xl">📈</span>
+                  <div>
+                    <span className="font-bold text-red-400">STREAK</span>
+                    <p className="text-xs text-gray-400">Current value hitting 4+ times consecutively. Strong momentum.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 bg-gray-800 p-2 rounded">
+                  <span className="text-2xl">🔄</span>
+                  <div>
+                    <span className="font-bold text-blue-400">ALTERNATING</span>
+                    <p className="text-xs text-gray-400">High switch rate (75%+). Values changing frequently.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 bg-gray-800 p-2 rounded">
+                  <span className="text-2xl">👑</span>
+                  <div>
+                    <span className="font-bold text-yellow-400">DOMINANT</span>
+                    <p className="text-xs text-gray-400">Low switch rate (30%-). One value appearing more often.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 bg-gray-800 p-2 rounded">
+                  <span className="text-2xl">🌀</span>
+                  <div>
+                    <span className="font-bold text-gray-400">CHAOS</span>
+                    <p className="text-xs text-gray-400">No clear pattern. Unpredictable behavior.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Status Indicators */}
+            <div>
+              <h4 className="text-lg font-bold text-cyan-400 mb-2">🚦 Status Indicators</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                <div className="flex items-center gap-2 bg-gray-800 p-2 rounded">
+                  <span className="bg-green-500 px-2 py-1 rounded text-xs font-bold">🟢 STABLE</span>
+                  <p className="text-xs text-gray-400">Switch rate &lt;35%. Pattern is consistent.</p>
+                </div>
+                <div className="flex items-center gap-2 bg-gray-800 p-2 rounded">
+                  <span className="bg-red-500 px-2 py-1 rounded text-xs font-bold">🔴 VOLATILE</span>
+                  <p className="text-xs text-gray-400">Switch rate &gt;65%. Pattern is unstable.</p>
+                </div>
+                <div className="flex items-center gap-2 bg-gray-800 p-2 rounded">
+                  <span className="bg-yellow-500 px-2 py-1 rounded text-xs font-bold">🟡 NEUTRAL</span>
+                  <p className="text-xs text-gray-400">Switch rate 35-65%. Balanced behavior.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Recommendations */}
+            <div>
+              <h4 className="text-lg font-bold text-cyan-400 mb-2">💡 Recommendations</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                <div className="flex items-start gap-2 bg-gray-800 p-2 rounded">
+                  <span className="bg-green-600 px-2 py-1 rounded text-xs font-bold">🎯 FOLLOW</span>
+                  <p className="text-xs text-gray-400">High confidence (70%+) STREAK or DOMINANT pattern. Bet on current value.</p>
+                </div>
+                <div className="flex items-start gap-2 bg-gray-800 p-2 rounded">
+                  <span className="bg-blue-600 px-2 py-1 rounded text-xs font-bold">🔄 ALTERNATE</span>
+                  <p className="text-xs text-gray-400">High confidence (70%+) ALTERNATING pattern. Bet opposite of current value.</p>
+                </div>
+                <div className="flex items-start gap-2 bg-gray-800 p-2 rounded">
+                  <span className="bg-gray-600 px-2 py-1 rounded text-xs font-bold">👀 OBSERVE</span>
+                  <p className="text-xs text-gray-400">Medium confidence. Wait for clearer signal before betting.</p>
+                </div>
+                <div className="flex items-start gap-2 bg-gray-800 p-2 rounded">
+                  <span className="bg-red-600 px-2 py-1 rounded text-xs font-bold">⚠️ AVOID</span>
+                  <p className="text-xs text-gray-400">VOLATILE status. Too unpredictable to bet safely.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Understanding Metrics */}
+            <div>
+              <h4 className="text-lg font-bold text-cyan-400 mb-2">📊 Understanding Card Metrics</h4>
+              <div className="space-y-2 text-sm">
+                <div className="bg-gray-800 p-3 rounded">
+                  <div className="font-bold text-yellow-400 mb-1">Pattern Strength (0-100%)</div>
+                  <p className="text-xs text-gray-400">
+                    How strong the detected pattern is. For STREAK: length × 25. For ALTERNATING: switch rate × 1.2. For DOMINANT: (100 - switch rate) × 1.5.
+                    <br />
+                    <span className="text-red-400">80%+ = Very Strong</span> |
+                    <span className="text-yellow-400"> 60-79% = Strong</span> |
+                    <span className="text-blue-400"> 40-59% = Moderate</span> |
+                    <span className="text-gray-400"> &lt;40% = Weak</span>
+                  </p>
+                </div>
+                <div className="bg-gray-800 p-3 rounded">
+                  <div className="font-bold text-cyan-400 mb-1">Confidence (0-100%)</div>
+                  <p className="text-xs text-gray-400">
+                    Overall reliability score combining pattern strength, status, and streak bonuses.
+                    STABLE status: +20% boost. VOLATILE status: -30% penalty. Streak ≥5: +30% boost.
+                    <br />
+                    <span className="text-green-400">70%+ = High confidence (safe to bet)</span> |
+                    <span className="text-yellow-400"> 50-69% = Medium (proceed with caution)</span> |
+                    <span className="text-gray-400"> &lt;50% = Low (avoid betting)</span>
+                  </p>
+                </div>
+                <div className="bg-gray-800 p-3 rounded">
+                  <div className="font-bold text-orange-400 mb-1">Streak</div>
+                  <p className="text-xs text-gray-400">
+                    How many consecutive times the current value has appeared. Longer streaks = stronger momentum (but also higher risk of reversal).
+                  </p>
+                </div>
+                <div className="bg-gray-800 p-3 rounded">
+                  <div className="font-bold text-purple-400 mb-1">Volatility (%)</div>
+                  <p className="text-xs text-gray-400">
+                    Percentage of times the value switched in recent history.
+                    <span className="text-green-400">Low (0-35%)</span> = stable patterns.
+                    <span className="text-red-400">High (65%+)</span> = unpredictable, risky.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Filters and Sorting */}
+            <div>
+              <h4 className="text-lg font-bold text-cyan-400 mb-2">🔧 Filters & Sorting</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="bg-gray-800 p-3 rounded">
+                  <div className="font-bold text-blue-400 mb-2">Sort Options:</div>
+                  <ul className="text-xs text-gray-400 space-y-1">
+                    <li><strong>Confidence:</strong> Highest reliability first (default)</li>
+                    <li><strong>Pattern Strength:</strong> Strongest patterns first</li>
+                    <li><strong>Volatility:</strong> Most unpredictable first</li>
+                    <li><strong>Streak Length:</strong> Longest runs first</li>
+                  </ul>
+                </div>
+                <div className="bg-gray-800 p-3 rounded">
+                  <div className="font-bold text-green-400 mb-2">Filter Options:</div>
+                  <ul className="text-xs text-gray-400 space-y-1">
+                    <li><strong>All Patterns:</strong> Show everything</li>
+                    <li><strong>High Confidence (≥70%):</strong> Only safe bets</li>
+                    <li><strong>Active Streaks (≥3):</strong> Only hot runs</li>
+                    <li><strong>Volatile Only:</strong> High-risk patterns</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Pro Tips */}
+            <div>
+              <h4 className="text-lg font-bold text-cyan-400 mb-2">💎 Pro Tips</h4>
+              <div className="bg-gradient-to-r from-yellow-900/50 to-orange-900/50 p-4 rounded border border-yellow-600">
+                <ul className="text-sm text-gray-200 space-y-2">
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-400 font-bold">✓</span>
+                    <span><strong>Focus on Priority tab</strong> - It shows the 3 best opportunities based on confidence.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-400 font-bold">✓</span>
+                    <span><strong>Look for STABLE + STREAK combos</strong> - These have the highest success rate.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-400 font-bold">✓</span>
+                    <span><strong>Avoid VOLATILE patterns</strong> - They are unpredictable and risky regardless of confidence.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-400 font-bold">✓</span>
+                    <span><strong>Combine multiple groups</strong> - Bet on 2-3 high-confidence patterns for better coverage.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400 font-bold">✗</span>
+                    <span><strong>Don&apos;t chase CHAOS patterns</strong> - No clear pattern means no edge.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-400 font-bold">✗</span>
+                    <span><strong>Don&apos;t bet on confidence &lt;60%</strong> - Wait for stronger signals.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Priority Dashboard */}
       {activeTab === 'priority' && (
