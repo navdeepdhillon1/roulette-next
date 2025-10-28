@@ -1525,8 +1525,11 @@ const openSessionSetup = () => {
 
                         {/* RIGHT SIDE: Analysis Tables - Takes up right half */}
                         <div className="w-1/2 p-2 overflow-y-auto">
+                          {/* Quick Scan Title */}
+                          <h3 className="text-lg font-bold text-cyan-400 mb-3">⚡ Quick Scan</h3>
+
                           {/* Analysis View Tabs */}
-                          <div className="flex gap-1 mb-2 bg-gray-900/50 p-1 rounded-lg">
+                          <div className="flex gap-1 mb-3 bg-gray-900/50 p-1 rounded-lg">
                             <button
                               onClick={() => setAnalysisView('common')}
                               className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
@@ -1569,19 +1572,21 @@ const openSessionSetup = () => {
                             </button>
                           </div>
 
-                          {/* Analysis Table Content */}
-                          {analysisView === 'common' && (
-                            <CommonGroupsTable spinHistory={spins.map(s => s.number)} />
-                          )}
-                          {analysisView === 'special' && (
-                            <SpecialBetsTable spinHistory={spins.map(s => s.number)} />
-                          )}
-                          {analysisView === 'wheel' && (
-                            <WheelBetStats spinHistory={spins.map(s => s.number)} />
-                          )}
-                          {analysisView === 'numbers' && (
-                            <NumbersStatsTab history={spins.map(s => s.number)} />
-                          )}
+                          {/* Analysis Table Content - No Scrolling */}
+                          <div className="overflow-visible">
+                            {analysisView === 'common' && (
+                              <CommonGroupsTable spinHistory={spins.map(s => s.number)} />
+                            )}
+                            {analysisView === 'special' && (
+                              <SpecialBetsTable spinHistory={spins.map(s => s.number)} />
+                            )}
+                            {analysisView === 'wheel' && (
+                              <WheelBetStats spinHistory={spins.map(s => s.number)} />
+                            )}
+                            {analysisView === 'numbers' && (
+                              <NumbersStatsTab history={spins.map(s => s.number)} />
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -1605,8 +1610,11 @@ const openSessionSetup = () => {
     </div>
     {/* Right Side: Analysis Tables */}
     <div className="w-1/2 p-2 overflow-y-auto">
+      {/* Quick Scan Title */}
+      <h3 className="text-lg font-bold text-cyan-400 mb-3">⚡ Quick Scan</h3>
+
       {/* Analysis View Tabs */}
-      <div className="flex gap-1 mb-2 bg-gray-900/50 p-1 rounded-lg">
+      <div className="flex gap-1 mb-3 bg-gray-900/50 p-1 rounded-lg">
         <button
           onClick={() => setAnalysisView('common')}
           className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
@@ -1649,19 +1657,21 @@ const openSessionSetup = () => {
         </button>
       </div>
 
-      {/* Analysis Table Content */}
-      {analysisView === 'common' && (
-        <CommonGroupsTable spinHistory={spins.map(s => s.number)} />
-      )}
-      {analysisView === 'special' && (
-        <SpecialBetsTable spinHistory={spins.map(s => s.number)} />
-      )}
-      {analysisView === 'wheel' && (
-        <WheelBetStats spinHistory={spins.map(s => s.number)} />
-      )}
-      {analysisView === 'numbers' && (
-        <NumbersStatsTab history={spins.map(s => s.number)} />
-      )}
+      {/* Analysis Table Content - No Scrolling */}
+      <div className="overflow-visible">
+        {analysisView === 'common' && (
+          <CommonGroupsTable spinHistory={spins.map(s => s.number)} />
+        )}
+        {analysisView === 'special' && (
+          <SpecialBetsTable spinHistory={spins.map(s => s.number)} />
+        )}
+        {analysisView === 'wheel' && (
+          <WheelBetStats spinHistory={spins.map(s => s.number)} />
+        )}
+        {analysisView === 'numbers' && (
+          <NumbersStatsTab history={spins.map(s => s.number)} />
+        )}
+      </div>
     </div>
   </div>
                     )}
@@ -1759,70 +1769,75 @@ const openSessionSetup = () => {
     )}
   </div>
 
-  {/* Stats type selector - ADD THIS NEW SECTION */}
+  {/* Quick Scan Title */}
+  <h3 className="text-lg font-bold text-yellow-400 mb-3">⚡ Quick Scan</h3>
+
+  {/* Stats type selector */}
   <div className="flex justify-between items-center mb-4">
   <div className="flex gap-2">
     <button
       onClick={() => setAnalysisView('common')}
       className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-        analysisView === 'common' 
-          ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
+        analysisView === 'common'
+          ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50'
           : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
       }`}
     >
-      Common Bets Stats
+      Common
     </button>
     <button
       onClick={() => setAnalysisView('special')}
       className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-        analysisView === 'special' 
-          ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
+        analysisView === 'special'
+          ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50'
           : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
       }`}
     >
-Special Bets Stats
-  </button>
-  <button
-    onClick={() => setAnalysisView('wheel')}
-    className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-      analysisView === 'wheel' 
-        ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50' 
-        : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
-    }`}>
-   
-   Wheel Bets Stats
-  </button>
-  <button
-    onClick={() => setAnalysisView('numbers')}
-    className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-      analysisView === 'numbers'
-        ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50'
-        : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
-    }`}
-  >
-    Numbers Stats
-  </button>
-</div>
-</div>
-    {/* Conditional rendering based on selection */}
-{analysisView === 'common' ? (
-  <CommonGroupsTable 
-    spinHistory={spins.map(s => s.number)}
+      Special
+    </button>
+    <button
+      onClick={() => setAnalysisView('wheel')}
+      className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+        analysisView === 'wheel'
+          ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50'
+          : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+      }`}
+    >
+      Wheel
+    </button>
+    <button
+      onClick={() => setAnalysisView('numbers')}
+      className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+        analysisView === 'numbers'
+          ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50'
+          : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+      }`}
+    >
+      Numbers
+    </button>
+  </div>
+  </div>
 
-  />
-) : analysisView === 'special' ? (
-  <SpecialBetsTable 
-    spinHistory={spins.map(s => s.number)}
-  />
-) : analysisView === 'wheel' ? (
-  <WheelBetStats 
-    spinHistory={spins.map(s => s.number)}
-  />
-) : analysisView === 'numbers' ? (
-  <NumbersStatsTab
-    history={spins.map(s => s.number)}
-  />
-) : null}
+  {/* Conditional rendering based on selection - No Scrolling */}
+  <div className="overflow-visible">
+    {analysisView === 'common' ? (
+      <CommonGroupsTable
+        spinHistory={spins.map(s => s.number)}
+      />
+    ) : analysisView === 'special' ? (
+      <SpecialBetsTable
+        spinHistory={spins.map(s => s.number)}
+      />
+    ) : analysisView === 'wheel' ? (
+      <WheelBetStats
+        spinHistory={spins.map(s => s.number)}
+      />
+    ) : analysisView === 'numbers' ? (
+      <NumbersStatsTab
+        history={spins.map(s => s.number)}
+      />
+    ) : null}
+  </div>
     
     {/* 2. Section Selector Tabs */}
     <div className="flex flex-wrap gap-2">
