@@ -1,7 +1,7 @@
 // components/BettingAssistant.tsx
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Navigation from './Navigation'
 import SessionSetup from './SessionSetup'
@@ -587,7 +587,8 @@ export default function BettingAssistant() {
   }
 
   // Handle bets placed in HistoryTable - NOW CONNECTED TO CARD SYSTEM
-  const handleHistoryTableBet = (
+  // Wrapped in useCallback to prevent infinite re-renders in HistoryTable
+  const handleHistoryTableBet = useCallback((
     totalWagered: number,
     totalReturned: number,
     pnl: number,
@@ -735,7 +736,7 @@ export default function BettingAssistant() {
         }
       })()
     }
-  }
+  }, [session, userId, supabaseSessionId, stepCounter, updateSessionStats, handleCardComplete, handleCardFailure])
 
   // ❌ REMOVED: Dead placeBet() function - was never called
   // ✅ Using handleHistoryTableBet() instead (see above)
