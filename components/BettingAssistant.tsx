@@ -282,7 +282,7 @@ export default function BettingAssistant() {
     }
   }, [currentDealer, previousDealer, session, addDealerChange])
 
-  const startSession = (
+  const startSession = async (
     config: SessionConfig,
     locationData?: {
       casinoId: string | null
@@ -318,7 +318,7 @@ export default function BettingAssistant() {
       startTime: i === 0 ? new Date() : null,
     }))
 
-    setSession({
+    const newSession = {
       id: `session-${Date.now()}`,
       config: configWithLocation,
       cards,
@@ -326,7 +326,9 @@ export default function BettingAssistant() {
       currentBankroll: config.bankroll,
       totalWagered: 0,
       totalReturned: 0,
-    })
+    }
+
+    setSession(newSession)
     updateSessionStats({
       currentBankroll: config.bankroll,
       totalSpins: 0,
@@ -334,6 +336,42 @@ export default function BettingAssistant() {
       totalReturned: 0,
       roi: 0
     })
+
+    // ✅ Save to Supabase (if user logged in)
+    if (userId) {
+      try {
+        const result = await createBettingSession(
+          userId,
+          configWithLocation,
+          `Session ${new Date().toLocaleDateString()}`,
+          locationData?.casinoId || undefined,
+          locationData?.tableNumber || undefined,
+          undefined, // wheelNumber
+          undefined // notes
+        )
+
+        if ('sessionId' in result) {
+          setSupabaseSessionId(result.sessionId)
+          setStepCounter(0) // Reset step counter
+          console.log('[Bet Assistant] ✅ Session saved to Supabase:', result.sessionId)
+
+          // Save all cards
+          const cardResult = await createBettingCards(userId, result.sessionId, cards)
+          if ('error' in cardResult) {
+            console.error('[Bet Assistant] ⚠️ Failed to save cards:', cardResult.error)
+          } else {
+            console.log('[Bet Assistant] ✅ Cards saved to Supabase')
+          }
+        } else {
+          console.error('[Bet Assistant] ⚠️ Failed to create session:', result.error)
+        }
+      } catch (error) {
+        console.error('[Bet Assistant] ⚠️ Supabase error (non-fatal):', error)
+      }
+    } else {
+      console.log('[Bet Assistant] 💾 Running in local mode (no user logged in)')
+    }
+
     // Skip dashboard if cards are disabled
     setViewMode(config.useCards ? 'dashboard' : 'activeCard')
   }
