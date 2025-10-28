@@ -162,6 +162,13 @@ export default function RouletteSystem() {
   // Session management modals
   const [showEndSessionModal, setShowEndSessionModal] = useState(false)
   const [showRestartSessionModal, setShowRestartSessionModal] = useState(false)
+  const [showSaveSessionModal, setShowSaveSessionModal] = useState(false)
+  const [showViewSessionsModal, setShowViewSessionsModal] = useState(false)
+  const [sessionName, setSessionName] = useState('')
+  const [sessionDescription, setSessionDescription] = useState('')
+  const [savedSessions, setSavedSessions] = useState<any[]>([])
+  const [savingSession, setSavingSession] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   // Check user authentication on mount
   useEffect(() => {
@@ -699,6 +706,180 @@ const openSessionSetup = () => {
     window.location.reload();
   };
 
+  // Save Session - Save current session to Supabase
+  const handleSaveSession = async () => {
+    if (!session || !userProfile.id) return;
+
+    setSavingSession(true);
+    setSaveError('');
+
+    try {
+      // Auto-generate session name if empty
+      const finalSessionName = sessionName.trim() || `Session - ${new Date().toLocaleDateString()}`;
+
+      // Calculate session duration
+      const durationMinutes = sessionStartTime
+        ? Math.round((new Date().getTime() - sessionStartTime.getTime()) / 60000)
+        : 0;
+
+      // Prepare session data
+      const sessionData = {
+        user_id: userProfile.id,
+        session_name: finalSessionName,
+        session_description: sessionDescription.trim() || null,
+        original_session_id: session.id,
+        session_data: {
+          balance: currentBankroll,
+          starting_balance: startingBankroll,
+          total_profit_loss: sessionPnL,
+          total_spins: session.total_spins,
+          total_bets: session.total_bets,
+          winning_bets: session.winning_bets,
+          losing_bets: session.losing_bets,
+          created_at: session.created_at,
+          updated_at: session.updated_at
+        },
+        spins_data: storageMode === 'local' ? localSpins : cloudSpins,
+        player_setup: playerSetup,
+        bet_history: betHistory,
+        final_bankroll: currentBankroll,
+        final_pnl: sessionPnL,
+        total_spins_count: session.total_spins,
+        session_duration_minutes: durationMinutes
+      };
+
+      // Save to Supabase
+      const { data, error } = await supabase
+        .from('saved_tracker_sessions')
+        .insert(sessionData)
+        .select()
+        .single();
+
+      if (error) {
+        // Check if it's the session limit error
+        if (error.message.includes('Session limit reached')) {
+          setSaveError('You\'ve reached the maximum of 10 saved sessions. Delete an old session or upgrade to Premium for 50 sessions.');
+        } else {
+          setSaveError(error.message);
+        }
+        setSavingSession(false);
+        return;
+      }
+
+      // Success!
+      setSessionName('');
+      setSessionDescription('');
+      setShowSaveSessionModal(false);
+      setSavingSession(false);
+
+      // Show success message (you could add a toast notification here)
+      alert(`Session "${finalSessionName}" saved successfully!`);
+
+    } catch (error: any) {
+      setSaveError(error.message || 'Failed to save session');
+      setSavingSession(false);
+    }
+  };
+
+  // Load Saved Sessions - Fetch from Supabase
+  const loadSavedSessions = async () => {
+    if (!userProfile.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('saved_tracker_sessions')
+        .select('*')
+        .eq('user_id', userProfile.id)
+        .order('saved_at', { ascending: false });
+
+      if (error) throw error;
+
+      setSavedSessions(data || []);
+    } catch (error: any) {
+      console.error('Failed to load saved sessions:', error);
+    }
+  };
+
+  // Load Session - Restore a saved session
+  const handleLoadSession = async (savedSession: any) => {
+    if (!confirm(`Load session "${savedSession.session_name}"? This will replace your current session.`)) {
+      return;
+    }
+
+    try {
+      // Restore session data
+      const sessionData = savedSession.session_data;
+      const newSession: Session = {
+        id: `local-${Date.now()}`,
+        is_active: true,
+        balance: sessionData.balance,
+        starting_balance: sessionData.starting_balance,
+        total_profit_loss: sessionData.total_profit_loss,
+        total_spins: sessionData.total_spins,
+        total_bets: sessionData.total_bets,
+        winning_bets: sessionData.winning_bets,
+        losing_bets: sessionData.losing_bets,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      // Restore all state
+      setLocalSession(newSession);
+      setLocalSpins(savedSession.spins_data || []);
+      setBetHistory(savedSession.bet_history || []);
+      setPlayerSetup(savedSession.player_setup || playerSetup);
+      setStartingBankroll(savedSession.session_data.starting_balance);
+      setCurrentBankroll(savedSession.session_data.balance);
+      setSessionPnL(savedSession.session_data.total_profit_loss);
+
+      // Update last_loaded_at timestamp
+      await supabase
+        .from('saved_tracker_sessions')
+        .update({ last_loaded_at: new Date().toISOString() })
+        .eq('id', savedSession.id);
+
+      // Close modal
+      setShowViewSessionsModal(false);
+
+      alert(`Session "${savedSession.session_name}" loaded successfully!`);
+    } catch (error: any) {
+      console.error('Failed to load session:', error);
+      alert('Failed to load session: ' + error.message);
+    }
+  };
+
+  // Delete Session
+  const handleDeleteSession = async (savedSession: any) => {
+    if (!confirm(`Delete session "${savedSession.session_name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('saved_tracker_sessions')
+        .delete()
+        .eq('id', savedSession.id)
+        .eq('user_id', userProfile.id);
+
+      if (error) throw error;
+
+      // Refresh the list
+      await loadSavedSessions();
+
+      alert(`Session "${savedSession.session_name}" deleted successfully!`);
+    } catch (error: any) {
+      console.error('Failed to delete session:', error);
+      alert('Failed to delete session: ' + error.message);
+    }
+  };
+
+  // Load saved sessions when View Saved Sessions modal opens
+  useEffect(() => {
+    if (showViewSessionsModal) {
+      loadSavedSessions();
+    }
+  }, [showViewSessionsModal]);
+
   return (
     <div className="text-white">
       <div className="max-w-[1920px] mx-auto p-4">
@@ -766,6 +947,20 @@ const openSessionSetup = () => {
       {/* RIGHT: Session Management Buttons */}
       <div className="flex items-center gap-2">
         <button
+          onClick={() => setShowViewSessionsModal(true)}
+          className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5"
+          title="View saved sessions"
+        >
+          📁 Saved
+        </button>
+        <button
+          onClick={() => setShowSaveSessionModal(true)}
+          className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5"
+          title="Save current session to cloud"
+        >
+          💾 Save
+        </button>
+        <button
           onClick={() => setShowRestartSessionModal(true)}
           className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5"
           title="Start fresh - clears all data"
@@ -777,11 +972,11 @@ const openSessionSetup = () => {
           className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5"
           title="Archive session and return to setup"
         >
-          💾 End Session
+          🏁 End
         </button>
         <button
           onClick={downloadSessionCSV}
-          className="px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+          className="px-4 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
           title="Download session data as CSV"
         >
           📊 Export CSV
@@ -1683,6 +1878,200 @@ Special Bets Stats
               </div>
             )}
       </div>
+
+      {/* Save Session Modal */}
+      {showSaveSessionModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-800 border-2 border-green-500 rounded-xl p-6 max-w-md w-full mx-4">
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">💾</div>
+              <h3 className="text-xl font-bold text-white mb-2">Save Session</h3>
+              <p className="text-gray-300 text-sm">
+                Save your current session to cloud storage
+              </p>
+            </div>
+
+            {/* Session Preview */}
+            <div className="bg-gray-900 rounded-lg p-4 mb-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <div className="text-gray-400">Total Spins</div>
+                  <div className="text-white font-bold">{session?.total_spins || 0}</div>
+                </div>
+                <div>
+                  <div className="text-gray-400">P/L</div>
+                  <div className={`font-bold ${sessionPnL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {sessionPnL >= 0 ? '+' : ''}${sessionPnL.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Session Name Input */}
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-300 mb-2">
+                Session Name (optional)
+              </label>
+              <input
+                type="text"
+                value={sessionName}
+                onChange={(e) => setSessionName(e.target.value)}
+                placeholder={`Session - ${new Date().toLocaleDateString()}`}
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500"
+                maxLength={100}
+              />
+            </div>
+
+            {/* Session Description Input */}
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-gray-300 mb-2">
+                Description (optional)
+              </label>
+              <textarea
+                value={sessionDescription}
+                onChange={(e) => setSessionDescription(e.target.value)}
+                placeholder="Add notes about this session..."
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                rows={3}
+                maxLength={500}
+              />
+            </div>
+
+            {/* Error Message */}
+            {saveError && (
+              <div className="mb-4 p-3 bg-red-900/30 border border-red-500/50 rounded-lg text-red-400 text-sm">
+                {saveError}
+              </div>
+            )}
+
+            {/* Saved Sessions Count */}
+            <div className="mb-4 text-center text-xs text-gray-400">
+              {storageMode === 'cloud' ? `${savedSessions.length}/10 sessions saved` : 'Sign in to save sessions'}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowSaveSessionModal(false);
+                  setSessionName('');
+                  setSessionDescription('');
+                  setSaveError('');
+                }}
+                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-all"
+                disabled={savingSession}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveSession}
+                className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={savingSession || storageMode !== 'cloud'}
+              >
+                {savingSession ? 'Saving...' : 'Save Session'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Saved Sessions Modal */}
+      {showViewSessionsModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-800 border-2 border-purple-500 rounded-xl p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="text-center mb-4">
+              <div className="text-4xl mb-2">📁</div>
+              <h3 className="text-xl font-bold text-white mb-2">Saved Sessions</h3>
+              <p className="text-gray-300 text-sm">
+                Load or delete your saved tracker sessions
+              </p>
+            </div>
+
+            {/* Sessions List */}
+            {savedSessions.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                <div className="text-5xl mb-3">📂</div>
+                <p>No saved sessions yet</p>
+                <p className="text-sm mt-2">Save your current session to access it later</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {savedSessions.map((savedSession) => (
+                  <div
+                    key={savedSession.id}
+                    className="bg-gray-900 border border-gray-700 rounded-lg p-4 hover:border-purple-500 transition-all"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <h4 className="text-lg font-bold text-white mb-1">
+                          {savedSession.session_name}
+                        </h4>
+                        {savedSession.session_description && (
+                          <p className="text-sm text-gray-400 mb-2">
+                            {savedSession.session_description}
+                          </p>
+                        )}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                          <div>
+                            <div className="text-gray-500">Spins</div>
+                            <div className="text-white font-semibold">
+                              {savedSession.total_spins_count}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-gray-500">P/L</div>
+                            <div className={`font-semibold ${savedSession.final_pnl >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {savedSession.final_pnl >= 0 ? '+' : ''}${savedSession.final_pnl?.toFixed(2)}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-gray-500">Duration</div>
+                            <div className="text-white font-semibold">
+                              {savedSession.session_duration_minutes || 0}m
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-gray-500">Saved</div>
+                            <div className="text-white font-semibold">
+                              {new Date(savedSession.saved_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => handleLoadSession(savedSession)}
+                          className="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+                        >
+                          Load
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSession(savedSession)}
+                          className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-all whitespace-nowrap"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-xs text-gray-400">
+                {savedSessions.length}/10 sessions saved (Basic tier)
+              </div>
+              <button
+                onClick={() => setShowViewSessionsModal(false)}
+                className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* End Session Confirmation Modal */}
       {showEndSessionModal && (
