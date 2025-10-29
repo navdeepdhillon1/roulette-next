@@ -64,7 +64,7 @@ const getArticleBySlug = (slug: string) => {
           <img
             src="/images/learn/tracker-method-2-input.png"
             alt="Basic Tracker manual input field for entering spin numbers"
-            style="width: 100%; height: auto; border-radius: 0.5rem; border: 1px solid rgba(156, 163, 175, 0.3);"
+            style="width: 50%; height: auto; border-radius: 0.5rem; border: 1px solid rgba(156, 163, 175, 0.3); display: block; margin: 0 auto;"
           />
           <p style="margin-top: 0.75rem; font-size: 0.875rem; color: rgba(209, 213, 219, 1); text-align: center;">
             <em>Type a number and press Enter or click ADD to record the spin</em>
@@ -251,20 +251,22 @@ const getArticleBySlug = (slug: string) => {
       readTime: '10 min read',
       author: 'Roulette Tracker Team',
       content: `
-        <p>Welcome to the Betting Assistant! Betting Cards are the core feature of the Elite tier. They provide structured, disciplined betting with real-time pattern-based suggestions. This guide will walk you through creating and using your first card.</p>
+        <p>Welcome to the Betting Assistant! <strong>Betting Cards</strong> are the core feature of the Elite tier. They provide structured, disciplined betting with real-time pattern-based suggestions. This guide will walk you through creating and using your first card.</p>
 
         <h2>What Is a Betting Card?</h2>
-        <p>A betting card is a mini-session with specific goals:</p>
+        <p>A <strong>betting card</strong> is a mini-session with specific goals:</p>
 
         <ul>
           <li><strong>Target Profit:</strong> A clear dollar amount you're trying to win (e.g., $30)</li>
           <li><strong>Max Bets:</strong> A hard limit on number of attempts (e.g., 20 bets)</li>
           <li><strong>Betting System:</strong> A progression strategy (Flat, Martingale, Fibonacci, etc.)</li>
-          <li><strong>Betting Group:</strong> What you're betting on (red/black, dozens, numbers, etc.)</li>
+          <li><strong>Betting Groups:</strong> What types of bets you're placing (red/black, dozens, columns, etc.)</li>
           <li><strong>Adaptive Rule:</strong> How the decision engine analyzes patterns (follow trends, stay contrarian, or adaptive)</li>
         </ul>
 
         <p>Think of a card as a structured game plan. You either hit your target (success!) or reach max bets (failure). No "just one more bet."</p>
+
+        <p><strong>Key Terms:</strong> <em>Betting groups</em> are the categories of bets (Red, Black, Dozens, etc.). You place bets by clicking <em>betting chips</em> - the interactive buttons for each group. Each card tracks your bets and progress toward your target.</p>
 
         <h2>Why Use Betting Cards?</h2>
 
@@ -321,8 +323,8 @@ const getArticleBySlug = (slug: string) => {
 
         <p><strong>For your first card, use Flat Betting.</strong> Set your base bet to 2-5% of your bankroll (e.g., $5 for a $200 bankroll).</p>
 
-        <h3>Step 4: Select a Betting Group</h3>
-        <p>Choose what you'll be betting on:</p>
+        <h3>Step 4: Select Your Betting Groups</h3>
+        <p>Choose which <strong>betting groups</strong> you'll be betting on. You'll interact with these using <strong>betting chips</strong> (the clickable buttons for each bet type):</p>
 
         <ul>
           <li><strong>Red/Black:</strong> 48.6% win rate, 1:1 payout (simplest for beginners)</li>
@@ -370,7 +372,7 @@ const getArticleBySlug = (slug: string) => {
           <li><strong>Meaning:</strong> Conditions look favorable, place a bet</li>
           <li><strong>Side:</strong> Bet on A or B (e.g., Red vs Black)</li>
           <li><strong>Stake:</strong> How much to bet (based on your betting system)</li>
-          <li><strong>Action:</strong> Click "Place Bet" and select the suggested side</li>
+          <li><strong>Action:</strong> Click the appropriate <strong>betting chip</strong> (e.g., the Red chip) to place your bet</li>
         </ul>
 
         <h4>SKIP (Yellow)</h4>
@@ -485,9 +487,9 @@ const getArticleBySlug = (slug: string) => {
         <ul>
           <li>Review your <strong>Performance Analytics</strong> to see discipline scores</li>
           <li>Try different betting systems (Fibonacci, D'Alembert) to compare</li>
-          <li>Experiment with different betting groups (dozens, columns)</li>
+          <li>Experiment with different <strong>betting groups</strong> (dozens, columns) using their respective <strong>betting chips</strong></li>
           <li>Read our guide on <strong>Understanding the Decision Engine</strong> to learn how statistical analysis generates suggestions</li>
-          <li>Try <strong>Matrix Betting</strong> (advanced: bet on multiple groups simultaneously)</li>
+          <li>Try <strong>Matrix Betting</strong> (advanced: place multiple betting chips simultaneously to bet on several groups at once)</li>
         </ul>
 
         <h2>Key Takeaways</h2>
@@ -513,6 +515,8 @@ const getArticleBySlug = (slug: string) => {
       content: `
         <p>One of the most powerful features of Roulette Tracker Pro is comprehensive tracking across <strong>47 distinct betting groups</strong>. This guide explains what these groups are, how they're organized, and how to use them in your analysis.</p>
 
+        <p><strong>Key Terminology:</strong> <em>Betting groups</em> are the categories or types of bets you can place (Red, Black, Dozens, etc.). In the Elite tier, you interact with these groups using <em>betting chips</em> - the clickable buttons that let you place bets on each group. This guide focuses on understanding the 47 betting groups available for tracking and analysis.</p>
+
         <h2>Why 47 Groups?</h2>
         <p>Standard roulette tracking only shows basic stats like red/black or hot numbers. But experienced players know there are many more ways to bet:</p>
 
@@ -522,7 +526,7 @@ const getArticleBySlug = (slug: string) => {
           <li><strong>Alternative patterns:</strong> Custom groupings (A/B splits, AA/BB patterns)</li>
         </ul>
 
-        <p>Our system tracks ALL of them simultaneously, giving you unprecedented insight into which betting groups are hitting and which aren't.</p>
+        <p>Our system tracks ALL of them simultaneously, giving you unprecedented insight into which <strong>betting groups</strong> are hitting and which aren't.</p>
 
         <h2>The 47 Groups: Complete Breakdown</h2>
 
@@ -759,13 +763,14 @@ const getArticleBySlug = (slug: string) => {
 
         <ul>
           <li>Roulette Tracker Pro tracks <strong>47 distinct betting groups</strong> simultaneously</li>
-          <li>Groups include standard bets (red/black), dozens/columns, wheel sectors (Voisins, Tiers), and alternative patterns</li>
+          <li><strong>Betting groups</strong> include standard bets (red/black), dozens/columns, wheel sectors (Voisins, Tiers), and alternative patterns</li>
+          <li>In the Elite tier, you place bets on these groups using <strong>betting chips</strong> - clickable buttons for each group</li>
           <li>Beginners should focus on 6 core groups, advanced players can use all 47</li>
           <li>Anomalies show statistical deviations but don't predict future outcomes</li>
-          <li>Matrix betting allows betting on multiple groups at once for complex strategies</li>
+          <li><strong>Matrix betting</strong> allows clicking multiple betting chips at once to bet on several groups simultaneously for complex strategies</li>
         </ul>
 
-        <p><strong>Ready to explore?</strong> Go to <a href="/analysis">/analysis</a> to see real-time group tracking!</p>
+        <p><strong>Ready to explore?</strong> Go to <a href="/analysis">/analysis</a> to see real-time group tracking, or head to <a href="/assistant">/assistant</a> to start placing bets with betting chips!</p>
       `,
     },
     'betting-systems-explained': {
