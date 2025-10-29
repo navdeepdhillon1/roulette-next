@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 
 interface Spin {
@@ -16,6 +16,14 @@ export default function BasicTracker() {
   const [spins, setSpins] = useState<Spin[]>([]);
   const [inputNumber, setInputNumber] = useState('');
   const [showHeatMap, setShowHeatMap] = useState(false);
+  const [sessionId, setSessionId] = useState<string>('');
+  const [showHelp, setShowHelp] = useState(false);
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+
+  // Set session ID only on client side to avoid hydration mismatch
+  useEffect(() => {
+    setSessionId(Date.now().toString().slice(-6));
+  }, []);
 
   const redNumbers = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
   const MAX_FREE_SPINS = 20;
@@ -36,7 +44,7 @@ export default function BasicTracker() {
     if (isNaN(num) || num < 0 || num > 36) return;
 
     if (spins.length >= MAX_FREE_SPINS) {
-      alert('🔒 Free tier limited to 20 spins. Upgrade to Pro for unlimited tracking!');
+      setShowRestartConfirm(true);
       return;
     }
 
@@ -49,7 +57,7 @@ export default function BasicTracker() {
     if (num < 0 || num > 36) return;
 
     if (spins.length >= MAX_FREE_SPINS) {
-      alert('🔒 Free tier limited to 20 spins. Upgrade to Pro for unlimited tracking!');
+      setShowRestartConfirm(true);
       return;
     }
 
@@ -60,6 +68,13 @@ export default function BasicTracker() {
   const undoLastSpin = () => {
     if (spins.length === 0) return;
     setSpins(spins.slice(1)); // Remove first item (most recent)
+  };
+
+  const restartSession = () => {
+    setSpins([]);
+    setInputNumber('');
+    setSessionId(Date.now().toString().slice(-6));
+    setShowRestartConfirm(false);
   };
 
   const calculateHitCount = (num: number) => {
@@ -161,14 +176,22 @@ export default function BasicTracker() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-     
-      
+    <div className="min-h-screen">
       <div className="text-white">
         <div className="max-w-7xl mx-auto p-4">
           {/* Header */}
           <div className="text-center mb-6 relative">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent blur-3xl"></div>
+
+            {/* Help Button - Top Right */}
+            <button
+              onClick={() => setShowHelp(true)}
+              className="absolute top-0 right-0 md:right-4 px-3 py-1.5 bg-yellow-400/10 hover:bg-yellow-400/20 border border-yellow-400/30 hover:border-yellow-400/60 rounded-lg transition-all text-yellow-400 text-sm font-semibold flex items-center gap-2 z-10"
+            >
+              <span className="text-lg">?</span>
+              <span className="hidden md:inline">Help</span>
+            </button>
+
             <h1 className="relative text-4xl md:text-5xl font-bold">
               <span className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 bg-clip-text text-transparent">
                 BASIC TRACKER
@@ -182,7 +205,7 @@ export default function BasicTracker() {
             <div className="flex justify-between items-center">
               <div>
                 <span className="text-yellow-400 text-xs uppercase">Session</span>
-                <p className="text-lg font-bold text-white">Free-{Date.now().toString().slice(-6)}</p>
+                <p className="text-lg font-bold text-white">Free-{sessionId || '------'}</p>
               </div>
               <div>
                 <span className="text-yellow-400 text-xs uppercase">Spins</span>
@@ -196,13 +219,19 @@ export default function BasicTracker() {
                 <span className="text-yellow-400 text-xs uppercase">Limit</span>
                 <p className="text-lg font-bold text-white">{spins.length}/{MAX_FREE_SPINS}</p>
               </div>
+              {spins.length >= MAX_FREE_SPINS && (
+                <button
+                  onClick={() => setShowRestartConfirm(true)}
+                  className="px-4 py-2 bg-yellow-400/10 hover:bg-yellow-400/20 border border-yellow-400/40 hover:border-yellow-400/60 rounded-lg transition-all text-yellow-400 font-semibold text-sm"
+                >
+                  🔄 Restart Session
+                </button>
+              )}
             </div>
           </Card>
 
-          {/* Two-Column Layout */}
-          <div className="flex gap-4">
-            {/* LEFT COLUMN: Number Grid & Input */}
-            <div className="w-3/5 space-y-4">
+          {/* Full Width Number Grid */}
+          <div className="space-y-4">
               {/* Number Input Bar with Recent Numbers */}
               <Card className="p-3 bg-gray-900 border-gray-700">
             <div className="flex items-center justify-between">
@@ -404,11 +433,115 @@ export default function BasicTracker() {
               </div>
                 </div>
               </Card>
-            </div>
+          </div>
 
-            {/* RIGHT COLUMN: Analytics Table */}
-            <div className="w-2/5">
-              <Card className="sticky top-4 p-4 bg-gray-900 border-gray-700">
+          {/* Two Column Layout: History and Live Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            {/* History - Common Bets */}
+            <Card className="p-4 bg-gray-900 border-gray-700">
+            <h3 className="text-lg font-bold text-yellow-400 mb-3">History - Common Bets</h3>
+
+            {spins.length === 0 ? (
+              <div className="text-center py-8 text-gray-400">
+                No spins recorded yet. Add numbers to start tracking!
+              </div>
+            ) : (
+              <div className="overflow-x-auto" style={{ maxHeight: '500px' }}>
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-gray-800">
+                    <tr>
+                      <th className="px-2 py-1.5 text-center border border-gray-700 text-yellow-400">Number</th>
+                      <th className="px-2 py-1.5 text-center border border-gray-700 text-yellow-400">Color</th>
+                      <th className="px-2 py-1.5 text-center border border-gray-700 text-yellow-400">Even/Odd</th>
+                      <th className="px-2 py-1.5 text-center border border-gray-700 text-yellow-400">Low/High</th>
+                      <th className="px-2 py-1.5 text-center border border-gray-700 text-yellow-400">Column</th>
+                      <th className="px-2 py-1.5 text-center border border-gray-700 text-yellow-400">Dozen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {spins.slice(0, 20).map((spin, idx) => (
+                      <tr key={idx} className="hover:bg-gray-800/50">
+                        <td className="px-2 py-1.5 text-center border border-gray-700">
+                          <div className={`
+                            w-8 h-8 mx-auto rounded-full flex items-center justify-center font-bold text-sm
+                            ${spin.number === 0 ? 'bg-green-600' :
+                              spin.color === 'red' ? 'bg-red-600' : 'bg-gray-800 border-2 border-gray-500'}
+                            text-white
+                          `}>
+                            {spin.number}
+                          </div>
+                        </td>
+                        <td className="px-2 py-1.5 text-center border border-gray-700">
+                          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                            spin.color === 'green' ? 'bg-green-600/20 text-green-400' :
+                            spin.color === 'red' ? 'bg-red-600/20 text-red-400' :
+                            'bg-gray-600/20 text-gray-300'
+                          }`}>
+                            {spin.color.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-2 py-1.5 text-center border border-gray-700">
+                          {spin.evenOdd ? (
+                            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                              spin.evenOdd === 'even'
+                                ? 'bg-purple-600/20 text-purple-400'
+                                : 'bg-orange-600/20 text-orange-400'
+                            }`}>
+                              {spin.evenOdd.toUpperCase()}
+                            </span>
+                          ) : (
+                            <span className="text-gray-500">-</span>
+                          )}
+                        </td>
+                        <td className="px-2 py-1.5 text-center border border-gray-700">
+                          {spin.lowHigh ? (
+                            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                              spin.lowHigh === 'low'
+                                ? 'bg-blue-600/20 text-blue-400'
+                                : 'bg-teal-600/20 text-teal-400'
+                            }`}>
+                              {spin.lowHigh.toUpperCase()}
+                            </span>
+                          ) : (
+                            <span className="text-gray-500">-</span>
+                          )}
+                        </td>
+                        <td className="px-2 py-1.5 text-center border border-gray-700">
+                          {spin.column ? (
+                            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                              spin.column === 1 ? 'bg-cyan-600/20 text-cyan-400' :
+                              spin.column === 2 ? 'bg-teal-600/20 text-teal-400' :
+                              'bg-lime-600/20 text-lime-400'
+                            }`}>
+                              {spin.column === 1 ? '1st' : spin.column === 2 ? '2nd' : '3rd'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-500">-</span>
+                          )}
+                        </td>
+                        <td className="px-2 py-1.5 text-center border border-gray-700">
+                          {spin.dozen ? (
+                            <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
+                              spin.dozen === 1 ? 'bg-blue-600/20 text-blue-400' :
+                              spin.dozen === 2 ? 'bg-purple-600/20 text-purple-400' :
+                              'bg-orange-600/20 text-orange-400'
+                            }`}>
+                              {spin.dozen === 1 ? '1st' : spin.dozen === 2 ? '2nd' : '3rd'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-500">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            </Card>
+
+            {/* Live Stats - Common Bets */}
+            <Card className="p-4 bg-gray-900 border-gray-700">
                 <h3 className="text-lg font-bold text-yellow-400 mb-3">Live Stats - Common Bets</h3>
 
                 {spins.length === 0 ? (
@@ -416,7 +549,7 @@ export default function BasicTracker() {
                     No spins recorded yet. Add numbers to see live statistics!
                   </div>
                 ) : (
-                  <div className="overflow-x-auto" style={{ maxHeight: '600px' }}>
+                  <div className="overflow-x-auto" style={{ maxHeight: '500px' }}>
                     <table className="w-full text-xs text-white">
                       <thead className="sticky top-0 z-10 bg-gray-800">
                         <tr>
@@ -465,6 +598,7 @@ export default function BasicTracker() {
                                 ${group.type === 'lowhigh' ? 'bg-blue-900/10' : ''}
                                 ${group.type === 'dozen' ? 'bg-orange-900/10' : ''}
                                 ${group.type === 'column' ? 'bg-green-900/10' : ''}
+                                ${group.id === 'even' || group.id === 'low' || group.id === 'dozen1' || group.id === 'col1' ? 'border-t-2 border-t-yellow-400/30' : ''}
                               `}
                             >
                               <td className={`
@@ -503,129 +637,331 @@ export default function BasicTracker() {
                     </table>
                   </div>
                 )}
+            </Card>
+          </div>
+
+          {/* Testimonials Section */}
+          <div className="mt-8 mb-6">
+            <h2 className="text-3xl font-bold text-center text-yellow-400 mb-2">What Our Players Say</h2>
+            <p className="text-center text-gray-400 mb-6">Real results from professional roulette players</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+              {/* Testimonial 1 */}
+              <Card className="bg-black/40 backdrop-blur border border-yellow-400/30 p-4 md:p-6 hover:border-yellow-400/60 transition-all">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex text-yellow-400">
+                    {'⭐'.repeat(5)}
+                  </div>
+                </div>
+                <p className="text-gray-300 mb-4 italic">
+                  "The pattern detection is game-changing. I've increased my win rate by 23% tracking hot/cold patterns across all 47 groups. The intelligent predictions are spot-on."
+                </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white font-bold">Marcus R.</p>
+                    <p className="text-gray-500 text-sm">Las Vegas, NV</p>
+                  </div>
+                  <div className="px-3 py-1 bg-yellow-400/20 border border-yellow-400/40 rounded-full text-yellow-400 text-xs font-bold">
+                    ELITE
+                  </div>
+                </div>
+              </Card>
+
+              {/* Testimonial 2 */}
+              <Card className="bg-black/40 backdrop-blur border border-yellow-400/30 p-4 md:p-6 hover:border-yellow-400/60 transition-all">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex text-yellow-400">
+                    {'⭐'.repeat(5)}
+                  </div>
+                </div>
+                <p className="text-gray-300 mb-4 italic">
+                  "Finally, a tracker that understands wheel sections! The voisins/orphelins analysis helped me identify dealer signatures I never noticed before."
+                </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white font-bold">Sarah Chen</p>
+                    <p className="text-gray-500 text-sm">Macau</p>
+                  </div>
+                  <div className="px-3 py-1 bg-blue-400/20 border border-blue-400/40 rounded-full text-blue-400 text-xs font-bold">
+                    PRO
+                  </div>
+                </div>
+              </Card>
+
+              {/* Testimonial 3 */}
+              <Card className="bg-black/40 backdrop-blur border border-yellow-400/30 p-4 md:p-6 hover:border-yellow-400/60 transition-all">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex text-yellow-400">
+                    {'⭐'.repeat(5)}
+                  </div>
+                </div>
+                <p className="text-gray-300 mb-4 italic">
+                  "The betting card system is brilliant. It keeps me disciplined and prevents chasing losses. Up $4,200 this month following the skip suggestions."
+                </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white font-bold">James D.</p>
+                    <p className="text-gray-500 text-sm">Monaco</p>
+                  </div>
+                  <div className="px-3 py-1 bg-yellow-400/20 border border-yellow-400/40 rounded-full text-yellow-400 text-xs font-bold">
+                    ELITE
+                  </div>
+                </div>
               </Card>
             </div>
           </div>
 
-          {/* History Table - 6 Common Bets Only - Full Width Below */}
-          <Card className="mt-4 p-4 bg-gray-900 border-gray-700">
-            <h3 className="text-lg font-bold text-yellow-400 mb-3">History - Common Bets</h3>
-            
-            {spins.length === 0 ? (
-              <div className="text-center py-8 text-gray-400">
-                No spins recorded yet. Add numbers to start tracking!
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-gray-800">
-                    <tr>
-                      <th className="px-3 py-2 text-center border border-gray-700 text-yellow-400">Number</th>
-                      <th className="px-3 py-2 text-center border border-gray-700 text-yellow-400">Color</th>
-                      <th className="px-3 py-2 text-center border border-gray-700 text-yellow-400">Even/Odd</th>
-                      <th className="px-3 py-2 text-center border border-gray-700 text-yellow-400">Low/High</th>
-                      <th className="px-3 py-2 text-center border border-gray-700 text-yellow-400">Column</th>
-                      <th className="px-3 py-2 text-center border border-gray-700 text-yellow-400">Dozen</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {spins.slice(0, 20).map((spin, idx) => (
-                      <tr key={idx} className="hover:bg-gray-800/50">
-                        <td className="px-3 py-2 text-center border border-gray-700">
-                          <div className={`
-                            w-10 h-10 mx-auto rounded-full flex items-center justify-center font-bold
-                            ${spin.number === 0 ? 'bg-green-600' :
-                              spin.color === 'red' ? 'bg-red-600' : 'bg-gray-800 border-2 border-gray-500'}
-                            text-white
-                          `}>
-                            {spin.number}
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 text-center border border-gray-700">
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                            spin.color === 'green' ? 'bg-green-600/20 text-green-400' :
-                            spin.color === 'red' ? 'bg-red-600/20 text-red-400' : 
-                            'bg-gray-600/20 text-gray-300'
-                          }`}>
-                            {spin.color.toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-center border border-gray-700">
-                          {spin.evenOdd ? (
-                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                              spin.evenOdd === 'even' 
-                                ? 'bg-purple-600/20 text-purple-400' 
-                                : 'bg-orange-600/20 text-orange-400'
-                            }`}>
-                              {spin.evenOdd.toUpperCase()}
-                            </span>
-                          ) : (
-                            <span className="text-gray-500">-</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-center border border-gray-700">
-                          {spin.lowHigh ? (
-                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                              spin.lowHigh === 'low' 
-                                ? 'bg-blue-600/20 text-blue-400' 
-                                : 'bg-teal-600/20 text-teal-400'
-                            }`}>
-                              {spin.lowHigh.toUpperCase()}
-                            </span>
-                          ) : (
-                            <span className="text-gray-500">-</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-center border border-gray-700">
-                          {spin.column ? (
-                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                              spin.column === 1 ? 'bg-cyan-600/20 text-cyan-400' :
-                              spin.column === 2 ? 'bg-teal-600/20 text-teal-400' :
-                              'bg-lime-600/20 text-lime-400'
-                            }`}>
-                              {spin.column === 1 ? '1st' : spin.column === 2 ? '2nd' : '3rd'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-500">-</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-center border border-gray-700">
-                          {spin.dozen ? (
-                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                              spin.dozen === 1 ? 'bg-blue-600/20 text-blue-400' :
-                              spin.dozen === 2 ? 'bg-purple-600/20 text-purple-400' :
-                              'bg-orange-600/20 text-orange-400'
-                            }`}>
-                              {spin.dozen === 1 ? '1st' : spin.dozen === 2 ? '2nd' : '3rd'}
-                            </span>
-                          ) : (
-                            <span className="text-gray-500">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </Card>
-
           {/* Upgrade CTA - Full Width */}
-          <Card className="mt-4 p-6 bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-blue-500">
-            <div className="text-center">
-              <div className="text-4xl mb-3">🚀</div>
-              <h2 className="text-2xl font-bold mb-2">Want Advanced Analytics?</h2>
-              <p className="text-gray-300 mb-4">
-                Upgrade to <strong className="text-blue-400">Pro</strong> to unlock unlimited spins, 47 betting groups,
-                pattern detection, probability analysis, and cloud storage!
-              </p>
-              <button className="px-8 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold text-lg transition-all transform hover:scale-105">
-                Upgrade to Pro - $9.99/mo
-              </button>
-              <p className="text-xs text-gray-400 mt-2">7-day free trial • Cancel anytime</p>
+          <Card className="mt-4 p-4 md:p-6 bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 backdrop-blur border-yellow-400/40 relative overflow-hidden">
+            {/* Dark overlay for depth */}
+            <div className="absolute inset-0 bg-black/40"></div>
+
+            {/* Subtle teal accent from edges */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(6,78,59,0.6)_100%)]"></div>
+
+            {/* Grid pattern overlay */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(250,204,21,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(250,204,21,0.02)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+
+            <div className="relative">
+              <div className="text-center mb-6">
+                <h2 className="text-3xl font-bold text-yellow-400 mb-2">Ready to Level Up?</h2>
+                <p className="text-white/90">Choose the plan that fits your strategy</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                {/* Pro Tier */}
+                <div className="bg-black/30 backdrop-blur rounded-xl border border-yellow-400/30 p-4 md:p-6 hover:border-yellow-400/60 transition-all shadow-[0_0_20px_rgba(250,204,21,0.1)] hover:shadow-[0_0_30px_rgba(250,204,21,0.2)]">
+                  <div className="text-center">
+                    <div className="text-3xl mb-2">⚡</div>
+                    <h3 className="text-2xl font-bold text-yellow-400 mb-2">Pro</h3>
+                    <div className="text-3xl font-extrabold text-white mb-3">$9.99<span className="text-sm text-gray-300">/mo</span></div>
+                    <ul className="text-left text-sm text-gray-200 space-y-2 mb-6">
+                      <li>✓ Unlimited spins tracking</li>
+                      <li>✓ 47 betting groups analysis</li>
+                      <li>✓ Pattern detection engine</li>
+                      <li>✓ Probability analysis</li>
+                      <li>✓ Cloud storage & sync</li>
+                    </ul>
+                    <button className="w-full px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-black rounded-lg font-bold transition-all transform hover:scale-105">
+                      Start Pro Trial
+                    </button>
+                    <p className="text-xs text-gray-400 mt-2">7-day free trial</p>
+                  </div>
+                </div>
+
+                {/* Elite Tier */}
+                <div className="bg-black/30 backdrop-blur rounded-xl border border-yellow-400/50 p-4 md:p-6 hover:border-yellow-400/80 transition-all shadow-[0_0_30px_rgba(250,204,21,0.2)] hover:shadow-[0_0_40px_rgba(250,204,21,0.3)]">
+                  <div className="text-center">
+                    <div className="text-3xl mb-2">👑</div>
+                    <h3 className="text-2xl font-bold text-yellow-400 mb-2">Elite</h3>
+                    <div className="text-3xl font-extrabold text-white mb-3">$19.99<span className="text-sm text-gray-300">/mo</span></div>
+                    <ul className="text-left text-sm text-gray-200 space-y-2 mb-6">
+                      <li>✓ <strong>Everything in Pro</strong></li>
+                      <li>✓ Smart betting assistant</li>
+                      <li>✓ Betting card system</li>
+                      <li>✓ Advanced progressions</li>
+                      <li>✓ Priority support</li>
+                    </ul>
+                    <button className="w-full px-6 py-3 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black rounded-lg font-bold transition-all transform hover:scale-105">
+                      Start Elite Trial
+                    </button>
+                    <p className="text-xs text-gray-400 mt-2">7-day free trial</p>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-center text-sm text-white/70 mt-6">Cancel anytime • No long-term commitment</p>
             </div>
           </Card>
         </div>
+
+        {/* Restart Confirmation Modal */}
+        {showRestartConfirm && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowRestartConfirm(false)}>
+            <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-yellow-400/40 rounded-xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div className="bg-gradient-to-r from-orange-900/40 to-red-900/40 border-b border-yellow-400/30 p-6">
+                <h2 className="text-2xl font-bold text-yellow-400 flex items-center gap-2">
+                  <span className="text-3xl">🔄</span>
+                  Restart Session?
+                </h2>
+                <p className="text-gray-300 text-sm mt-2">You've reached the 20 spin limit for the free tier</p>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-4">
+                <div className="bg-yellow-900/20 border border-yellow-400/30 rounded-lg p-4">
+                  <p className="text-yellow-400 font-semibold mb-2">Choose an option:</p>
+                  <ul className="text-gray-300 text-sm space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-yellow-400 font-bold">1.</span>
+                      <span><strong className="text-white">Restart:</strong> Start a brand new session with fresh statistics (all current data will be cleared)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-yellow-400 font-bold">2.</span>
+                      <span><strong className="text-white">Upgrade:</strong> Get unlimited spins + advanced features with Pro or Elite tier</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="bg-black/30 rounded-lg p-4">
+                  <p className="text-gray-400 text-xs">
+                    ⚠️ <strong className="text-white">Warning:</strong> Restarting will permanently delete your current {spins.length} spins and all statistics. This cannot be undone.
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="border-t border-yellow-400/30 p-4 space-y-2">
+                <button
+                  onClick={restartSession}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white rounded-lg font-bold transition-all"
+                >
+                  🔄 Yes, Restart Session
+                </button>
+                <button
+                  onClick={() => setShowRestartConfirm(false)}
+                  className="w-full px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-all"
+                >
+                  Cancel
+                </button>
+                <a
+                  href="/pricing"
+                  className="block w-full px-6 py-2 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black rounded-lg font-bold text-center transition-all"
+                >
+                  🚀 Upgrade for Unlimited
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Help Modal */}
+        {showHelp && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowHelp(false)}>
+            <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 border-2 border-yellow-400/40 rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div className="sticky top-0 bg-gradient-to-r from-gray-900 to-gray-800 border-b border-yellow-400/30 p-6 flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-yellow-400">How to Use Basic Tracker</h2>
+                  <p className="text-gray-400 text-sm mt-1">Your guide to tracking roulette patterns</p>
+                </div>
+                <button
+                  onClick={() => setShowHelp(false)}
+                  className="text-gray-400 hover:text-yellow-400 text-3xl leading-none transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-6">
+                {/* Getting Started */}
+                <div>
+                  <h3 className="text-xl font-bold text-yellow-400 mb-3 flex items-center gap-2">
+                    <span className="text-2xl">🎯</span>
+                    Getting Started
+                  </h3>
+                  <div className="bg-black/30 rounded-lg p-4 space-y-2 text-gray-300">
+                    <p><strong className="text-white">1.</strong> Enter roulette numbers as they appear using the input field or click numbers on the grid</p>
+                    <p><strong className="text-white">2.</strong> Watch the Live Stats table update automatically with each new spin</p>
+                    <p><strong className="text-white">3.</strong> Review the History table to see detailed results for recent spins</p>
+                    <p><strong className="text-white">4.</strong> Use the Undo button to remove incorrect entries</p>
+                  </div>
+                </div>
+
+                {/* Understanding Live Stats */}
+                <div>
+                  <h3 className="text-xl font-bold text-yellow-400 mb-3 flex items-center gap-2">
+                    <span className="text-2xl">📊</span>
+                    Live Stats Columns
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="bg-black/30 rounded-lg p-4">
+                      <p className="font-bold text-white mb-1">Streak</p>
+                      <p className="text-gray-300 text-sm">Number of consecutive times this group has won. High streaks (5+) are marked with 🔥</p>
+                    </div>
+                    <div className="bg-black/30 rounded-lg p-4">
+                      <p className="font-bold text-white mb-1">Absence</p>
+                      <p className="text-gray-300 text-sm">Number of spins since this group last won. Long absences (8+) trigger alerts: ⚠️ at 8, 🚨 at 10+</p>
+                    </div>
+                    <div className="bg-black/30 rounded-lg p-4">
+                      <p className="font-bold text-white mb-1">Hits (L9)</p>
+                      <p className="text-gray-300 text-sm">How many times this group won in the Last 9 spins. Helps identify recent trends.</p>
+                    </div>
+                    <div className="bg-black/30 rounded-lg p-4">
+                      <p className="font-bold text-white mb-1">Act%</p>
+                      <p className="text-gray-300 text-sm">Actual percentage this group has won vs. theoretical probability (Red/Black/Even/Odd: 48.6%, Dozens/Columns: 32.4%)</p>
+                    </div>
+                    <div className="bg-black/30 rounded-lg p-4">
+                      <p className="font-bold text-white mb-1">Status</p>
+                      <p className="text-gray-300 text-sm">
+                        <span className="text-red-400 font-bold">HOT</span> = Appearing more than expected (+10% deviation)<br/>
+                        <span className="text-blue-400 font-bold">COLD</span> = Appearing less than expected (-10% deviation)<br/>
+                        <span className="text-gray-400 font-bold">NORM</span> = Within normal range
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Betting Groups */}
+                <div>
+                  <h3 className="text-xl font-bold text-yellow-400 mb-3 flex items-center gap-2">
+                    <span className="text-2xl">🎲</span>
+                    Betting Groups
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="bg-red-900/20 border border-red-400/30 rounded-lg p-3">
+                      <p className="font-bold text-red-400">Colors</p>
+                      <p className="text-gray-300 text-sm">Red or Black (18 numbers each)</p>
+                    </div>
+                    <div className="bg-purple-900/20 border border-purple-400/30 rounded-lg p-3">
+                      <p className="font-bold text-purple-400">Even/Odd</p>
+                      <p className="text-gray-300 text-sm">Even or Odd numbers</p>
+                    </div>
+                    <div className="bg-blue-900/20 border border-blue-400/30 rounded-lg p-3">
+                      <p className="font-bold text-blue-400">Low/High</p>
+                      <p className="text-gray-300 text-sm">Low (1-18) or High (19-36)</p>
+                    </div>
+                    <div className="bg-orange-900/20 border border-orange-400/30 rounded-lg p-3">
+                      <p className="font-bold text-orange-400">Dozens</p>
+                      <p className="text-gray-300 text-sm">1st (1-12), 2nd (13-24), 3rd (25-36)</p>
+                    </div>
+                    <div className="bg-green-900/20 border border-green-400/30 rounded-lg p-3 md:col-span-2">
+                      <p className="font-bold text-green-400">Columns</p>
+                      <p className="text-gray-300 text-sm">Column 1, 2, or 3 (12 numbers each, based on table layout)</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pro Tips */}
+                <div>
+                  <h3 className="text-xl font-bold text-yellow-400 mb-3 flex items-center gap-2">
+                    <span className="text-2xl">💡</span>
+                    Pro Tips
+                  </h3>
+                  <div className="bg-gradient-to-br from-yellow-900/20 to-orange-900/20 border border-yellow-400/30 rounded-lg p-4 space-y-2 text-gray-300">
+                    <p>• Look for patterns across multiple betting groups simultaneously</p>
+                    <p>• High absence doesn't guarantee the next win - use it as one factor among many</p>
+                    <p>• Track at least 10-15 spins before making pattern judgments</p>
+                    <p>• The free tier allows 20 spins - upgrade to Pro/Elite for unlimited tracking</p>
+                    <p>• Yellow dividers separate different betting group categories for easier scanning</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="sticky bottom-0 bg-gradient-to-r from-gray-900 to-gray-800 border-t border-yellow-400/30 p-4">
+                <button
+                  onClick={() => setShowHelp(false)}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-black rounded-lg font-bold transition-all"
+                >
+                  Got It!
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

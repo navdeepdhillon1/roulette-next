@@ -788,10 +788,12 @@ export default function BettingAssistant() {
       <Navigation />
       {/* Intro/Welcome Page */}
       {viewMode === 'intro' && (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-8">
-          <div className="max-w-4xl w-full">
+        <div className="min-h-screen bg-gradient-to-br from-[#0A0E27] via-[#0B5345] to-[#0A0E27] flex items-center justify-center p-8 relative overflow-hidden">
+          {/* Subtle yellow accent overlay */}
+          <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-yellow-600/8 via-transparent to-transparent pointer-events-none"></div>
+          <div className="max-w-4xl w-full relative z-10">
             <div className="text-center mb-8">
-              <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-4">
+              <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-teal-600 mb-4">
                 🎯 Betting Assistant
               </h1>
               <p className="text-xl text-gray-300">
@@ -801,8 +803,8 @@ export default function BettingAssistant() {
 
             <div className="grid gap-6 mb-8">
               {/* What is it? */}
-              <div className="bg-gray-800/50 rounded-xl p-6 border border-cyan-500/30">
-                <h2 className="text-2xl font-bold text-cyan-400 mb-3">What is the Betting Assistant?</h2>
+              <div className="bg-black/40 backdrop-blur rounded-xl p-6 border border-teal-500/30">
+                <h2 className="text-2xl font-bold text-teal-400 mb-3">What is the Betting Assistant?</h2>
                 <p className="text-gray-300 leading-relaxed">
                   A powerful tool that helps you manage your roulette sessions with a structured, card-based approach.
                   Track your performance, manage your bankroll, and make informed decisions with real-time analytics.
@@ -810,8 +812,8 @@ export default function BettingAssistant() {
               </div>
 
               {/* Key Features */}
-              <div className="bg-gray-800/50 rounded-xl p-6 border border-blue-500/30">
-                <h2 className="text-2xl font-bold text-blue-400 mb-4">Key Features</h2>
+              <div className="bg-black/40 backdrop-blur rounded-xl p-6 border border-teal-500/30">
+                <h2 className="text-2xl font-bold text-teal-400 mb-4">Key Features</h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="flex gap-3">
                     <span className="text-2xl">🎴</span>
@@ -845,30 +847,30 @@ export default function BettingAssistant() {
               </div>
 
               {/* How to Use */}
-              <div className="bg-gray-800/50 rounded-xl p-6 border border-purple-500/30">
-                <h2 className="text-2xl font-bold text-purple-400 mb-4">How to Use</h2>
+              <div className="bg-black/40 backdrop-blur rounded-xl p-6 border border-teal-500/30">
+                <h2 className="text-2xl font-bold text-teal-400 mb-4">How to Use</h2>
                 <div className="space-y-3">
                   <div className="flex gap-3">
-                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center font-bold text-white">1</span>
+                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center font-bold text-white">1</span>
                     <p className="text-gray-300 pt-1"><strong className="text-white">Setup Session:</strong> Configure your bankroll, target profit, and betting preferences</p>
                   </div>
                   <div className="flex gap-3">
-                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center font-bold text-white">2</span>
+                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center font-bold text-white">2</span>
                     <p className="text-gray-300 pt-1"><strong className="text-white">View Dashboard:</strong> See all your betting cards and select one to start</p>
                   </div>
                   <div className="flex gap-3">
-                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center font-bold text-white">3</span>
+                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center font-bold text-white">3</span>
                     <p className="text-gray-300 pt-1"><strong className="text-white">Place Bets & Track:</strong> Enter numbers, place bets, and watch the analytics update in real-time</p>
                   </div>
                   <div className="flex gap-3">
-                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center font-bold text-white">4</span>
+                    <span className="flex-shrink-0 w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center font-bold text-white">4</span>
                     <p className="text-gray-300 pt-1"><strong className="text-white">Complete Cards:</strong> Hit your target or move to the next card strategically</p>
                   </div>
                 </div>
               </div>
 
               {/* Benefits */}
-              <div className="bg-gray-800/50 rounded-xl p-6 border border-green-500/30">
+              <div className="bg-black/40 backdrop-blur rounded-xl p-6 border border-green-500/30">
                 <h2 className="text-2xl font-bold text-green-400 mb-3">Benefits</h2>
                 <ul className="space-y-2 text-gray-300">
                   <li className="flex gap-2"><span className="text-green-400">✓</span> Structured approach prevents emotional betting</li>
@@ -883,7 +885,7 @@ export default function BettingAssistant() {
             <div className="text-center">
               <button
                 onClick={() => setViewMode('setup')}
-                className="px-12 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white text-xl font-bold rounded-xl shadow-2xl transform hover:scale-105 transition-all"
+                className="px-12 py-4 bg-gradient-to-r from-teal-500 to-teal-700 hover:from-teal-600 hover:to-teal-800 text-white text-xl font-bold rounded-xl shadow-2xl hover:shadow-teal-400/50 transform hover:scale-105 transition-all"
               >
                 🚀 Start Your Session
               </button>

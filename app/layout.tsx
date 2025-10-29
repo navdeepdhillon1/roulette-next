@@ -15,8 +15,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Roulette Tracker Pro",
-  description: "Advanced roulette analytics, simulator, and session tracking.",
+  title: "EuroRoulette Tracker - Professional Edition",
+  description: "Professional-grade roulette analytics platform. Track 47 betting groups with real-time statistical insights, betting assistant, and session management.",
+  keywords: "roulette tracker, roulette analytics, roulette statistics, betting assistant, roulette strategy",
+  authors: [{ name: "EuroRoulette Tracker" }],
+  creator: "EuroRoulette Tracker",
+  publisher: "EuroRoulette Tracker",
+  metadataBase: new URL('https://euroroulette-tracker.com'),
+  openGraph: {
+    title: "EuroRoulette Tracker - Professional Edition",
+    description: "Track 47 betting groups with real-time statistical insights",
+    url: 'https://euroroulette-tracker.com',
+    siteName: 'EuroRoulette Tracker',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "EuroRoulette Tracker - Professional Edition",
+    description: "Track 47 betting groups with real-time statistical insights",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

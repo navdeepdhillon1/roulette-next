@@ -954,8 +954,10 @@ export default function SessionSetup({ onStartSession, userId, hasEliteAccess }:
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-[#0A0E27] via-[#0B5345] to-[#0A0E27] p-4 relative overflow-hidden">
+      {/* Subtle yellow accent overlay */}
+      <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-yellow-600/8 via-transparent to-transparent pointer-events-none"></div>
+      <div className="max-w-4xl mx-auto relative z-10">
         <div className="flex justify-center mb-2">
           <div className="bg-purple-600/20 border border-purple-500/40 rounded-full px-3 py-0.5 text-xs font-bold text-purple-300">
             v1.2.1 🔒 Feature Locked

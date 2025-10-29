@@ -66,7 +66,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
   }
 
   return (
-    <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-xl border-2 border-yellow-400 p-6 mb-6 shadow-2xl">
+    <div className="bg-black/40 backdrop-blur rounded-xl border-2 border-yellow-400 p-6 mb-6 shadow-2xl">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -98,7 +98,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
         <button
           onClick={() => setActiveTab('matrix')}
           className={`flex-1 px-4 py-3 rounded-lg font-bold transition-all ${
-            activeTab === 'matrix' ? 'bg-cyan-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            activeTab === 'matrix' ? 'bg-cyan-600 text-white' : 'bg-black/40 text-gray-300 hover:bg-black/60'
           }`}
         >
           📊 Betting Matrix
@@ -106,7 +106,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
         <button
           onClick={() => setActiveTab('spins')}
           className={`flex-1 px-4 py-3 rounded-lg font-bold transition-all ${
-            activeTab === 'spins' ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            activeTab === 'spins' ? 'bg-purple-600 text-white' : 'bg-black/40 text-gray-300 hover:bg-black/60'
           }`}
         >
           🎲 Spin History
@@ -114,7 +114,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
         <button
           onClick={() => setActiveTab('numbers')}
           className={`flex-1 px-4 py-3 rounded-lg font-bold transition-all ${
-            activeTab === 'numbers' ? 'bg-orange-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            activeTab === 'numbers' ? 'bg-orange-600 text-white' : 'bg-black/40 text-gray-300 hover:bg-black/60'
           }`}
         >
           🔢 Numbers Hit
@@ -122,7 +122,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
         <button
           onClick={() => setActiveTab('analysis')}
           className={`flex-1 px-4 py-3 rounded-lg font-bold transition-all ${
-            activeTab === 'analysis' ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            activeTab === 'analysis' ? 'bg-green-600 text-white' : 'bg-black/40 text-gray-300 hover:bg-black/60'
           }`}
         >
           📈 Analysis
@@ -131,12 +131,12 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
 
       {/* BETTING MATRIX TAB */}
       {activeTab === 'matrix' && (
-        <div className="bg-gray-800/50 rounded-xl p-4">
+        <div className="bg-black/30 rounded-xl p-4">
           <div className="flex gap-2 mb-4">
             <button
               onClick={() => setMatrixTab('table-common')}
               className={`flex-1 px-3 py-2 rounded-lg text-sm font-bold ${
-                matrixTab === 'table-common' ? 'bg-cyan-600' : 'bg-gray-700 hover:bg-gray-600'
+                matrixTab === 'table-common' ? 'bg-cyan-600' : 'bg-black/40 hover:bg-black/60'
               }`}
             >
               📊 Table Common
@@ -144,7 +144,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
             <button
               onClick={() => setMatrixTab('table-special')}
               className={`flex-1 px-3 py-2 rounded-lg text-sm font-bold ${
-                matrixTab === 'table-special' ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'
+                matrixTab === 'table-special' ? 'bg-purple-600' : 'bg-black/40 hover:bg-black/60'
               }`}
             >
               ⭐ Table Special
@@ -152,7 +152,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
             <button
               onClick={() => setMatrixTab('wheel-common')}
               className={`flex-1 px-3 py-2 rounded-lg text-sm font-bold ${
-                matrixTab === 'wheel-common' ? 'bg-orange-600' : 'bg-gray-700 hover:bg-gray-600'
+                matrixTab === 'wheel-common' ? 'bg-orange-600' : 'bg-black/40 hover:bg-black/60'
               }`}
             >
               🎡 Wheel Common
@@ -160,7 +160,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
             <button
               onClick={() => setMatrixTab('wheel-special')}
               className={`flex-1 px-3 py-2 rounded-lg text-sm font-bold ${
-                matrixTab === 'wheel-special' ? 'bg-emerald-600' : 'bg-gray-700 hover:bg-gray-600'
+                matrixTab === 'wheel-special' ? 'bg-emerald-600' : 'bg-black/40 hover:bg-black/60'
               }`}
             >
               🎯 Wheel Special
@@ -204,9 +204,9 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
                   {cardBets.map((bet, idx) => {
                     const num = bet.numberHit
                     const groups = ['red', 'black', 'even', 'odd', 'low', 'high', 'dozen1', 'dozen2', 'dozen3', 'col1', 'col2', 'col3']
-                    
+
                     return (
-                      <tr key={idx} className="hover:bg-gray-700/30">
+                      <tr key={idx} className="hover:bg-black/40">
                         <td className="border border-gray-700 p-2 text-center font-bold">{idx + 1}</td>
                         <td className="border border-gray-700 p-2 text-center">
                           <span className={`inline-block px-2 py-1 rounded font-bold ${
@@ -222,7 +222,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
                             <td
                               key={group}
                               className={`border border-gray-700 p-2 text-center ${
-                                won ? 'bg-green-900/30' : 'bg-gray-900/20'
+                                won ? 'bg-green-900/30' : 'bg-black/20'
                               }`}
                             >
                               {won ? <span className="text-green-400">✓</span> : ''}
@@ -254,7 +254,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
 
       {/* SPIN HISTORY TAB */}
       {activeTab === 'spins' && (
-        <div className="bg-gray-800/50 rounded-xl p-4 max-h-96 overflow-y-auto">
+        <div className="bg-black/30 rounded-xl p-4 max-h-96 overflow-y-auto">
           <h3 className="text-xl font-bold text-white mb-4">Complete Spin History</h3>
           <div className="space-y-2">
             {cardBets.map((bet, idx) => (
@@ -291,7 +291,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
 
       {/* NUMBERS HIT TAB */}
       {activeTab === 'numbers' && (
-        <div className="bg-gray-800/50 rounded-xl p-4">
+        <div className="bg-black/30 rounded-xl p-4">
           <h3 className="text-xl font-bold text-white mb-4">Numbers Hit During This Card</h3>
           
           <div className="grid grid-cols-12 gap-2 mb-6">
@@ -303,7 +303,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
                 <div
                   key={num}
                   className={`aspect-square rounded-lg flex flex-col items-center justify-center font-bold border-2 ${
-                    !wasHit ? 'bg-gray-700/30 border-gray-600 opacity-30' :
+                    !wasHit ? 'bg-black/20 border-gray-600 opacity-30' :
                     num === 0 ? 'bg-green-600 border-green-400' :
                     redNumbers.includes(num) ? 'bg-red-600 border-red-400' :
                     'bg-gray-900 border-gray-600'
@@ -317,7 +317,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-900/50 rounded-lg p-4">
+            <div className="bg-black/40 rounded-lg p-4">
               <h4 className="font-bold text-red-400 mb-3">🔥 Hot Numbers</h4>
               <div className="space-y-2">
                 {hotNumbers.map(([num, count]) => (
@@ -334,7 +334,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
               </div>
             </div>
 
-            <div className="bg-gray-900/50 rounded-lg p-4">
+            <div className="bg-black/40 rounded-lg p-4">
               <h4 className="font-bold text-blue-400 mb-3">❄️ Cold Numbers</h4>
               <div className="space-y-2">
                 {Array.from({ length: 37 }, (_, i) => i)
@@ -359,11 +359,11 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
 
       {/* ANALYSIS TAB */}
       {activeTab === 'analysis' && (
-        <div className="bg-gray-800/50 rounded-xl p-4">
+        <div className="bg-black/30 rounded-xl p-4">
           <h3 className="text-xl font-bold text-white mb-4">Card Performance Analysis</h3>
-          
+
           <div className="grid grid-cols-3 gap-4">
-            <div className="bg-gray-900/50 rounded-lg p-4">
+            <div className="bg-black/40 rounded-lg p-4">
               <h4 className="text-sm text-gray-400 mb-2">Efficiency Score</h4>
               <div className="text-3xl font-bold text-cyan-400">
                 {card.status === 'completed' 
@@ -377,7 +377,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
               </p>
             </div>
 
-            <div className="bg-gray-900/50 rounded-lg p-4">
+            <div className="bg-black/40 rounded-lg p-4">
               <h4 className="text-sm text-gray-400 mb-2">Average P/L per Spin</h4>
               <div className={`text-3xl font-bold ${
                 card.currentTotal / cardBets.length >= 0 ? 'text-green-400' : 'text-red-400'
@@ -389,7 +389,7 @@ const ExpandedCardDetail = ({ card, onClose }: { card: BetCard; onClose: () => v
               </p>
             </div>
 
-            <div className="bg-gray-900/50 rounded-lg p-4">
+            <div className="bg-black/40 rounded-lg p-4">
               <h4 className="text-sm text-gray-400 mb-2">Numbers Diversity</h4>
               <div className="text-3xl font-bold text-purple-400">
                 {uniqueNumbers.length}/37
@@ -413,8 +413,10 @@ export default function BetCardDashboard({ session, onSelectCard, onEndSession, 
   const [expandedCardId, setExpandedCardId] = useState<string | null>(null)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#0A0E27] via-[#0B5345] to-[#0A0E27] p-6 relative overflow-hidden">
+      {/* Subtle yellow accent overlay */}
+      <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-yellow-600/8 via-transparent to-transparent pointer-events-none"></div>
+      <div className="max-w-7xl mx-auto space-y-6 relative z-10">
         <div className="bg-black/40 backdrop-blur rounded-xl border border-yellow-400/30 p-6">
         <div className="flex justify-between items-start mb-4">
   <div>
@@ -576,15 +578,15 @@ export default function BetCardDashboard({ session, onSelectCard, onEndSession, 
   }}
         disabled={card.status === 'locked'}
         className={`relative p-4 rounded-xl border-2 transition-all ${
-          card.status === 'active' 
+          card.status === 'active'
             ? 'bg-yellow-500/20 border-yellow-400 hover:bg-yellow-500/30 hover:scale-105' :
-          card.status === 'locked' 
-            ? 'bg-gray-800/50 border-gray-600 opacity-50 cursor-not-allowed' :
-          card.status === 'completed' 
+          card.status === 'locked'
+            ? 'bg-black/30 border-gray-600 opacity-50 cursor-not-allowed' :
+          card.status === 'completed'
             ? 'bg-green-500/20 border-green-400 hover:bg-green-500/30 hover:scale-105' :
-          card.status === 'failed' 
-            ? 'bg-red-500/20 border-red-400 hover:bg-red-500/30 hover:scale-105' 
-            : 'bg-gray-800 border-gray-600 hover:bg-gray-700 hover:scale-105'
+          card.status === 'failed'
+            ? 'bg-red-500/20 border-red-400 hover:bg-red-500/30 hover:scale-105'
+            : 'bg-black/30 border-gray-600 hover:bg-black/40 hover:scale-105'
         }`}
       >
         {/* Status Icon */}

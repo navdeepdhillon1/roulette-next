@@ -1073,26 +1073,205 @@ const openSessionSetup = () => {
 )}
 {/* Main Content Area */}
 {!session && !showAssistant ? (
-          // Landing Page - No Active Session, No Setup showing
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="text-center space-y-6">
-              <div className="text-6xl mb-4">🎰</div>
-              <h2 className="text-3xl font-bold text-yellow-400">Ready to Track?</h2>
+          // Landing Page - Professional Edition Showcase
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            {/* Hero Section with Wheel Background */}
+            <div className="text-center mb-12 relative">
+              {/* Decorative wheel/chips background */}
+              <div className="absolute inset-0 opacity-5 pointer-events-none">
+                <div className="text-9xl">🎰🎲🎯💰🃏</div>
+              </div>
+
+              <div className="relative z-10">
+                <h1 className="text-5xl md:text-6xl font-bold text-yellow-400 mb-4">
+                  PROFESSIONAL TRACKER
+                </h1>
+                <p className="text-xl text-gray-300 mb-6">
+                  Track all 47 betting groups with real-time analytics
+                </p>
+                <button
+                  onClick={() => {
+                    console.log('Center button clicked - opening session setup')
+                    setShowAssistant(true)
+                    setAssistantSubTab('setup')
+                  }}
+                  className="px-12 py-5 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold rounded-xl text-2xl shadow-2xl hover:shadow-yellow-400/50 transition-all transform hover:scale-105 mb-4"
+                >
+                  ✨ Start New Session
+                </button>
+                {storageMode === 'local' && (
+                  <p className="text-sm text-yellow-400/60">
+                    <a href="#" className="underline">Sign in</a> to save and download sessions
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Feature Highlights */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+              <Card className="bg-black/40 backdrop-blur border-blue-400/30 p-6 hover:border-blue-400/60 transition-all">
+                <div className="text-5xl text-center mb-4">📊</div>
+                <h3 className="text-xl font-bold text-blue-400 text-center mb-3">47 Betting Groups</h3>
+                <ul className="text-gray-300 text-sm space-y-2">
+                  <li>✓ Track numbers & bets</li>
+                  <li>✓ Common bets</li>
+                  <li>✓ Special bets</li>
+                  <li>✓ Wheel sectors (voisins, orphelins, tiers)</li>
+                  <li>✓ Alternative groupings</li>
+                  <li>✓ All 37 individual numbers</li>
+                </ul>
+              </Card>
+
+              <Card className="bg-black/40 backdrop-blur border-yellow-400/30 p-6 hover:border-yellow-400/60 transition-all">
+                <div className="text-5xl text-center mb-4">🎯</div>
+                <h3 className="text-xl font-bold text-yellow-400 text-center mb-3">Advanced Analytics</h3>
+                <ul className="text-gray-300 text-sm space-y-2">
+                  <li>✓ 6 time windows (9-288 spins)</li>
+                  <li>✓ Hot/Cold/Norm status</li>
+                  <li>✓ Streak & absence tracking</li>
+                  <li>✓ Anomaly detection</li>
+                  <li>✓ Pattern recognition</li>
+                </ul>
+              </Card>
+
+              <Card className="bg-black/40 backdrop-blur border-teal-400/30 p-6 hover:border-teal-400/60 transition-all">
+                <div className="text-5xl text-center mb-4">💾</div>
+                <h3 className="text-xl font-bold text-teal-400 text-center mb-3">Session Management</h3>
+                <ul className="text-gray-300 text-sm space-y-2">
+                  <li>✓ Unlimited spins tracking</li>
+                  <li>✓ Export to CSV/JSON</li>
+                  <li>✓ Cloud sync (with login)</li>
+                  <li>✓ Session history</li>
+                  <li>✓ Real-time updates</li>
+                </ul>
+              </Card>
+            </div>
+
+            {/* Tier Comparison - Focused on Pro */}
+            <div className="mb-12">
+              <h2 className="text-3xl font-bold text-center text-yellow-400 mb-8">Compare Editions</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* BASIC TIER */}
+                <div className="bg-black/40 backdrop-blur rounded-xl border border-gray-700 p-6 opacity-75">
+                  <div className="text-4xl mb-3 text-center">🎲</div>
+                  <h3 className="text-2xl font-bold text-white text-center mb-2">Basic</h3>
+                  <div className="text-center mb-4">
+                    <span className="text-3xl font-bold text-gray-400">FREE</span>
+                    <p className="text-xs text-gray-400 mt-1">20 spins/session</p>
+                  </div>
+
+                  <div className="space-y-2 mb-6">
+                    <div className="flex items-start gap-2 text-sm">
+                      <span className="text-green-400 mt-0.5">✓</span>
+                      <span className="text-gray-400">12 common betting groups</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-sm">
+                      <span className="text-gray-600 mt-0.5">✗</span>
+                      <span className="text-gray-500">No wheel sectors</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-sm">
+                      <span className="text-gray-600 mt-0.5">✗</span>
+                      <span className="text-gray-500">No data export</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* PRO TIER - HIGHLIGHTED */}
+                <div className="bg-black/40 backdrop-blur rounded-xl border-2 border-blue-500/70 p-6 hover:border-blue-400 transition-all relative overflow-hidden scale-105">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-blue-700/10"></div>
+
+                  <div className="absolute -top-1 -right-1 bg-gradient-to-r from-blue-400 to-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+                    YOU ARE HERE
+                  </div>
+
+                  <div className="relative z-10">
+                    <div className="text-4xl mb-3 text-center">📊</div>
+                    <h3 className="text-2xl font-bold text-blue-400 text-center mb-2">Pro</h3>
+                    <div className="text-center mb-4">
+                      <span className="text-3xl font-bold text-blue-400">$9.99</span>
+                      <span className="text-gray-400">/month</span>
+                      <p className="text-xs text-gray-400 mt-1">Full analytics</p>
+                    </div>
+
+                    <div className="space-y-2 mb-6">
+                      <div className="flex items-start gap-2 text-sm">
+                        <span className="text-green-400 mt-0.5">✓</span>
+                        <span className="text-gray-200 font-semibold">Everything in Basic, plus:</span>
+                      </div>
+                      <div className="flex items-start gap-2 text-sm">
+                        <span className="text-green-400 mt-0.5">✓</span>
+                        <span className="text-gray-400">47 betting groups</span>
+                      </div>
+                      <div className="flex items-start gap-2 text-sm">
+                        <span className="text-green-400 mt-0.5">✓</span>
+                        <span className="text-gray-400">Wheel sector analysis</span>
+                      </div>
+                      <div className="flex items-start gap-2 text-sm">
+                        <span className="text-green-400 mt-0.5">✓</span>
+                        <span className="text-gray-400">Data export (CSV/JSON)</span>
+                      </div>
+                      <div className="flex items-start gap-2 text-sm">
+                        <span className="text-green-400 mt-0.5">✓</span>
+                        <span className="text-gray-400">Unlimited spins</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ELITE TIER */}
+                <div className="bg-black/40 backdrop-blur rounded-xl border border-yellow-400/30 p-6 hover:border-yellow-400/60 transition-all relative overflow-hidden">
+                  <div className="text-4xl mb-3 text-center">🎯</div>
+                  <h3 className="text-2xl font-bold text-yellow-400 text-center mb-2">Elite</h3>
+                  <div className="text-center mb-4">
+                    <span className="text-3xl font-bold text-yellow-400">$19.99</span>
+                    <span className="text-gray-400">/month</span>
+                    <p className="text-xs text-gray-400 mt-1">Betting assistant</p>
+                  </div>
+
+                  <div className="space-y-2 mb-6">
+                    <div className="flex items-start gap-2 text-sm">
+                      <span className="text-green-400 mt-0.5">✓</span>
+                      <span className="text-yellow-300 font-semibold">Everything in Pro, plus:</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-sm">
+                      <span className="text-green-400 mt-0.5">✓</span>
+                      <span className="text-gray-400">Betting card system</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-sm">
+                      <span className="text-green-400 mt-0.5">✓</span>
+                      <span className="text-gray-400">6 betting systems</span>
+                    </div>
+                    <div className="flex items-start gap-2 text-sm">
+                      <span className="text-green-400 mt-0.5">✓</span>
+                      <span className="text-gray-400">Matrix betting</span>
+                    </div>
+                  </div>
+
+                  <a
+                    href="/assistant"
+                    className="block w-full py-3 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold rounded-lg text-center transition-all hover:shadow-lg hover:shadow-yellow-400/50"
+                  >
+                    Upgrade to Elite →
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Final CTA */}
+            <div className="text-center">
               <button
                 onClick={() => {
-                  console.log('Center button clicked - opening session setup')
                   setShowAssistant(true)
                   setAssistantSubTab('setup')
                 }}
-                className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-bold rounded-lg text-xl shadow-2xl hover:shadow-yellow-400/50 transition-all transform hover:scale-105"
+                className="px-12 py-5 bg-gradient-to-r from-blue-500 to-blue-700 text-white font-bold rounded-xl text-xl shadow-2xl hover:shadow-blue-400/50 transition-all transform hover:scale-105"
               >
-                ✨ Start New Session
+                🚀 Start Tracking Now
               </button>
-              {storageMode === 'local' && (
-                <p className="text-sm text-yellow-400/60">
-                  <a href="#" className="underline">Sign in</a> to download sessions
-                </p>
-              )}
+              <p className="text-gray-400 text-sm mt-4">
+                Professional Edition • Unlimited Spins • Full Analytics
+              </p>
             </div>
           </div>
         ) : !session && showAssistant ? (
@@ -1111,7 +1290,65 @@ const openSessionSetup = () => {
                 <h2 className="text-2xl font-bold text-yellow-400 text-center mb-6">
                   Configure Your Session
                 </h2>
-                
+
+                {/* Setup Help Panel */}
+                <div className="border border-yellow-400/30 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => toggleHelp('setup')}
+                    className="w-full px-4 py-3 bg-yellow-900/20 hover:bg-yellow-900/30 transition-colors flex items-center justify-between text-left"
+                  >
+                    <span className="text-sm font-semibold text-yellow-300 flex items-center gap-2">
+                      <span className="text-lg">💡</span>
+                      Setup Help - Understanding Configuration
+                    </span>
+                    <span className="text-yellow-400 text-xl">{showHelp.setup ? '−' : '+'}</span>
+                  </button>
+                  {showHelp.setup && (
+                    <div className="bg-yellow-950/30 border-t border-yellow-400/30 p-4 text-sm text-gray-300 space-y-4">
+                      <p className="font-semibold text-yellow-300 text-base">Understanding Session Configuration</p>
+
+                      <div className="space-y-3">
+                        <div className="bg-black/30 rounded-lg p-3 border-l-2 border-blue-400">
+                          <p className="mb-2"><span className="text-yellow-400 font-semibold">💰 Starting Bankroll</span></p>
+                          <p className="text-xs mb-1"><span className="font-semibold">What it is:</span> The total amount you're starting with for this session.</p>
+                          <p className="text-xs text-gray-400"><span className="font-semibold">What to expect:</span> This number is tracked in real-time throughout your session. Your current bankroll will update with every spin result, showing you exactly how much you have available to bet. The tracker will alert you when you're approaching your stop loss limit.</p>
+                        </div>
+
+                        <div className="bg-black/30 rounded-lg p-3 border-l-2 border-green-400">
+                          <p className="mb-2"><span className="text-yellow-400 font-semibold">🎯 Target Profit</span></p>
+                          <p className="text-xs mb-1"><span className="font-semibold">What it is:</span> Your profit goal for this session.</p>
+                          <p className="text-xs text-gray-400"><span className="font-semibold">What to expect:</span> The tracker displays your progress toward this target with a visual progress bar. When you reach your target profit, you'll get a celebration notification suggesting you lock in your gains and end the session. Discipline is key - many players give back winnings by continuing past their target.</p>
+                        </div>
+
+                        <div className="bg-black/30 rounded-lg p-3 border-l-2 border-red-400">
+                          <p className="mb-2"><span className="text-yellow-400 font-semibold">🛑 Stop Loss</span></p>
+                          <p className="text-xs mb-1"><span className="font-semibold">What it is:</span> Maximum loss you're willing to accept before ending the session.</p>
+                          <p className="text-xs text-gray-400"><span className="font-semibold">What to expect:</span> This is your safety net. If your bankroll drops to this level (Bankroll - Stop Loss), the tracker will show strong warning indicators. This protects you from chasing losses. Stick to this limit - it's the foundation of responsible bankroll management.</p>
+                        </div>
+
+                        <div className="bg-black/30 rounded-lg p-3 border-l-2 border-purple-400">
+                          <p className="mb-2"><span className="text-yellow-400 font-semibold">🎲 Unit Size</span></p>
+                          <p className="text-xs mb-1"><span className="font-semibold">What it is:</span> Your base bet amount - the building block for all bets.</p>
+                          <p className="text-xs text-gray-400"><span className="font-semibold">What to expect:</span> All bet recommendations are calculated as multiples of this unit (1x, 2x, 3x, etc.). The tracker uses this to size your bets proportionally to your bankroll. During gameplay, you'll see suggestions like "Bet 2 units on Red" which means 2 × your unit size. Recommended: 1-2% of bankroll for conservative play.</p>
+                        </div>
+                      </div>
+
+                      <div className="bg-yellow-900/20 rounded-lg p-3 border border-yellow-400/30">
+                        <p className="text-xs text-yellow-300 mb-2"><span className="font-bold">💡 Recommended Settings (Conservative):</span></p>
+                        <ul className="text-xs text-gray-300 space-y-1 ml-4">
+                          <li>• Target Profit: 20% of bankroll (e.g., $20 profit on $100 bankroll)</li>
+                          <li>• Stop Loss: 40% of bankroll (e.g., stop at $60 remaining)</li>
+                          <li>• Unit Size: 2% of bankroll (e.g., $2 units on $100 bankroll)</li>
+                        </ul>
+                      </div>
+
+                      <div className="bg-teal-900/20 rounded-lg p-3 border border-teal-400/30">
+                        <p className="text-xs text-teal-300"><span className="font-bold">📊 During Gameplay:</span> The tracker monitors all 47 betting groups in real-time, showing hot/cold trends, streaks, and statistical anomalies. Your session stats update after every spin, helping you make informed decisions based on actual data, not gut feelings.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-yellow-400/80 text-sm mb-2">Starting Bankroll</label>
@@ -1257,21 +1494,46 @@ const openSessionSetup = () => {
                             <span className="text-yellow-400 text-xl">{showHelp.setup ? '−' : '+'}</span>
                           </button>
                           {showHelp.setup && (
-                            <div className="bg-yellow-950/30 border-t border-yellow-400/30 p-4 text-sm text-gray-300 space-y-3">
-                              <p className="font-semibold text-yellow-300">Configure Your Session Parameters</p>
+                            <div className="bg-yellow-950/30 border-t border-yellow-400/30 p-4 text-sm text-gray-300 space-y-4">
+                              <p className="font-semibold text-yellow-300 text-base">Understanding Session Configuration</p>
 
-                              <div className="space-y-2">
-                                <p><span className="text-yellow-400 font-semibold">💰 Starting Bankroll:</span> The total amount you're starting with. This is your session capital and determines bet sizing and risk management.</p>
+                              <div className="space-y-3">
+                                <div className="bg-black/30 rounded-lg p-3 border-l-2 border-blue-400">
+                                  <p className="mb-2"><span className="text-yellow-400 font-semibold">💰 Starting Bankroll</span></p>
+                                  <p className="text-xs mb-1"><span className="font-semibold">What it is:</span> The total amount you're starting with for this session.</p>
+                                  <p className="text-xs text-gray-400"><span className="font-semibold">What to expect:</span> This number is tracked in real-time throughout your session. Your current bankroll will update with every spin result, showing you exactly how much you have available to bet. The tracker will alert you when you're approaching your stop loss limit.</p>
+                                </div>
 
-                                <p><span className="text-yellow-400 font-semibold">🎯 Target Profit:</span> Your profit goal for this session. When you reach this target, consider ending the session to lock in gains.</p>
+                                <div className="bg-black/30 rounded-lg p-3 border-l-2 border-green-400">
+                                  <p className="mb-2"><span className="text-yellow-400 font-semibold">🎯 Target Profit</span></p>
+                                  <p className="text-xs mb-1"><span className="font-semibold">What it is:</span> Your profit goal for this session.</p>
+                                  <p className="text-xs text-gray-400"><span className="font-semibold">What to expect:</span> The tracker displays your progress toward this target with a visual progress bar. When you reach your target profit, you'll get a celebration notification suggesting you lock in your gains and end the session. Discipline is key - many players give back winnings by continuing past their target.</p>
+                                </div>
 
-                                <p><span className="text-yellow-400 font-semibold">🛑 Stop Loss:</span> Maximum loss you're willing to accept. The session should end if you hit this limit to protect your bankroll.</p>
+                                <div className="bg-black/30 rounded-lg p-3 border-l-2 border-red-400">
+                                  <p className="mb-2"><span className="text-yellow-400 font-semibold">🛑 Stop Loss</span></p>
+                                  <p className="text-xs mb-1"><span className="font-semibold">What it is:</span> Maximum loss you're willing to accept before ending the session.</p>
+                                  <p className="text-xs text-gray-400"><span className="font-semibold">What to expect:</span> This is your safety net. If your bankroll drops to this level (Bankroll - Stop Loss), the tracker will show strong warning indicators. This protects you from chasing losses. Stick to this limit - it's the foundation of responsible bankroll management.</p>
+                                </div>
 
-                                <p><span className="text-yellow-400 font-semibold">🎲 Unit Size:</span> Your base bet amount. All betting calculations and progressions are based on this unit. Recommended: 1-2% of bankroll.</p>
+                                <div className="bg-black/30 rounded-lg p-3 border-l-2 border-purple-400">
+                                  <p className="mb-2"><span className="text-yellow-400 font-semibold">🎲 Unit Size</span></p>
+                                  <p className="text-xs mb-1"><span className="font-semibold">What it is:</span> Your base bet amount - the building block for all bets.</p>
+                                  <p className="text-xs text-gray-400"><span className="font-semibold">What to expect:</span> All bet recommendations are calculated as multiples of this unit (1x, 2x, 3x, etc.). The tracker uses this to size your bets proportionally to your bankroll. During gameplay, you'll see suggestions like "Bet 2 units on Red" which means 2 × your unit size. Recommended: 1-2% of bankroll for conservative play.</p>
+                                </div>
                               </div>
 
-                              <div className="bg-yellow-900/20 rounded p-3 border-l-2 border-yellow-400">
-                                <p className="text-xs text-yellow-300/80"><span className="font-bold">💡 Pro Tip:</span> Conservative bankroll management suggests: Target Profit = 50% of bankroll, Stop Loss = 50% of bankroll, Unit Size = 2% of bankroll.</p>
+                              <div className="bg-yellow-900/20 rounded-lg p-3 border border-yellow-400/30">
+                                <p className="text-xs text-yellow-300 mb-2"><span className="font-bold">💡 Recommended Settings (Conservative):</span></p>
+                                <ul className="text-xs text-gray-300 space-y-1 ml-4">
+                                  <li>• Target Profit: 20% of bankroll (e.g., $20 profit on $100 bankroll)</li>
+                                  <li>• Stop Loss: 40% of bankroll (e.g., stop at $60 remaining)</li>
+                                  <li>• Unit Size: 2% of bankroll (e.g., $2 units on $100 bankroll)</li>
+                                </ul>
+                              </div>
+
+                              <div className="bg-teal-900/20 rounded-lg p-3 border border-teal-400/30">
+                                <p className="text-xs text-teal-300"><span className="font-bold">📊 During Gameplay:</span> The tracker monitors all 47 betting groups in real-time, showing hot/cold trends, streaks, and statistical anomalies. Your session stats update after every spin, helping you make informed decisions based on actual data, not gut feelings.</p>
                               </div>
                             </div>
                           )}
@@ -1372,23 +1634,65 @@ const openSessionSetup = () => {
                           <span className="text-cyan-400 text-xl">{showHelp.action ? '−' : '+'}</span>
                         </button>
                         {showHelp.action && (
-                          <div className="bg-cyan-950/30 border-t border-cyan-400/30 p-4 text-sm text-gray-300 space-y-3">
-                            <p className="font-semibold text-cyan-300">How to Use the Tracker</p>
+                          <div className="bg-cyan-950/30 border-t border-cyan-400/30 p-4 text-sm text-gray-300 space-y-4">
+                            <p className="font-semibold text-cyan-300 text-base">How to Use the Professional Tracker</p>
 
-                            <div className="space-y-2">
-                              <p><span className="text-cyan-400 font-semibold">🎯 Adding Numbers:</span> Click any number on the table/wheel or type 0-36 in the input box and press ADD. The spin will be recorded instantly.</p>
-
-                              <p><span className="text-cyan-400 font-semibold">📊 Table View:</span> Shows the traditional roulette table layout with color-coded numbers. Displays hit counts on each number - hot numbers (3+ hits) pulse with yellow rings.</p>
-
-                              <p><span className="text-cyan-400 font-semibold">🎰 Wheel View:</span> Shows the physical wheel layout with Voisins, Tiers, and Orphelins sectors. Visualize wheel-based betting patterns.</p>
-
-                              <p><span className="text-cyan-400 font-semibold">↩ Undo:</span> Remove the last spin if you made an error. Only works for local sessions.</p>
-
-                              <p><span className="text-cyan-400 font-semibold">📈 Statistics Tabs:</span> Switch between Common (red/black, dozens), Special (A/B groupings), Wheel (sectors), and Numbers (individual analysis).</p>
+                            {/* Getting Started Section */}
+                            <div className="bg-gradient-to-r from-yellow-900/20 to-transparent border-l-4 border-yellow-400 rounded-lg p-3">
+                              <p className="text-yellow-300 font-semibold mb-2">🎓 Getting Started</p>
+                              <div className="space-y-2 text-xs">
+                                <p><span className="font-semibold">Step 1 - Master Number Tracking:</span> If you're new, start by learning how to add number results quickly and get familiar with the interface. Practice adding numbers until you feel comfortable with the flow.</p>
+                                <p><span className="font-semibold">Step 2 - Learn Bet Tracking:</span> Once you're comfortable tracking numbers, you can start learning how to track your bets alongside the results. This helps you monitor your actual gameplay and profitability.</p>
+                              </div>
                             </div>
 
-                            <div className="bg-cyan-900/20 rounded p-3 border-l-2 border-cyan-400">
-                              <p className="text-xs text-cyan-300/80"><span className="font-bold">💡 Pro Tip:</span> Watch the "Last 20" spins bar at the top - it shows recent patterns at a glance. Click any number there to quickly re-enter it.</p>
+                            {/* Number Tracking */}
+                            <div className="space-y-3">
+                              <div className="bg-black/30 rounded-lg p-3 border-l-2 border-blue-400">
+                                <p className="mb-2"><span className="text-cyan-400 font-semibold">🎯 Adding Numbers (Result Tracking)</span></p>
+                                <p className="text-xs mb-2">Click any number on the table/wheel or type 0-36 in the input box and press ADD. The spin will be recorded instantly and all statistics update in real-time.</p>
+                                <p className="text-xs text-gray-400">Hot numbers (3+ hits) will pulse with yellow rings to help you spot trends quickly.</p>
+                              </div>
+
+                              {/* Bet Tracking */}
+                              <div className="bg-black/30 rounded-lg p-3 border-l-2 border-green-400">
+                                <p className="mb-2"><span className="text-cyan-400 font-semibold">💰 Bet Tracking (Track Your Actual Bets)</span></p>
+                                <div className="text-xs space-y-2">
+                                  <p><span className="font-semibold">Placing Bets:</span></p>
+                                  <ul className="ml-4 space-y-1">
+                                    <li>• <span className="font-semibold">One click</span> on a betting group places 1 unit bet</li>
+                                    <li>• <span className="font-semibold">Multiple clicks</span> keep adding unit bets to that group (e.g., 3 clicks = 3 units)</li>
+                                    <li>• You can bet on multiple groups simultaneously</li>
+                                  </ul>
+                                  <p><span className="font-semibold">Correcting Mistakes:</span> If you selected a wrong bet, use the <span className="text-red-400 font-semibold">'Clear Bet'</span> button to remove it before adding the result.</p>
+                                  <p><span className="font-semibold">Instant Results:</span> As soon as you add a winning number, the system automatically calculates results for all betting groups you placed bets on. Win/loss amounts update instantly.</p>
+                                </div>
+                              </div>
+
+                              <div className="bg-black/30 rounded-lg p-3 border-l-2 border-purple-400">
+                                <p className="mb-2"><span className="text-cyan-400 font-semibold">📊 Views & Analysis</span></p>
+                                <div className="text-xs space-y-1">
+                                  <p><span className="font-semibold">Table View:</span> Traditional roulette table layout with color-coded numbers and hit counts.</p>
+                                  <p><span className="font-semibold">Wheel View:</span> Physical wheel layout showing Voisins, Tiers, and Orphelins sectors.</p>
+                                  <p><span className="font-semibold">Statistics Tabs:</span> Switch between Common (red/black, dozens), Special (A/B groupings), Wheel (sectors), and Numbers (individual analysis).</p>
+                                </div>
+                              </div>
+
+                              <div className="bg-black/30 rounded-lg p-3 border-l-2 border-orange-400">
+                                <p className="mb-2"><span className="text-cyan-400 font-semibold">↩ Undo & Corrections</span></p>
+                                <p className="text-xs">Made a mistake? Use the Undo button to remove the last spin. This works for local sessions and helps you maintain accurate tracking.</p>
+                              </div>
+                            </div>
+
+                            {/* Pro Tips */}
+                            <div className="bg-cyan-900/20 rounded-lg p-3 border border-cyan-400/30">
+                              <p className="text-xs text-cyan-300 mb-2"><span className="font-bold">💡 Pro Tips:</span></p>
+                              <ul className="text-xs text-gray-300 space-y-1 ml-4">
+                                <li>• Watch the "Last 20" spins bar at the top - shows recent patterns at a glance</li>
+                                <li>• Start with just number tracking until you're fast and comfortable</li>
+                                <li>• Once confident, add bet tracking to monitor your actual gameplay profitability</li>
+                                <li>• Use the statistics tabs to identify hot/cold trends across all 47 betting groups</li>
+                              </ul>
                             </div>
                           </div>
                         )}

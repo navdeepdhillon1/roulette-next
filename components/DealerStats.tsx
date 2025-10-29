@@ -130,9 +130,11 @@ export default function DealerStats({ session, spinHistory: propSpinHistory }: D
         }
       }
 
-      // Track the spin
-      dealers[currentDealer].totalSpins++
-      dealers[currentDealer].numbers.push(spin.number)
+      // Track the spin (only if number is valid)
+      if (typeof spin.number === 'number' && !isNaN(spin.number)) {
+        dealers[currentDealer].totalSpins++
+        dealers[currentDealer].numbers.push(spin.number)
+      }
     })
 
     // Calculate metrics for each dealer
@@ -167,17 +169,17 @@ export default function DealerStats({ session, spinHistory: propSpinHistory }: D
       dealer.wheelMetrics.wheelGroups = {
         voisins: {
           count: voisinsCount,
-          hitRate: (voisinsCount / numbers.length) * 100,
+          hitRate: numbers.length > 0 ? (voisinsCount / numbers.length) * 100 : 0,
           expected: 45.9
         },
         tiers: {
           count: tiersCount,
-          hitRate: (tiersCount / numbers.length) * 100,
+          hitRate: numbers.length > 0 ? (tiersCount / numbers.length) * 100 : 0,
           expected: 32.4
         },
         orphelins: {
           count: orphelinsCount,
-          hitRate: (orphelinsCount / numbers.length) * 100,
+          hitRate: numbers.length > 0 ? (orphelinsCount / numbers.length) * 100 : 0,
           expected: 21.6
         }
       }
@@ -189,10 +191,10 @@ export default function DealerStats({ session, spinHistory: propSpinHistory }: D
       const q4Count = numbers.filter(n => WHEEL_QUADRANTS.q4.includes(n)).length
 
       dealer.wheelMetrics.wheelQuadrants = {
-        q1: { count: q1Count, hitRate: (q1Count / numbers.length) * 100, expected: 25 },
-        q2: { count: q2Count, hitRate: (q2Count / numbers.length) * 100, expected: 25 },
-        q3: { count: q3Count, hitRate: (q3Count / numbers.length) * 100, expected: 25 },
-        q4: { count: q4Count, hitRate: (q4Count / numbers.length) * 100, expected: 25 }
+        q1: { count: q1Count, hitRate: numbers.length > 0 ? (q1Count / numbers.length) * 100 : 0, expected: 25 },
+        q2: { count: q2Count, hitRate: numbers.length > 0 ? (q2Count / numbers.length) * 100 : 0, expected: 25 },
+        q3: { count: q3Count, hitRate: numbers.length > 0 ? (q3Count / numbers.length) * 100 : 0, expected: 25 },
+        q4: { count: q4Count, hitRate: numbers.length > 0 ? (q4Count / numbers.length) * 100 : 0, expected: 25 }
       }
 
       // Neighbor Clustering Analysis
