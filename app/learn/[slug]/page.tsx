@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import { useEffect } from 'react'
 import Navigation from '@/components/Navigation'
@@ -16,151 +17,231 @@ const getArticleBySlug = (slug: string) => {
       readTime: '7 min read',
       author: 'Roulette Tracker Team',
       content: `
-        <p>Welcome to Roulette Tracker Pro! This guide will help you get started with the Basic Tracker - your first step to understanding roulette statistics and managing your sessions effectively.</p>
+        <p>You're standing at the roulette table. The ball spins. Red 27 hits. Then red 36. Your friend whispers, "Black is due!" But is it? That's where your journey begins.</p>
 
-        <h2>What You'll Learn</h2>
+        <p>Welcome to the <strong>Basic Tracker</strong> - your first taste of what it feels like to see roulette through the lens of data, not superstition. This is where curiosity meets clarity.</p>
+
+        <h2>What Is the Basic Tracker?</h2>
+
+        <p>Think of it as your <strong>training wheels</strong> for understanding roulette statistics. It's completely free, requires no sign-up, and gives you a powerful glimpse into the 12 most common betting groups:</p>
+
         <ul>
-          <li>How to add your first spin</li>
-          <li>Understanding the statistics panel</li>
-          <li>Reading color distribution</li>
-          <li>Session tracking basics</li>
-          <li>Exporting your data</li>
+          <li><strong>Red / Black</strong> - The classic color bets</li>
+          <li><strong>Even / Odd</strong> - Parity-based betting</li>
+          <li><strong>Low (1-18) / High (19-36)</strong> - Range betting</li>
+          <li><strong>1st / 2nd / 3rd Dozen</strong> - The table thirds</li>
+          <li><strong>Column 1 / 2 / 3</strong> - Vertical betting strips</li>
         </ul>
 
-        <h2>Adding Your First Spin</h2>
-        <p>The basic tracker is available on the <strong>/tracker</strong> page. Here's how to start:</p>
+        <p>These 12 groups cover the foundation of roulette strategy. Master these, and you'll understand <strong>80% of what happens at any roulette table</strong>. Ready to see patterns emerge before your eyes? Let's dive in.</p>
 
-        <h3>Method 1: Click the Number Wheel</h3>
+        <h2>Your First Spin: It's Easier Than You Think</h2>
+
+        <p>Head to the <strong><a href="/tracker">/tracker</a></strong> page. You'll see a clean interface with a number grid and a simple input box. Here's how it works:</p>
+
+        <h3>Method 1: Click the Number Grid 🎯</h3>
+        <p>See that beautiful grid of numbers (0-36)? Just click any number. <strong>Boom</strong> - it's logged. Watch the statistics light up instantly.</p>
+
+        <div style="margin: 1.5rem 0; padding: 1rem; background: rgba(254, 243, 199, 0.1); border: 1px solid rgba(252, 211, 77, 0.3); border-radius: 0.75rem;">
+          <img
+            src="/images/learn/tracker-method-1-grid.png"
+            alt="Basic Tracker number grid showing clickable numbers 0-36"
+            style="width: 100%; height: auto; border-radius: 0.5rem; border: 1px solid rgba(156, 163, 175, 0.3);"
+          />
+          <p style="margin-top: 0.75rem; font-size: 0.875rem; color: rgba(209, 213, 219, 1); text-align: center;">
+            <em>Click any number on the grid to instantly log a spin</em>
+          </p>
+        </div>
+
+        <h3>Method 2: Manual Entry ⌨️</h3>
         <ol>
-          <li>Click on any number from the roulette wheel display (0-36)</li>
-          <li>The number will be instantly added to your spin history</li>
-          <li>Watch as statistics update in real-time</li>
+          <li>Type the number (0-36) into the input field at the top</li>
+          <li>Hit <strong>Enter</strong> or click <strong>"ADD"</strong></li>
+          <li>The spin is recorded - that's it!</li>
         </ol>
 
-        <h3>Method 2: Manual Entry</h3>
+        <div style="margin: 1.5rem 0; padding: 1rem; background: rgba(254, 243, 199, 0.1); border: 1px solid rgba(252, 211, 77, 0.3); border-radius: 0.75rem;">
+          <img
+            src="/images/learn/tracker-method-2-input.png"
+            alt="Basic Tracker manual input field for entering spin numbers"
+            style="width: 100%; height: auto; border-radius: 0.5rem; border: 1px solid rgba(156, 163, 175, 0.3);"
+          />
+          <p style="margin-top: 0.75rem; font-size: 0.875rem; color: rgba(209, 213, 219, 1); text-align: center;">
+            <em>Type a number and press Enter or click ADD to record the spin</em>
+          </p>
+        </div>
+
+        <p><strong>Pro tip:</strong> If you're at a real casino, pull out your phone and use the tracker in <em>real-time</em>. Enter each spin as it happens. This way, you'll see HOT/COLD trends instantly and can make informed decisions on the fly. No paper, no delay - just live data showing you exactly what's happening <em>right now</em>.</p>
+
+        <h2>Understanding Your Live Stats</h2>
+
+        <p>As soon as you add 2-3 spins, the <strong>"Live Stats - Common Bets"</strong> panel springs to life. This is where the magic happens.</p>
+
+        <h3>Reading the Stats Table</h3>
+
+        <p>Each betting group shows you five critical pieces of information:</p>
+
+        <ul>
+          <li><strong>Streak:</strong> How many times in a row has this group won (or lost)?</li>
+          <li><strong>Absence:</strong> How many spins since this group last hit?</li>
+          <li><strong>Hits (L9):</strong> Out of the last 9 spins, how many times did it win?</li>
+          <li><strong>Act%:</strong> What percentage of total spins has this group won?</li>
+          <li><strong>Status:</strong> Is it HOT 🔥, COLD ❄️, or NORM (normal)?</li>
+        </ul>
+
+        <h3>What Do HOT, COLD, and NORM Mean?</h3>
+
+        <p>This is where beginners get <em>really</em> excited (and sometimes make mistakes). Let's break it down:</p>
+
+        <ul>
+          <li><strong>HOT 🔥:</strong> This group is hitting <em>more often</em> than expected. Red hitting 10 out of 15 spins? That's hot. Does it mean it'll <em>keep</em> hitting? Nope. It just means it's been on a run.</li>
+          <li><strong>COLD ❄️:</strong> This group has gone quiet. Black hasn't hit in 8 spins? Cold streak. Does it mean it's "due"? <strong>Absolutely not.</strong> The wheel has no memory.</li>
+          <li><strong>NORM:</strong> This group is performing close to its expected probability. Boring? Maybe. But normal is often the most common state.</li>
+        </ul>
+
+        <p><strong>Critical insight:</strong> The tracker shows you <em>what has happened</em>, not what <em>will happen</em>. Think of it like a rearview mirror - useful for understanding the road you've traveled, but don't steer based on it!</p>
+
+        <h2>Your Session: A Snapshot of the Game</h2>
+
+        <p>At the top of the tracker, you'll see:</p>
+
+        <ul>
+          <li><strong>Session ID:</strong> A unique identifier (e.g., "Free-858681")</li>
+          <li><strong>Spins:</strong> Total spins recorded so far (e.g., "2/20")</li>
+          <li><strong>Status:</strong> Active (you're tracking) or Closed (session ended)</li>
+        </ul>
+
+        <p>Each session is like a mini-experiment. You're collecting data. After 20-50 spins, you'll start seeing trends. After 100+ spins, you'll witness the <strong>law of large numbers</strong> in action - red and black converging toward 48.6% each, dozens hovering around 32.4%.</p>
+
+        <p>It's beautiful. It's mathematical. And once you see it, you'll never look at roulette the same way.</p>
+
+        <h2>The "Last 20" Feature: Your Recent History</h2>
+
+        <p>Just below the session info, you'll see the most recent spins displayed as colored circles. This is your <strong>short-term memory</strong>.</p>
+
+        <p>Seeing "Last 20: 27, 36, 14, 5, 30..." helps you spot <em>immediate</em> trends: Are we seeing a color streak? Alternating patterns? A missing dozen?</p>
+
+        <p><strong>Why only 20?</strong> Because short-term variance is where gamblers get emotional. By showing you the last 20, we're training you to <em>observe</em> without <em>predicting</em>. It's a discipline exercise disguised as data.</p>
+
+        <h2>What the Basic Tracker DOESN'T Show (Yet)</h2>
+
+        <p>Here's the thing: the Basic Tracker is <strong>deliberately limited</strong>. It's your taste test. Your free sample. Your "try before you buy."</p>
+
+        <p>What you're <em>not</em> seeing (yet):</p>
+
+        <ul>
+          <li><strong>No bankroll tracking</strong> - This is pure data, no money management</li>
+          <li><strong>No betting trend guidance</strong> - With limited spins, we show you what's HOT and COLD, but we don't have enough data yet to suggest specific betting strategies. That requires deeper analysis (Pro/Elite tier)</li>
+          <li><strong>No wheel-based groups</strong> - Voisins, Tiers, Orphelins? That's Pro/Elite territory</li>
+          <li><strong>No convergence analysis</strong> - How close are actual results to expected probability? Advanced feature</li>
+          <li><strong>No pattern analysis engine</strong> - Advanced statistical pattern recognition and multi-window analysis? Elite tier feature</li>
+          <li><strong>No export functionality</strong> - Can't download your data yet</li>
+          <li><strong>No historical comparison</strong> - Can't compare today's session to last week</li>
+        </ul>
+
+        <p>And honestly? <strong>That's perfect for now.</strong></p>
+
+        <p>You don't need all 47 betting groups when you're just learning to recognize that "black is due" is a myth. Start here. Get comfortable. See how red and black <em>actually</em> behave over 50 spins. Track a few dozen sessions.</p>
+
+        <p><strong>Then, when you're ready...</strong></p>
+
+        <h2>The Upgrade Path: When You Want More</h2>
+
+        <p>Here's what happens when you outgrow the Basic Tracker (and trust us, you will):</p>
+
+        <h3>Pro Tier: The Full Data Experience 📊</h3>
+
+        <p>Ready to see roulette through a <strong>microscope</strong>? Pro tier unlocks:</p>
+
+        <ul>
+          <li><strong>47 betting groups tracked</strong> (26 table-based + 21 wheel-based) - every possible bet type</li>
+          <li><strong>All 37 numbers tracked individually</strong> - frequency, absence, hot/cold status per number</li>
+          <li><strong>Multi-window analysis</strong> - Hits tracked across 6 time windows (Last 9, 18, 36, 72, 144, 288 spins) instead of just last 20</li>
+          <li><strong>Wheel sector analysis</strong> - Voisins du Zéro, Tiers, Orphelins, Jeu Zéro with HOT/COLD status</li>
+          <li><strong>Anomaly detection</strong> - Missing dozens, extreme streaks, sector bias alerts</li>
+          <li><strong>Convergence tracking</strong> - Watch actual results converge to expected probability over time</li>
+          <li><strong>Session history</strong> - Compare multiple sessions side-by-side</li>
+          <li><strong>Data export</strong> - CSV/JSON export for offline analysis in Excel/Python</li>
+        </ul>
+
+        <p>Pro tier is for players who want to <em>understand</em> roulette at a deep level. You're not betting yet - you're becoming a student of variance. The multi-window analysis shows you trends across different time horizons, revealing patterns you'd never spot with just 20 spins.</p>
+
+        <h3>Elite Tier: The Betting Assistant 🎯</h3>
+
+        <p>This is where data meets <strong>action</strong>. Elite tier includes everything from Pro, plus:</p>
+
+        <ul>
+          <li><strong>10 Custom Groups</strong> - Create, save, and track your own betting combinations (e.g., "My Lucky Numbers," "Cold Dozens Only," "Wheel Sectors 1-3-5")</li>
+          <li><strong>Dealer Analysis</strong> - Track performance by individual dealer to identify statistical patterns (dealer ID, session tracking, win/loss by dealer)</li>
+          <li><strong>Betting Card System</strong> - Structured mini-sessions with clear profit targets and max bet limits</li>
+          <li><strong>Multi-Window Pattern Engine</strong> - Statistical analysis across 6 time windows (9, 18, 36, 72, 144, 288 spins) with BET/SKIP/SIT_OUT suggestions</li>
+          <li><strong>6 Betting Systems</strong> - Flat, Martingale, Fibonacci, D'Alembert, Paroli, Custom (with auto-progression)</li>
+          <li><strong>Matrix Betting</strong> - Place bets on multiple groups simultaneously (e.g., Red + Dozen 1 + Column 3)</li>
+          <li><strong>Discipline Tracking</strong> - % of suggestions followed, skip adherence, override analysis</li>
+          <li><strong>Bankroll Management</strong> - Stop-loss limits, profit targets, survival probability calculator</li>
+          <li><strong>Performance Analytics</strong> - ROI by session, win rate by system, profit/loss by dealer, discipline scores</li>
+        </ul>
+
+        <p>Elite tier is for serious players who want <strong>structure and discipline</strong>. You're no longer just observing - you're executing strategies with data-driven guidance. The custom groups feature lets you test your own theories, while dealer analysis helps you identify if certain dealers have statistical anomalies in their spin patterns.</p>
+
+        <p><strong>But here's the secret:</strong> Neither Pro nor Elite will help you "beat the house." The house edge is a mathematical constant. What they <em>will</em> do is give you clarity, control, and confidence. You'll lose with understanding instead of confusion. And sometimes? That makes all the difference.</p>
+
+        <h2>Your Challenge: Track 50 Spins This Week</h2>
+
+        <p>Here's your homework (and it's the best kind - no pressure, just curiosity):</p>
+
         <ol>
-          <li>Find the number input field at the top</li>
-          <li>Type the number (0-36) and press Enter</li>
-          <li>Or use the "Add Spin" button</li>
+          <li><strong>Start a session</strong> on the <a href="/tracker">/tracker</a> page</li>
+          <li><strong>Track 50 spins</strong> (from a live stream, an online casino, or even a YouTube video)</li>
+          <li><strong>Watch the stats evolve</strong> - Notice how HOT/COLD status changes</li>
+          <li><strong>Ask yourself:</strong> Did any group stay hot the whole time? Did cold groups "catch up"?</li>
+          <li><strong>Repeat</strong> for another 50 spins. Compare the two sessions.</li>
         </ol>
 
-        <h2>Understanding the Statistics Panel</h2>
-        <p>Once you've added a few spins, the stats panel shows key metrics:</p>
+        <p>By the end, you'll <em>feel</em> the difference between superstition and statistics. You'll see patterns emerge and dissolve. You'll understand why "black is due" is the most expensive lie in gambling.</p>
 
-        <h3>Total Spins</h3>
-        <p>The total number of spins you've recorded in this session. More spins = more reliable statistics.</p>
+        <p>And maybe - just maybe - you'll be ready to level up.</p>
 
-        <h3>Win Rate</h3>
-        <p>If you're betting on a specific outcome (like red/black), this shows your success percentage. Keep in mind:</p>
-        <ul>
-          <li><strong>Even money bets (red/black, odd/even):</strong> Expected win rate is 48.6% in European roulette</li>
-          <li><strong>Dozens and columns:</strong> Expected win rate is 32.4%</li>
-          <li>Don't expect 50% - the zero is where the house edge comes from</li>
-        </ul>
+        <h2>Common Beginner Questions (Answered Honestly)</h2>
 
-        <h3>ROI (Return on Investment)</h3>
-        <p>Shows your profit or loss as a percentage of total money wagered.</p>
-        <ul>
-          <li><strong>Positive ROI:</strong> You're currently ahead (enjoy it while it lasts!)</li>
-          <li><strong>Negative ROI:</strong> You're currently behind (this is expected long-term)</li>
-          <li><strong>Realistic expectation:</strong> -2.7% for European, -5.26% for American roulette</li>
-        </ul>
+        <h3>Q: Will tracking help me win money?</h3>
+        <p><strong>A:</strong> It depends on your <strong>discipline</strong> and how you use the data. Here's the truth: tracking helps you identify <em>real trends</em> in the data as they unfold - streaks, hot/cold groups, momentum shifts. Some players use this information to align their betting with the current flow rather than fighting against it. If you have the discipline to follow trends (not chase losses) and walk away when targets are hit, tracking can help you play <em>smarter</em> in the short term.</p>
 
-        <h2>Color Distribution: Red vs Black</h2>
-        <p>The tracker shows a breakdown of red and black results:</p>
+        <p><strong>However:</strong> Roulette has a house edge (2.7% European, 5.26% American) that can't be overcome long-term. Tracking doesn't predict the <em>next</em> spin - it shows you patterns in <em>recent</em> spins. The wheel has no memory. Use tracking as a tool for disciplined, data-informed decisions, not as a guarantee of profit. Short-term wins are possible with smart play; long-term profit is mathematically unlikely.</p>
 
-        <ul>
-          <li><strong>Red Count:</strong> How many times red has hit (numbers 1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36)</li>
-          <li><strong>Black Count:</strong> How many times black has hit (all non-red numbers except 0)</li>
-          <li><strong>Green Count:</strong> How many times zero has hit</li>
-        </ul>
+        <h3>Q: Why is a dozen cold for 20 spins? Isn't it due?</h3>
+        <p><strong>A:</strong> This is the gambler's fallacy. A dozen that hasn't hit in 20 spins <em>still</em> has a 32.4% chance on spin 21. The wheel doesn't "owe" anyone anything. Absence doesn't create probability.</p>
 
-        <p><strong>Important:</strong> Over the long run, red and black should each appear approximately 48.6% of the time. Short-term deviations are normal and expected - they don't mean anything is "due."</p>
+        <h3>Q: Should I bet more when I see a hot streak?</h3>
+        <p><strong>A:</strong> Tempting, but no. Hot streaks are <em>past events</em>. They don't influence the next spin. Bet sizing should be based on your bankroll and risk tolerance, not perceived momentum.</p>
 
-        <h2>Session Tracking</h2>
-        <p>A "session" is a period of play from start to finish. Good session management is key to responsible gambling:</p>
+        <h3>Q: How many spins before stats are "meaningful"?</h3>
+        <p><strong>A:</strong> You'll start seeing convergence around 100+ spins. Under 30 spins? Anything can happen. That's why we say: track at least 50 spins before drawing conclusions.</p>
 
-        <h3>Starting a New Session</h3>
-        <ol>
-          <li>Click "New Session" or "Clear History"</li>
-          <li>Set your starting bankroll (the amount you brought to play with)</li>
-          <li>Set a stop-loss limit (the maximum you're willing to lose)</li>
-          <li>Optionally set a profit target (when you'll stop if winning)</li>
-        </ol>
+        <h3>Q: Can I track American roulette (with 00)?</h3>
+        <p><strong>A:</strong> Currently, the tracker is optimized for <strong>European roulette</strong> (single zero, numbers 0-36). We don't yet support American roulette wheel analysis (with double zero). This is intentional - European roulette has a much better house edge (2.7% vs 5.26%), so we built the tool around the player-friendly version first. American roulette support may come in future updates.</p>
 
-        <h3>During a Session</h3>
-        <ul>
-          <li>The tracker shows your current bankroll after each bet</li>
-          <li>A warning appears if you're approaching your stop-loss limit</li>
-          <li>The bankroll chart visualizes your session performance</li>
-        </ul>
-
-        <h3>Ending a Session</h3>
-        <ul>
-          <li>Stop when you hit your stop-loss (discipline!)</li>
-          <li>Stop when you hit your profit target (lock in wins)</li>
-          <li>Stop when you've played for your planned time</li>
-          <li><strong>Never chase losses</strong> - this is the most important rule</li>
-        </ul>
-
-        <h2>Exporting Your Data</h2>
-        <p>Want to analyze your results elsewhere? Export your data:</p>
-
-        <ol>
-          <li>Click the "Export" button (usually in the top-right)</li>
-          <li>Choose your format:
-            <ul>
-              <li><strong>CSV:</strong> Open in Excel, Google Sheets, or any spreadsheet</li>
-              <li><strong>JSON:</strong> For developers or advanced analysis</li>
-            </ul>
-          </li>
-          <li>Your spin history, timestamps, and bet details will be saved</li>
-        </ol>
-
-        <h2>Tips for Beginners</h2>
-
-        <h3>1. Start with Pen and Paper</h3>
-        <p>If you're at a real casino, practice tracking a few spins on paper first. Then enter them into the app later to see statistics.</p>
-
-        <h3>2. Track at Least 50 Spins</h3>
-        <p>Statistical patterns don't emerge from 5-10 spins. Track at least 50 to see meaningful data.</p>
-
-        <h3>3. Don't Look for Patterns That Aren't There</h3>
-        <p>The tracker shows hot/cold numbers and streaks, but remember: these are historical facts, not future predictions. The wheel has no memory.</p>
-
-        <h3>4. Use It for Discipline</h3>
-        <p>The real value of tracking isn't predicting outcomes - it's maintaining discipline. Seeing your bankroll chart helps you recognize when to stop.</p>
-
-        <h2>Common Questions</h2>
-
-        <h3>Q: Will tracking help me win?</h3>
-        <p><strong>A:</strong> No. Tracking shows you what has happened, not what will happen. Use it to understand variance and manage your bankroll, not to predict outcomes.</p>
-
-        <h3>Q: Why does my win rate fluctuate?</h3>
-        <p><strong>A:</strong> Short-term variance is normal. Over hundreds of spins, your win rate will converge toward the expected probability (48.6% for red/black).</p>
-
-        <h3>Q: Should I bet more when I see a pattern?</h3>
-        <p><strong>A:</strong> No! Past results don't influence future spins. This is the gambler's fallacy. Bet sizes should be based on your bankroll, not perceived patterns.</p>
-
-        <h2>Next Steps</h2>
-        <p>Once you're comfortable with basic tracking:</p>
+        <h2>Key Takeaways (Write These Down)</h2>
 
         <ul>
-          <li>Upgrade to <strong>Pro tier</strong> for Advanced Analytics (47 betting groups, probability analysis, convergence tracking)</li>
-          <li>Upgrade to <strong>Elite tier</strong> for the Betting Assistant (structured card system with data-driven suggestions)</li>
-          <li>Read our guide on <strong>Session Management 101</strong> to improve discipline</li>
+          <li>The Basic Tracker shows you 12 common betting groups in real-time</li>
+          <li>HOT/COLD/NORM status tells you <em>what happened</em>, not what <em>will happen</em></li>
+          <li>Tracking is about <strong>understanding variance</strong>, not beating the house</li>
+          <li>50+ spins is when data starts to tell a story</li>
+          <li>When you're ready for more, Pro (47 groups) and Elite (betting assistant) await</li>
+          <li>The wheel has no memory - every spin is independent</li>
+          <li><strong>Discipline > Superstition</strong></li>
         </ul>
 
-        <h2>Key Takeaways</h2>
-        <ul>
-          <li>The Basic Tracker helps you record spins and understand statistics</li>
-          <li>Win rate for even-money bets should approach 48.6% over time</li>
-          <li>Session management (stop-loss, profit targets) is critical</li>
-          <li>Export data to analyze your play offline</li>
-          <li>Tracking doesn't predict the future - use it for discipline, not strategy</li>
-        </ul>
+        <h2>Ready to Start?</h2>
 
-        <p><strong>Ready to start tracking?</strong> Head to the <a href="/tracker">/tracker</a> page and add your first spin!</p>
+        <p>Stop reading. Start tracking.</p>
+
+        <p>Head to <strong><a href="/tracker">/tracker</a></strong> right now. Add your first spin. Watch the stats light up. Feel the difference between <em>guessing</em> and <em>knowing</em>.</p>
+
+        <p>This is where your journey begins. Not as a gambler chasing luck. But as a data-driven thinker understanding probability.</p>
+
+        <p><strong>Welcome to the family.</strong> 🎰📊</p>
       `,
     },
     'your-first-betting-card': {
