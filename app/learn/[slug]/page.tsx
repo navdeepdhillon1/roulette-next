@@ -521,16 +521,21 @@ const getArticleBySlug = (slug: string) => {
         <p>Standard roulette tracking only shows basic stats like red/black or hot numbers. But experienced players know there are many more ways to bet:</p>
 
         <ul>
-          <li><strong>Table-based bets:</strong> What you see on the felt (red/black, dozens, columns, etc.)</li>
-          <li><strong>Wheel-based bets:</strong> Sectors of the physical wheel (Voisins, Tiers, Orphelins)</li>
-          <li><strong>Alternative patterns:</strong> Custom groupings (A/B splits, AA/BB patterns)</li>
+          <li><strong>Table Groups - Common (12 groups):</strong> The standard bets you see on the felt (red/black, even/odd, low/high, dozens, columns)</li>
+          <li><strong>Table Groups - Special (14 groups):</strong> Alternative table patterns (A/B, AA/BB, AAA/BBB, Edge/Center, Six-line groups)</li>
+          <li><strong>Wheel Groups (21 groups):</strong> Sectors based on the physical wheel position (Voisins, Tiers, Orphelins, alternative patterns, wheel quarters)</li>
         </ul>
 
-        <p>Our system tracks ALL of them simultaneously, giving you unprecedented insight into which <strong>betting groups</strong> are hitting and which aren't.</p>
+        <p>Our system tracks ALL 47 groups simultaneously, giving you unprecedented insight into which <strong>betting groups</strong> are hitting and which aren't.</p>
+
+        <p><strong>Don't worry about memorizing these!</strong> When you're ready to place bets in the Betting Assistant, there's a visual modal next to each <strong>betting chip</strong> that shows exactly which numbers belong to that group. Click the info icon to see your favorite numbers highlighted.</p>
 
         <h2>The 47 Groups: Complete Breakdown</h2>
 
-        <h3>Part 1: Standard Table Bets (8 groups)</h3>
+        <h3>Part 1: Table Groups - Common (12 groups)</h3>
+        <p>These are the classic betting groups you'll find on every roulette table. They're called "Common" because they're the standard bets most players use.</p>
+
+        <h4>Even Money Bets (1:1 Payout - 6 groups)</h4>
 
         <h4>1. Red (18 numbers)</h4>
         <p><strong>Numbers:</strong> 1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36</p>
@@ -564,12 +569,16 @@ const getArticleBySlug = (slug: string) => {
         <p><strong>Payout:</strong> 1:1</p>
         <p><strong>Win Rate:</strong> 48.6%</p>
 
+        <h4>2:1 Payout Bets (6 groups)</h4>
+
         <h4>7-9. Dozens (12 numbers each)</h4>
         <ul>
-          <li><strong>First Dozen (1-12):</strong> 32.4% win rate, 2:1 payout</li>
-          <li><strong>Second Dozen (13-24):</strong> 32.4% win rate, 2:1 payout</li>
-          <li><strong>Third Dozen (25-36):</strong> 32.4% win rate, 2:1 payout</li>
+          <li><strong>First Dozen (1-12):</strong> Numbers 1 through 12</li>
+          <li><strong>Second Dozen (13-24):</strong> Numbers 13 through 24</li>
+          <li><strong>Third Dozen (25-36):</strong> Numbers 25 through 36</li>
         </ul>
+        <p><strong>Payout:</strong> 2:1</p>
+        <p><strong>Win Rate:</strong> 32.4% (12/37)</p>
         <p><strong>Use Case:</strong> Lower win rate than red/black, but higher payout. Popular for hedging strategies.</p>
 
         <h4>10-12. Columns (12 numbers each)</h4>
@@ -582,67 +591,98 @@ const getArticleBySlug = (slug: string) => {
         <p><strong>Win Rate:</strong> 32.4%</p>
         <p><strong>Use Case:</strong> Similar to dozens. Good for matrix betting (combining with red/black).</p>
 
-        <h3>Part 2: Wheel-Based Groups (4 groups)</h3>
-        <p>These groups are based on the <strong>physical position</strong> of numbers on the European roulette wheel, not the table layout.</p>
+        <h3>Part 2: Table Groups - Special (14 groups)</h3>
+        <p>These are alternative table betting patterns that go beyond the standard groups. They're organized by the Table Layout Modal under "Special" categories.</p>
 
-        <h4>13. Voisins du Zéro (Neighbors of Zero - 17 numbers)</h4>
+        <h4>Six-Line Groups (6 groups)</h4>
+        <p>Each group covers 6 consecutive numbers in two rows on the table:</p>
+
+        <ul>
+          <li><strong>Six 1-6:</strong> Numbers 1, 2, 3, 4, 5, 6</li>
+          <li><strong>Six 7-12:</strong> Numbers 7, 8, 9, 10, 11, 12</li>
+          <li><strong>Six 13-18:</strong> Numbers 13, 14, 15, 16, 17, 18</li>
+          <li><strong>Six 19-24:</strong> Numbers 19, 20, 21, 22, 23, 24</li>
+          <li><strong>Six 25-30:</strong> Numbers 25, 26, 27, 28, 29, 30</li>
+          <li><strong>Six 31-36:</strong> Numbers 31, 32, 33, 34, 35, 36</li>
+        </ul>
+
+        <p><strong>Payout:</strong> 5:1</p>
+        <p><strong>Win Rate:</strong> 16.2% (6/37)</p>
+        <p><strong>Use Case:</strong> Medium coverage with decent payout. Good for sector-based strategies.</p>
+
+        <h4>Alternative Pattern Groups (6 groups)</h4>
+        <p>These groups track alternating patterns on the table for advanced pattern analysis:</p>
+
+        <ul>
+          <li><strong>A / B (Alternating Singles):</strong> Two halves of the table that alternate. Similar concept to Red/Black but based on table position.</li>
+          <li><strong>AA / BB (Alternating Pairs):</strong> Tracks when the same half hits twice in a row vs alternating.</li>
+          <li><strong>AAA / BBB (Alternating Triplets):</strong> Tracks when the same half hits three times in a row vs alternating.</li>
+        </ul>
+
+        <p><strong>Use Case:</strong> Used in the decision engine for pattern analysis. Helps identify table-based streaking vs alternation.</p>
+
+        <h4>Geometric Groups (2 groups)</h4>
+        <ul>
+          <li><strong>Edge:</strong> Numbers on the outer edges of the table layout</li>
+          <li><strong>Center:</strong> Numbers in the center section of the table layout</li>
+        </ul>
+
+        <p><strong>Use Case:</strong> Alternative way to divide the table for positional betting strategies.</p>
+
+        <h3>Part 3: Wheel Groups (21 groups)</h3>
+        <p>These groups are based on the <strong>physical position</strong> of numbers on the European roulette wheel, not the table layout. They're visualized in the Wheel Layout Modal.</p>
+
+        <h4>Classic French Bets (5 groups)</h4>
+        <p>The traditional wheel sector bets used in European casinos:</p>
+
+        <h5>1. Voisins du Zéro (Neighbors of Zero - 17 numbers)</h5>
         <p><strong>Numbers:</strong> 22, 18, 29, 7, 28, 12, 35, 3, 26, 0, 32, 15, 19, 4, 21, 2, 25</p>
         <p><strong>Wheel Position:</strong> The large arc from 22 to 25 (includes zero)</p>
         <p><strong>Coverage:</strong> 45.9% of the wheel</p>
-        <p><strong>Use Case:</strong> Popular in European casinos. Requires 9 chips (split/corner/trio bets).</p>
 
-        <h4>14. Tiers du Cylindre (Third of the Wheel - 12 numbers)</h4>
+        <h5>2. Tiers du Cylindre (Third of the Wheel - 12 numbers)</h5>
         <p><strong>Numbers:</strong> 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33</p>
         <p><strong>Wheel Position:</strong> Opposite side of the wheel from Voisins</p>
         <p><strong>Coverage:</strong> 32.4% of the wheel</p>
-        <p><strong>Use Case:</strong> Requires 6 chips (all split bets).</p>
 
-        <h4>15. Orphelins (Orphans - 8 numbers)</h4>
+        <h5>3. Orphelins (Orphans - 8 numbers)</h5>
         <p><strong>Numbers:</strong> 1, 20, 14, 31, 9, 17, 34, 6</p>
         <p><strong>Wheel Position:</strong> The two small arcs not covered by Voisins or Tiers</p>
         <p><strong>Coverage:</strong> 21.6% of the wheel</p>
-        <p><strong>Use Case:</strong> Requires 5 chips. Often overlooked but statistically valid.</p>
 
-        <h4>16. Jeu Zéro (Zero Game - 7 numbers)</h4>
+        <h5>4. Jeu Zéro (Zero Game - 7 numbers)</h5>
         <p><strong>Numbers:</strong> 12, 35, 3, 26, 0, 32, 15</p>
         <p><strong>Wheel Position:</strong> Immediate neighbors of zero</p>
         <p><strong>Coverage:</strong> 18.9% of the wheel</p>
-        <p><strong>Use Case:</strong> Requires 4 chips. Smallest wheel sector bet.</p>
 
-        <h3>Part 3: Neighbor Bets (Variable groups)</h3>
+        <h5>5. Non-Voisins (20 numbers)</h5>
+        <p><strong>Description:</strong> All numbers NOT in the Voisins du Zéro sector</p>
+        <p><strong>Coverage:</strong> 54.1% of the wheel</p>
+        <p><strong>Use Case:</strong> Complements Voisins for complete wheel coverage tracking</p>
 
-        <h4>17-53. Number + Neighbors</h4>
-        <p>For each number (0-36), you can bet on that number plus its neighbors on the wheel. For example:</p>
-
-        <ul>
-          <li><strong>17 and neighbors:</strong> 25, 2, 21, 4, 19 (17 in the middle, 2 neighbors on each side)</li>
-          <li><strong>0 and neighbors:</strong> 26, 0, 32 (with 2 neighbors on each side: 15, 19, 4, 21, 2)</li>
-        </ul>
-
-        <p><strong>Use Case:</strong> Popular in live casinos. Dealer announces "17 and neighbors" and places chips.</p>
-
-        <h3>Part 4: Alternative Groupings</h3>
-
-        <h4>A/B Groups (Red/Black Alternative View)</h4>
-        <p>Instead of standard red/black, some systems use A/B notation:</p>
+        <h4>Wheel Alternative Patterns (10 groups)</h4>
+        <p>Similar to table patterns but based on wheel position:</p>
 
         <ul>
-          <li><strong>A:</strong> Equivalent to Red</li>
-          <li><strong>B:</strong> Equivalent to Black</li>
+          <li><strong>A / B:</strong> Wheel split into two alternating halves</li>
+          <li><strong>AA / BB:</strong> Tracks consecutive hits on same wheel half</li>
+          <li><strong>AAA / BBB:</strong> Tracks triple consecutive hits on same wheel half</li>
+          <li><strong>A6 / B6:</strong> Wheel split into six-number sectors</li>
+          <li><strong>A9 / B9:</strong> Wheel split into nine-number sectors</li>
         </ul>
 
-        <p><strong>Use Case:</strong> Used in decision engine for statistical analysis. Allows flexible mapping (you can define A/B as anything).</p>
+        <p><strong>Use Case:</strong> Advanced pattern recognition based on wheel position rather than table layout.</p>
 
-        <h4>AA/BB Patterns</h4>
-        <p>Advanced pattern tracking:</p>
-
+        <h4>Geometric Wheel Divisions (6 groups)</h4>
         <ul>
-          <li><strong>AA:</strong> Two consecutive reds</li>
-          <li><strong>BB:</strong> Two consecutive blacks</li>
-          <li><strong>AB or BA:</strong> Alternating colors</li>
+          <li><strong>Right / Left:</strong> The wheel split vertically into right and left halves (18 numbers each)</li>
+          <li><strong>1st Nine:</strong> First quarter of the wheel (9 numbers)</li>
+          <li><strong>2nd Nine:</strong> Second quarter of the wheel (9 numbers)</li>
+          <li><strong>3rd Nine:</strong> Third quarter of the wheel (9 numbers)</li>
+          <li><strong>4th Nine:</strong> Fourth quarter of the wheel (9 numbers)</li>
         </ul>
 
-        <p><strong>Use Case:</strong> Used in adaptive betting strategies. Track how often results alternate vs streak.</p>
+        <p><strong>Use Case:</strong> Sector analysis for identifying wheel bias or dealer signatures.</p>
 
         <h2>How Groups Are Tracked</h2>
 
@@ -759,18 +799,64 @@ const getArticleBySlug = (slug: string) => {
 
         <p><strong>Interpretation:</strong> Red is running slightly hot, Voisins sector is hitting more than expected. But with only 100 spins, these deviations are well within normal variance. Not actionable.</p>
 
+        <h2>Custom Groups (Elite Tier Feature)</h2>
+        <p>As an <strong>Elite tier player</strong>, you can create up to <strong>10 custom betting groups</strong> using your own favorite numbers. This allows you to track personalized combinations that aren't part of the standard 47 groups.</p>
+
+        <h3>How Custom Groups Work</h3>
+        <ul>
+          <li><strong>Choose Your Numbers:</strong> Select any combination of numbers from 0-36</li>
+          <li><strong>Name Your Group:</strong> Give it a memorable name (e.g., "My Lucky Numbers," "Birthday Combo," "Hot Numbers")</li>
+          <li><strong>Track Performance:</strong> Your custom group is tracked just like the standard groups (streaks, absences, hit counts, deviation)</li>
+          <li><strong>Place Bets:</strong> Use betting chips to place bets on your custom groups in the Betting Assistant</li>
+        </ul>
+
+        <h3>Example Custom Groups</h3>
+        <ul>
+          <li><strong>"My Lucky 7":</strong> 7, 17, 27 (all numbers with 7)</li>
+          <li><strong>"Birthdays":</strong> 3, 12, 24, 31 (family birth dates)</li>
+          <li><strong>"Corner Favorites":</strong> 1, 2, 4, 5 (corner bet numbers)</li>
+          <li><strong>"Hot Run":</strong> Numbers that have been hot in recent sessions</li>
+        </ul>
+
+        <p><strong>Use Case:</strong> Custom groups let you test personal theories, track favorite number combinations, or create strategies based on your own observations.</p>
+
+        <h2>Beginner Advice: Where to Start?</h2>
+        <p>With 47 groups available, it's easy to feel overwhelmed. Here's how to approach betting groups as a beginner:</p>
+
+        <h3>Start with One Group at a Time</h3>
+        <p>Don't try to track all 47 groups immediately. <strong>Pick one stable group</strong> and stick with it until you're comfortable. The most stable groups for beginners:</p>
+
+        <ul>
+          <li><strong>Red or Black:</strong> 48.6% win rate, simple to understand, 1:1 payout</li>
+          <li><strong>Even or Odd:</strong> Same win rate and payout as Red/Black, equally stable</li>
+          <li><strong>Low (1-18) or High (19-36):</strong> Another 48.6% option, good for range betting</li>
+        </ul>
+
+        <h3>Choose What Feels Comfortable</h3>
+        <p>There's no "best" group to start with. Some players prefer colors, others like dozens. The important thing is to <strong>pick one betting group and learn how it behaves</strong> over dozens or hundreds of spins.</p>
+
+        <h3>Focus on Stability</h3>
+        <p>The highest win-rate groups (Red, Black, Even, Odd, Low, High) are the most stable. They converge to their expected probabilities fastest. As you gain experience, you can explore dozens, columns, and wheel sectors.</p>
+
+        <h3>Use the Visual Modals</h3>
+        <p>Remember: <strong>you don't need to memorize which numbers belong to which group.</strong> When you're placing bets, click the info icon next to any betting chip to see the visual modal showing exactly which numbers are in that group.</p>
+
         <h2>Key Takeaways</h2>
 
         <ul>
           <li>Roulette Tracker Pro tracks <strong>47 distinct betting groups</strong> simultaneously</li>
-          <li><strong>Betting groups</strong> include standard bets (red/black), dozens/columns, wheel sectors (Voisins, Tiers), and alternative patterns</li>
+          <li><strong>Table Groups - Common (12):</strong> Red, Black, Even, Odd, Low, High, Dozens (3), Columns (3)</li>
+          <li><strong>Table Groups - Special (14):</strong> Six-line groups (6), Alternative patterns (A/B, AA/BB, AAA/BBB), Edge/Center (2)</li>
+          <li><strong>Wheel Groups (21):</strong> Classic French bets (Voisins, Tiers, Orphelins, Jeu Zero, Non-Voisins), Alternative wheel patterns (A/B, AA/BB, AAA/BBB, A6/B6, A9/B9), Geometric divisions (Right/Left, Quarters)</li>
+          <li><strong>Custom Groups:</strong> Elite tier players can create up to 10 custom groups with their favorite numbers</li>
           <li>In the Elite tier, you place bets on these groups using <strong>betting chips</strong> - clickable buttons for each group</li>
-          <li>Beginners should focus on 6 core groups, advanced players can use all 47</li>
+          <li><strong>Don't memorize!</strong> Visual modals next to each betting chip show which numbers belong to that group</li>
+          <li><strong>Beginners:</strong> Start with one stable group (Red, Black, Even, Odd) and stick with it</li>
           <li>Anomalies show statistical deviations but don't predict future outcomes</li>
-          <li><strong>Matrix betting</strong> allows clicking multiple betting chips at once to bet on several groups simultaneously for complex strategies</li>
+          <li><strong>Matrix betting</strong> allows clicking multiple betting chips at once to bet on several groups simultaneously</li>
         </ul>
 
-        <p><strong>Ready to explore?</strong> Go to <a href="/analysis">/analysis</a> to see real-time group tracking, or head to <a href="/assistant">/assistant</a> to start placing bets with betting chips!</p>
+        <p><strong>Ready to explore?</strong> Go to <a href="/analysis">/analysis</a> to see real-time group tracking across all 47 groups, or head to <a href="/assistant">/assistant</a> to start placing bets with betting chips and visual modals!</p>
       `,
     },
     'betting-systems-explained': {
