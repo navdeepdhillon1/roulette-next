@@ -250,6 +250,30 @@ export default function BettingAssistant() {
   const [showBettingHelpModal, setShowBettingHelpModal] = useState(false)
   const [mounted, setMounted] = useState(false)
 
+  // Beta Access Control
+  const [hasAccess, setHasAccess] = useState(false)
+  const [accessCode, setAccessCode] = useState('')
+  const BETA_CODE = 'ROULETTE2024' // Change this to your secret code
+
+  useEffect(() => {
+    // Check if user has beta access in localStorage
+    const storedAccess = localStorage.getItem('beta_access')
+    if (storedAccess === BETA_CODE) {
+      setHasAccess(true)
+    }
+  }, [])
+
+  const handleAccessSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (accessCode === BETA_CODE) {
+      localStorage.setItem('beta_access', BETA_CODE)
+      setHasAccess(true)
+    } else {
+      alert('Invalid access code. Please check your email for the correct code.')
+      setAccessCode('')
+    }
+  }
+
   // ✅ Get authenticated user on mount
   useEffect(() => {
     setMounted(true)
@@ -788,6 +812,81 @@ export default function BettingAssistant() {
     })
   }
 
+  // Show access gate if no access
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          {/* Logo/Title */}
+          <div className="text-center mb-8">
+            <div className="relative mb-4">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent blur-3xl"></div>
+              <h1 className="relative text-4xl md:text-5xl font-bold">
+                <span className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 bg-clip-text text-transparent">
+                  ROULETTE TRACKER
+                </span>
+              </h1>
+            </div>
+            <p className="text-yellow-400/60 text-sm tracking-widest">PROFESSIONAL EDITION</p>
+          </div>
+
+          {/* Access Card */}
+          <div className="bg-gray-800 border-2 border-yellow-400/30 rounded-xl p-8 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/20 border border-orange-400/50 rounded-full mb-4">
+                <span className="text-2xl">🔒</span>
+                <span className="text-orange-300 font-bold text-sm">BETA ACCESS REQUIRED</span>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Welcome, Beta Tester!</h2>
+              <p className="text-gray-400 text-sm">
+                Enter your access code to unlock the app
+              </p>
+            </div>
+
+            <form onSubmit={handleAccessSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Access Code
+                </label>
+                <input
+                  type="text"
+                  value={accessCode}
+                  onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                  placeholder="Enter code from email"
+                  className="w-full px-4 py-3 bg-gray-900 border-2 border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-yellow-400 focus:outline-none text-center font-mono text-lg tracking-wider"
+                  autoFocus
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-gray-900 font-bold rounded-lg transition-all transform hover:scale-105"
+              >
+                Unlock Beta Access
+              </button>
+            </form>
+
+            <div className="mt-6 pt-6 border-t border-gray-700">
+              <p className="text-xs text-gray-500 text-center">
+                Don't have a code?{' '}
+                <a
+                  href="mailto:youremail@example.com?subject=Beta Access Request"
+                  className="text-yellow-400 hover:text-yellow-300 underline"
+                >
+                  Request access
+                </a>
+              </p>
+            </div>
+          </div>
+
+          {/* Info Footer */}
+          <div className="mt-6 text-center text-xs text-gray-500">
+            <p>Early Access Program • Limited Spots Available</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <>
       <Navigation />
@@ -1305,6 +1404,16 @@ export default function BettingAssistant() {
                         onBetPlaced={handleHistoryTableBet}
                         historicalBets={historicalBets}
                         onHistoricalBetsUpdate={handleHistoricalBetsUpdate}
+                        onBetModeChange={(mode) => {
+                          // Switch tableView based on betMode
+                          if (mode === 'wheel') {
+                            setTableView('wheelLayout')
+                          } else if (mode === 'table') {
+                            setTableView('layout')
+                          } else if (mode === 'custom') {
+                            setTableView('my-groups')
+                          }
+                        }}
                       />
                     </div>
                   </div>

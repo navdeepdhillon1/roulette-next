@@ -1336,12 +1336,24 @@ export default function HistoryTable({
             }
 
             const num = spin.number
+            // Table group calculations
             const alt1 = num === 0 ? '-' : [1,2,3,7,8,9,13,14,15,19,20,21,25,26,27,31,32,33].includes(num) ? 'A' : 'B'
             const alt2 = num === 0 ? '-' : [1,2,3,4,5,6,13,14,15,16,17,18,25,26,27,28,29,30].includes(num) ? 'AA' : 'BB'
             const alt3 = num === 0 ? '-' : [1,2,3,4,5,6,7,8,9,19,20,21,22,23,24,25,26,27].includes(num) ? 'AAA' : 'BBB'
             const edgeCenter = num === 0 ? '-' : [1,2,3,4,5,6,7,8,9,28,29,30,31,32,33,34,35,36].includes(num) ? 'E' : 'C'
             const sixGroup = num === 0 ? '-' : num <= 6 ? '1st' : num <= 12 ? '2nd' : num <= 18 ? '3rd' : num <= 24 ? '4th' : num <= 30 ? '5th' : '6th'
             const wheelPosition = WHEEL_ORDER.indexOf(num)
+
+            // Wheel group calculations
+            const voisOrphTier = num === 0 ? '-' : WHEEL_GROUPS.voisins.includes(num) ? 'Vois' : WHEEL_GROUPS.orphelins.includes(num) ? 'Orph' : WHEEL_GROUPS.tiers.includes(num) ? 'Tier' : '-'
+            const voisNonVois = num === 0 ? '-' : WHEEL_GROUPS.voisins.includes(num) ? 'Vois' : WHEEL_GROUPS.non_voisin.includes(num) ? 'N-Vois' : '-'
+            const wheelAB = num === 0 ? '-' : WHEEL_GROUPS.a.includes(num) ? 'A' : WHEEL_GROUPS.b.includes(num) ? 'B' : '-'
+            const wheelAABB = num === 0 ? '-' : WHEEL_GROUPS.aa.includes(num) ? 'AA' : WHEEL_GROUPS.bb.includes(num) ? 'BB' : '-'
+            const wheelAAABBB = num === 0 ? '-' : WHEEL_GROUPS.aaa.includes(num) ? 'AAA' : WHEEL_GROUPS.bbb.includes(num) ? 'BBB' : '-'
+            const wheelA6B6 = num === 0 ? '-' : WHEEL_GROUPS.a6.includes(num) ? 'A6' : WHEEL_GROUPS.b6.includes(num) ? 'B6' : '-'
+            const wheelA9B9 = num === 0 ? '-' : WHEEL_GROUPS.a9.includes(num) ? 'A9' : WHEEL_GROUPS.b9.includes(num) ? 'B9' : '-'
+            const wheelRightLeft = num === 0 ? '-' : WHEEL_GROUPS.right.includes(num) ? 'Right' : WHEEL_GROUPS.left.includes(num) ? 'Left' : '-'
+            const wheelQuarter = num === 0 ? '-' : WHEEL_GROUPS.first_9.includes(num) ? '1st' : WHEEL_GROUPS.second_9.includes(num) ? '2nd' : WHEEL_GROUPS.third_9.includes(num) ? '3rd' : WHEEL_GROUPS.fourth_9.includes(num) ? '4th' : '-'
 
             // Check if we have bet results for this spin - use spin ID as key
             const spinKey = spin.id || spin.spin_number?.toString() || new Date(spin.created_at).getTime().toString()
@@ -1401,124 +1413,245 @@ export default function HistoryTable({
                     {num}
                   </div>
                 </td>
-                <td className="px-1 py-1 text-center">
-                  {renderCellWithBadge(
-                    spin.color === 'red' ? 'R' : spin.color === 'black' ? 'B' : 'G',
-                    `px-1.5 py-0.5 rounded text-xs font-bold ${
-                      spin.color === 'red' ? 'bg-red-600/30 text-red-400' :
-                      spin.color === 'black' ? 'bg-gray-600/30 text-gray-300' :
-                      'bg-green-600/30 text-green-400'
-                    }`,
-                    ['red', 'black']
-                  )}
-                </td>
-                <td className="px-1 py-1 text-center">
-                  {renderCellWithBadge(
-                    spin.even_odd === 'even' ? 'E' : spin.even_odd === 'odd' ? 'O' : '-',
-                    `px-1.5 py-0.5 rounded text-xs font-bold ${
-                      spin.even_odd === 'even' ? 'bg-purple-600/30 text-purple-400' :
-                      spin.even_odd === 'odd' ? 'bg-cyan-600/30 text-cyan-400' :
-                      'bg-gray-600/30 text-gray-400'
-                    }`,
-                    ['even', 'odd']
-                  )}
-                </td>
-                <td className="px-1 py-1 text-center">
-                  {renderCellWithBadge(
-                    spin.low_high === 'low' ? 'L' : spin.low_high === 'high' ? 'H' : '-',
-                    `px-1.5 py-0.5 rounded text-xs font-bold ${
-                      spin.low_high === 'low' ? 'bg-amber-700/30 text-amber-400' :
-                      spin.low_high === 'high' ? 'bg-gray-600/30 text-gray-300' :
-                      'bg-gray-600/30 text-gray-400'
-                    }`,
-                    ['low', 'high']
-                  )}
-                </td>
-                <td className="px-1 py-1 text-center">
-                  {renderCellWithBadge(
-                    spin.column_num > 0 ? `${spin.column_num}st` : '-',
-                    `px-1.5 py-0.5 rounded text-xs font-bold ${
-                      spin.column_num === 1 ? 'bg-orange-600/30 text-orange-400' :
-                      spin.column_num === 2 ? 'bg-teal-600/30 text-teal-400' :
-                      spin.column_num === 3 ? 'bg-lime-600/30 text-lime-400' :
-                      'bg-gray-600/30 text-gray-400'
-                    }`,
-                    ['col1', 'col2', 'col3']
-                  )}
-                </td>
-                <td className="px-1 py-1 text-center">
-                  {renderCellWithBadge(
-                    spin.dozen === 'first' ? '1st' : spin.dozen === 'second' ? '2nd' : spin.dozen === 'third' ? '3rd' : '-',
-                    `px-1.5 py-0.5 rounded text-xs font-bold ${
-                      spin.dozen === 'first' ? 'bg-red-700/30 text-red-400' :
-                      spin.dozen === 'second' ? 'bg-cyan-700/30 text-cyan-400' :
-                      spin.dozen === 'third' ? 'bg-green-700/30 text-green-400' :
-                      'bg-gray-600/30 text-gray-400'
-                    }`,
-                    ['dozen1', 'dozen2', 'dozen3']
-                  )}
-                </td>
-                <td className="px-1 py-1 text-center">
-                  {renderCellWithBadge(
-                    alt1,
-                    `px-1.5 py-0.5 rounded text-xs font-bold ${
-                      alt1 === 'A' ? 'bg-indigo-600/30 text-indigo-400' :
-                      alt1 === 'B' ? 'bg-pink-600/30 text-pink-400' :
-                      'bg-gray-600/30 text-gray-400'
-                    }`,
-                    ['alt1_1', 'alt1_2']
-                  )}
-                </td>
-                <td className="px-1 py-1 text-center">
-                  {renderCellWithBadge(
-                    alt2,
-                    `px-1.5 py-0.5 rounded text-xs font-bold ${
-                      alt2 === 'AA' ? 'bg-lime-700/30 text-lime-400' :
-                      alt2 === 'BB' ? 'bg-purple-700/30 text-purple-400' :
-                      'bg-gray-600/30 text-gray-400'
-                    }`,
-                    ['alt2_1', 'alt2_2']
-                  )}
-                </td>
-                <td className="px-1 py-1 text-center">
-                  {renderCellWithBadge(
-                    alt3,
-                    `px-1.5 py-0.5 rounded text-xs font-bold ${
-                      alt3 === 'AAA' ? 'bg-blue-600/30 text-blue-400' :
-                      alt3 === 'BBB' ? 'bg-yellow-700/30 text-yellow-400' :
-                      'bg-gray-600/30 text-gray-400'
-                    }`,
-                    ['alt3_1', 'alt3_2']
-                  )}
-                </td>
-                <td className="px-1 py-1 text-center">
-                  {renderCellWithBadge(
-                    edgeCenter,
-                    `px-1.5 py-0.5 rounded text-xs font-bold ${
-                      edgeCenter === 'E' ? 'bg-purple-600/30 text-purple-400' :
-                      edgeCenter === 'C' ? 'bg-orange-600/30 text-orange-400' :
-                      'bg-gray-600/30 text-gray-400'
-                    }`,
-                    ['edge', 'center']
-                  )}
-                </td>
-                <td className="px-1 py-1 text-center">
-                  {renderCellWithBadge(
-                    sixGroup,
-                    `px-1.5 py-0.5 rounded text-xs font-bold ${
-                      sixGroup === '1st' || sixGroup === '6th' ? 'bg-red-700/30 text-red-400' :
-                      sixGroup === '2nd' || sixGroup === '5th' ? 'bg-blue-700/30 text-blue-400' :
-                      sixGroup === '3rd' || sixGroup === '4th' ? 'bg-green-700/30 text-green-400' :
-                      'bg-gray-600/30 text-gray-400'
-                    }`,
-                    ['six1', 'six2', 'six3', 'six4', 'six5', 'six6']
-                  )}
-                </td>
-                <td className="px-1 py-1 text-center">
-                  <span className="px-1.5 py-0.5 bg-gray-700/50 text-gray-300 rounded text-xs font-semibold">
-                    {wheelPosition >= 0 ? wheelPosition : '-'}
-                  </span>
-                </td>
+                {betMode === 'table' ? (
+                  // Table Groups History Cells
+                  <>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        spin.color === 'red' ? 'R' : spin.color === 'black' ? 'B' : 'G',
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          spin.color === 'red' ? 'bg-red-600/30 text-red-400' :
+                          spin.color === 'black' ? 'bg-gray-600/30 text-gray-300' :
+                          'bg-green-600/30 text-green-400'
+                        }`,
+                        ['red', 'black']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        spin.even_odd === 'even' ? 'E' : spin.even_odd === 'odd' ? 'O' : '-',
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          spin.even_odd === 'even' ? 'bg-purple-600/30 text-purple-400' :
+                          spin.even_odd === 'odd' ? 'bg-cyan-600/30 text-cyan-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['even', 'odd']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        spin.low_high === 'low' ? 'L' : spin.low_high === 'high' ? 'H' : '-',
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          spin.low_high === 'low' ? 'bg-amber-700/30 text-amber-400' :
+                          spin.low_high === 'high' ? 'bg-gray-600/30 text-gray-300' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['low', 'high']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        spin.column_num > 0 ? `${spin.column_num}st` : '-',
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          spin.column_num === 1 ? 'bg-orange-600/30 text-orange-400' :
+                          spin.column_num === 2 ? 'bg-teal-600/30 text-teal-400' :
+                          spin.column_num === 3 ? 'bg-lime-600/30 text-lime-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['col1', 'col2', 'col3']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        spin.dozen === 'first' ? '1st' : spin.dozen === 'second' ? '2nd' : spin.dozen === 'third' ? '3rd' : '-',
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          spin.dozen === 'first' ? 'bg-red-700/30 text-red-400' :
+                          spin.dozen === 'second' ? 'bg-cyan-700/30 text-cyan-400' :
+                          spin.dozen === 'third' ? 'bg-green-700/30 text-green-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['dozen1', 'dozen2', 'dozen3']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        alt1,
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          alt1 === 'A' ? 'bg-indigo-600/30 text-indigo-400' :
+                          alt1 === 'B' ? 'bg-pink-600/30 text-pink-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['alt1_1', 'alt1_2']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        alt2,
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          alt2 === 'AA' ? 'bg-lime-700/30 text-lime-400' :
+                          alt2 === 'BB' ? 'bg-purple-700/30 text-purple-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['alt2_1', 'alt2_2']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        alt3,
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          alt3 === 'AAA' ? 'bg-blue-600/30 text-blue-400' :
+                          alt3 === 'BBB' ? 'bg-yellow-700/30 text-yellow-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['alt3_1', 'alt3_2']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        edgeCenter,
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          edgeCenter === 'E' ? 'bg-purple-600/30 text-purple-400' :
+                          edgeCenter === 'C' ? 'bg-orange-600/30 text-orange-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['edge', 'center']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        sixGroup,
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          sixGroup === '1st' || sixGroup === '6th' ? 'bg-red-700/30 text-red-400' :
+                          sixGroup === '2nd' || sixGroup === '5th' ? 'bg-blue-700/30 text-blue-400' :
+                          sixGroup === '3rd' || sixGroup === '4th' ? 'bg-green-700/30 text-green-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['six1', 'six2', 'six3', 'six4', 'six5', 'six6']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      <span className="px-1.5 py-0.5 bg-gray-700/50 text-gray-300 rounded text-xs font-semibold">
+                        {wheelPosition >= 0 ? wheelPosition : '-'}
+                      </span>
+                    </td>
+                  </>
+                ) : betMode === 'wheel' ? (
+                  // Wheel Groups History Cells
+                  <>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        voisOrphTier,
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          voisOrphTier === 'Vois' ? 'bg-purple-600/30 text-purple-400' :
+                          voisOrphTier === 'Orph' ? 'bg-cyan-600/30 text-cyan-400' :
+                          voisOrphTier === 'Tier' ? 'bg-green-600/30 text-green-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['voisins', 'orphelins', 'tiers']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        voisNonVois,
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          voisNonVois === 'Vois' ? 'bg-purple-600/30 text-purple-400' :
+                          voisNonVois === 'N-Vois' ? 'bg-pink-600/30 text-pink-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['voisins', 'non_voisin']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        wheelAB,
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          wheelAB === 'A' ? 'bg-indigo-600/30 text-indigo-400' :
+                          wheelAB === 'B' ? 'bg-pink-600/30 text-pink-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['a', 'b']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        wheelAABB,
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          wheelAABB === 'AA' ? 'bg-lime-700/30 text-lime-400' :
+                          wheelAABB === 'BB' ? 'bg-purple-700/30 text-purple-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['aa', 'bb']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        wheelAAABBB,
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          wheelAAABBB === 'AAA' ? 'bg-blue-600/30 text-blue-400' :
+                          wheelAAABBB === 'BBB' ? 'bg-yellow-700/30 text-yellow-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['aaa', 'bbb']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        wheelA6B6,
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          wheelA6B6 === 'A6' ? 'bg-amber-600/30 text-amber-400' :
+                          wheelA6B6 === 'B6' ? 'bg-purple-600/30 text-purple-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['a6', 'b6']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        wheelA9B9,
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          wheelA9B9 === 'A9' ? 'bg-cyan-600/30 text-cyan-400' :
+                          wheelA9B9 === 'B9' ? 'bg-orange-600/30 text-orange-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['a9', 'b9']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        wheelRightLeft,
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          wheelRightLeft === 'Right' ? 'bg-teal-600/30 text-teal-400' :
+                          wheelRightLeft === 'Left' ? 'bg-purple-600/30 text-purple-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['right_18', 'left_18']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      {renderCellWithBadge(
+                        wheelQuarter,
+                        `px-1.5 py-0.5 rounded text-xs font-bold ${
+                          wheelQuarter === '1st' ? 'bg-red-700/30 text-red-400' :
+                          wheelQuarter === '2nd' ? 'bg-cyan-700/30 text-cyan-400' :
+                          wheelQuarter === '3rd' ? 'bg-green-700/30 text-green-400' :
+                          wheelQuarter === '4th' ? 'bg-purple-700/30 text-purple-400' :
+                          'bg-gray-600/30 text-gray-400'
+                        }`,
+                        ['nine_1st', 'nine_2nd', 'nine_3rd', 'nine_4th']
+                      )}
+                    </td>
+                    <td className="px-1 py-1 text-center">
+                      <span className="px-1.5 py-0.5 bg-gray-700/50 text-gray-300 rounded text-xs font-semibold">
+                        {wheelPosition >= 0 ? wheelPosition : '-'}
+                      </span>
+                    </td>
+                  </>
+                ) : (
+                  // Custom Groups - placeholder for now
+                  <td colSpan={10} className="px-1 py-1 text-center text-gray-400 text-xs">
+                    Custom groups display
+                  </td>
+                )}
               </tr>
             )
           })}
