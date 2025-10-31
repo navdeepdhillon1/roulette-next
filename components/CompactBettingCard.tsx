@@ -11,28 +11,86 @@ const FIBONACCI_SEQUENCE = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144];
 
 
 function calculateNextBet(system: any, outcome: 'win' | 'loss' | null): number {
-  const { id, baseBet, consecutiveWins, consecutiveLosses, sequenceIndex = 0, customRules } = system;
-  
-  // Custom system
-  if (id === 'custom' && customRules) {
-    let multiplier = system.currentBet / baseBet;
-    
+  const { id, baseBet, consecutiveWins, consecutiveLosses, sequenceIndex = 0, customRules, sequentialRules } = system;
+
+  // Custom sequential system
+  if (id === 'custom-sequential' && sequentialRules) {
+    const sequence = sequentialRules.sequence || [1, 2, 4, 8];
+    let currentPosition = sequentialRules.currentPosition || 0;
+
     if (outcome === 'win') {
-      if (customRules.resetAfterWin) return baseBet;
-      if (customRules.onWin === 'double') multiplier *= 2;
-      if (customRules.onWin === 'reset') return baseBet;
+      switch (sequentialRules.onWin) {
+        case 'reset':
+          currentPosition = 0;
+          break;
+        case 'moveBack1':
+          currentPosition = Math.max(0, currentPosition - 1);
+          break;
+        case 'moveBack2':
+          currentPosition = Math.max(0, currentPosition - 2);
+          break;
+        case 'stay':
+          // Keep current position
+          break;
+      }
+
+      // Check for reset after consecutive wins
+      if (sequentialRules.resetAfterConsecutiveWins &&
+          consecutiveWins >= sequentialRules.resetAfterConsecutiveWins) {
+        currentPosition = 0;
+      }
     } else if (outcome === 'loss') {
-      if (consecutiveLosses === 0 && customRules.onFirstLoss === 'double') multiplier *= 2;
-      if (consecutiveLosses === 1 && customRules.onSecondLoss === 'double') multiplier *= 2;
-      if (consecutiveLosses === 2 && customRules.onThirdLoss === 'double') multiplier *= 2;
-      
-      if (customRules.onFirstLoss === 'reset' || 
-          customRules.onSecondLoss === 'reset' || 
-          customRules.onThirdLoss === 'reset') {
-        return baseBet;
+      switch (sequentialRules.onLoss) {
+        case 'moveForward1':
+          currentPosition = Math.min(sequence.length - 1, currentPosition + 1);
+          break;
+        case 'moveForward2':
+          currentPosition = Math.min(sequence.length - 1, currentPosition + 2);
+          break;
+        case 'stay':
+          // Keep current position
+          break;
+      }
+
+      // Handle what happens at sequence end
+      if (currentPosition >= sequence.length - 1 && sequentialRules.atSequenceEnd === 'reset') {
+        currentPosition = 0;
       }
     }
-    
+
+    // Update the position in the system (important for next call)
+    system.sequentialRules.currentPosition = currentPosition;
+
+    return baseBet * sequence[currentPosition];
+  }
+
+  // Custom outcome-based system
+  if (id === 'custom' && customRules) {
+    let multiplier = system.currentBet / baseBet;
+
+    if (outcome === 'win') {
+      if (customRules.resetAfterWin || customRules.onWin === 'reset') return baseBet;
+      if (customRules.onWin === 'double') multiplier *= 2;
+      // 'same' = keep current multiplier
+    } else if (outcome === 'loss') {
+      // FIX: Use >= instead of === to handle 4+ consecutive losses
+      // Determine which rule to apply based on consecutive losses
+      let action = customRules.onThirdLoss;  // Default to 3rd loss rule for 3+ losses
+      if (consecutiveLosses <= 0) action = customRules.onFirstLoss;
+      else if (consecutiveLosses === 1) action = customRules.onSecondLoss;
+      // else use onThirdLoss for 2+ losses
+
+      if (action === 'reset') {
+        return baseBet;
+      } else if (action === 'double') {
+        multiplier *= 2;
+      } else if (action === 'pause') {
+        // Return current bet but don't increase (pause effectively stops progression)
+        return system.currentBet;
+      }
+      // 'same' = keep current multiplier
+    }
+
     const nextBet = baseBet * multiplier;
     return Math.min(nextBet, baseBet * customRules.maxMultiplier);
   }

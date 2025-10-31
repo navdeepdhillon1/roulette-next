@@ -472,9 +472,51 @@ function CustomSystemBuilder({ baseBet, onComplete, onCancel }: {
         const systemName = generateSystemName()
         const progression = previewProgression()
 
+        // Calculate worst-case scenario
+        const maxPotentialBet = baseBet * customRules.maxMultiplier
+        const lossesToReachMax = Math.log2(customRules.maxMultiplier)
+
         return (
           <div className="space-y-4">
             <h3 className="text-2xl font-bold text-white mb-4">📋 Your Custom System</h3>
+
+            {/* Safety Disclaimer */}
+            <div className="bg-yellow-900/30 border-2 border-yellow-500/50 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <span className="text-3xl">⚠️</span>
+                <div className="flex-1">
+                  <h4 className="font-bold text-yellow-300 mb-2">Important: This is for Learning & Entertainment Only</h4>
+                  <p className="text-sm text-yellow-100 mb-2">
+                    No betting system can overcome the house edge. Custom systems help you:
+                  </p>
+                  <ul className="text-xs text-yellow-200 space-y-1 list-disc list-inside">
+                    <li>Understand risk vs reward tradeoffs</li>
+                    <li>Practice discipline with structured rules</li>
+                    <li>Experiment with different progression strategies</li>
+                    <li>Learn when systems fail (most of the time)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Bankroll Warning if needed */}
+            {maxPotentialBet > baseBet * 16 && (
+              <div className="bg-red-900/30 border-2 border-red-500/50 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">🚨</span>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-red-300 mb-2">High Risk Warning!</h4>
+                    <p className="text-sm text-red-100">
+                      Your system can reach <span className="font-bold text-white">${maxPotentialBet}</span> per bet ({customRules.maxMultiplier}x multiplier).
+                      After just <span className="font-bold text-white">{Math.ceil(lossesToReachMax)} consecutive losses</span>, you'll be betting maximum.
+                    </p>
+                    <p className="text-xs text-red-200 mt-2">
+                      💡 Consider: Lower max multiplier (8x or 4x) or ensure your bankroll can handle ${maxPotentialBet * 5} minimum.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className={`p-4 rounded-xl border-2 ${
               riskLevel === 'low' ? 'bg-green-900/30 border-green-500' :
@@ -714,9 +756,43 @@ function CustomSystemBuilder({ baseBet, onComplete, onCancel }: {
           )
 
         case 6:
+          // Calculate max bet from sequence
+          const maxSeqBet = Math.max(...sequentialRules.sequence) * baseBet
+          const minSeqBet = Math.min(...sequentialRules.sequence) * baseBet
+
           return (
             <div className="space-y-4">
               <h3 className="text-2xl font-bold text-white mb-4">📋 Your Sequential System</h3>
+
+              {/* Safety Disclaimer */}
+              <div className="bg-yellow-900/30 border-2 border-yellow-500/50 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-3xl">⚠️</span>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-yellow-300 mb-2">Educational Purpose Only</h4>
+                    <p className="text-sm text-yellow-100">
+                      Sequential progressions are for learning risk management and testing discipline.
+                      The house edge always wins long-term. Use this to understand how progression systems work, not to "beat" roulette.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bankroll Warning */}
+              {maxSeqBet > baseBet * 8 && (
+                <div className="bg-red-900/30 border-2 border-red-500/50 rounded-xl p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🚨</span>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-red-300 mb-2">Risk Analysis</h4>
+                      <p className="text-sm text-red-100">
+                        Your sequence ranges from <span className="font-bold text-white">${minSeqBet}</span> to <span className="font-bold text-white">${maxSeqBet}</span>.
+                        {' '}Ensure your bankroll can handle at least <span className="font-bold text-white">${maxSeqBet * 10}</span> for safety.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="bg-purple-900/30 border-2 border-purple-500 rounded-xl p-4">
                 <h4 className="text-xl font-bold text-white mb-3">Sequence Preview</h4>

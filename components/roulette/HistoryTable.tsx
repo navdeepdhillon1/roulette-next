@@ -135,6 +135,7 @@ export default function HistoryTable({
   spins,
   baseUnit = 10,
   bettingSystem,
+  selectedCustomGroups = [],
   onBetPlaced,
   onNumberAdded,
   sessionStats,
@@ -151,38 +152,41 @@ export default function HistoryTable({
   console.log('🎮 Current betMode:', betMode)
 
   // Group-level betting progression - using ref for synchronous updates
-  const groupProgressionsRef = React.useRef<Record<string, { position: number; consecutiveWins: number; lastOutcome: 'win' | 'loss' | null }>>({
+  const groupProgressionsRef = React.useRef<Record<string, { position: number; consecutiveWins: number; consecutiveLosses?: number; lastOutcome: 'win' | 'loss' | null }>>({
     // Table groups
-    'red-black': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'even-odd': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'low-high': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'dozens': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'columns': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'six-groups': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'alt1': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'alt2': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'alt3': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'edge-center': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'red-black': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'even-odd': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'low-high': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'dozens': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'columns': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'six-groups': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'alt1': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'alt2': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'alt3': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'edge-center': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
     // Wheel special groups
-    'voisins': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'orphelins': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'tiers': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'jeu-zero': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'non-voisin': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'voisins': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'orphelins': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'tiers': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'jeu-zero': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'non-voisin': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
     // Wheel quarters
-    'wheel-quarters': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'wheel-quarters': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
     // Wheel halves
-    'wheel-halves': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'wheel-halves': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
     // Wheel alternating groups
-    'wheel-ab': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'wheel-aabb': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'wheel-aaabbb': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'wheel-a6b6': { position: 0, consecutiveWins: 0, lastOutcome: null },
-    'wheel-a9b9': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'wheel-ab': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'wheel-aabb': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'wheel-aaabbb': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'wheel-a6b6': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
+    'wheel-a9b9': { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null },
   })
 
   // Helper: Get betting group category for progression tracking
   const getGroupCategory = (betKey: BetKey): string => {
+    // Custom groups - each gets its own independent progression
+    if (betKey.startsWith('custom-')) return betKey
+
     // Table groups
     if (['red', 'black'].includes(betKey)) return 'red-black'
     if (['even', 'odd'].includes(betKey)) return 'even-odd'
@@ -252,8 +256,31 @@ export default function HistoryTable({
         // Double after wins (max 3 consecutive wins)
         return [1, 2, 4, 1, 2, 4, 1, 2, 4]
 
+      case 'custom':
+        // Outcome-based custom system - use Martingale sequence
+        // The custom rules will control progression behavior
+        if (bettingSystem.customRules?.maxMultiplier) {
+          const max = bettingSystem.customRules.maxMultiplier
+          const sequence = [1]
+          let current = 1
+          while (current < max) {
+            current *= 2
+            sequence.push(Math.min(current, max))
+          }
+          return sequence
+        }
+        return [1, 2, 4, 8, 16, 32, 64, 128]
+
+      case 'custom-sequential':
+        // Sequential progression system - use custom sequence
+        if (bettingSystem.sequentialRules?.sequence) {
+          return bettingSystem.sequentialRules.sequence
+        }
+        console.warn('Sequential system missing sequence, defaulting to Martingale')
+        return [1, 2, 4, 8, 16, 32, 64, 128]
+
       default:
-        // For custom systems, use Martingale as default
+        // For unknown systems, use Martingale as default
         console.warn(`Unknown betting system: ${systemId}, defaulting to Martingale`)
         return [1, 2, 4, 8, 16, 32, 64, 128]
     }
@@ -414,6 +441,19 @@ export default function HistoryTable({
           won = [32,15,19,4,21,2,25,17,34,5,24,16,33,1,20,14,31,9].includes(num); break
         case 'b9':
           won = [6,27,13,36,11,30,8,23,10,22,18,29,7,28,12,35,3,26].includes(num); break
+        default:
+          // Check if this is a custom group bet
+          if (betKey.startsWith('custom-')) {
+            const customGroup = selectedCustomGroups.find(g => g.id === betKey)
+            if (customGroup && customGroup.customGroup) {
+              won = customGroup.customGroup.numbers.includes(num)
+              // Calculate payout rate based on coverage (36 numbers total)
+              // Formula: 36 / numbers_in_group (e.g., 18 numbers = 2x, 12 numbers = 3x)
+              const coverage = customGroup.customGroup.numbers.length
+              payoutRates[betKey] = Math.max(1, Number((36 / coverage).toFixed(2)))
+            }
+          }
+          break
       }
 
       const amount = won ? betAmount * payoutRates[betKey] - betAmount : -betAmount
@@ -490,7 +530,7 @@ export default function HistoryTable({
             const won = calcResults[betKey]?.won || false
 
             if (!groupProgressionsRef.current[category]) {
-              groupProgressionsRef.current[category] = { position: 0, consecutiveWins: 0, lastOutcome: null }
+              groupProgressionsRef.current[category] = { position: 0, consecutiveWins: 0, consecutiveLosses: 0, lastOutcome: null }
             }
 
             const tracker = groupProgressionsRef.current[category]
@@ -502,6 +542,7 @@ export default function HistoryTable({
             // Update progression based on betting system
             if (won) {
               tracker.consecutiveWins++
+              tracker.consecutiveLosses = 0  // Reset consecutive losses on win
               tracker.lastOutcome = 'win'
 
               switch (systemId) {
@@ -541,6 +582,47 @@ export default function HistoryTable({
                   }
                   break
 
+                case 'custom':
+                  // Outcome-based custom system
+                  if (bettingSystem?.customRules) {
+                    const rules = bettingSystem.customRules
+                    if (rules.resetAfterWin || rules.onWin === 'reset') {
+                      tracker.position = 0
+                      tracker.consecutiveWins = 0
+                    } else if (rules.onWin === 'double') {
+                      tracker.position = Math.min(tracker.position + 1, sequence.length - 1)
+                    }
+                    // 'same' = do nothing
+                  }
+                  break
+
+                case 'custom-sequential':
+                  // Sequential progression system
+                  if (bettingSystem?.sequentialRules) {
+                    const seqRules = bettingSystem.sequentialRules
+                    switch (seqRules.onWin) {
+                      case 'reset':
+                        tracker.position = 0
+                        tracker.consecutiveWins = 0
+                        break
+                      case 'moveBack1':
+                        tracker.position = Math.max(tracker.position - 1, 0)
+                        break
+                      case 'moveBack2':
+                        tracker.position = Math.max(tracker.position - 2, 0)
+                        break
+                      case 'stay':
+                        // Keep current position
+                        break
+                    }
+                    // Check for reset after consecutive wins
+                    if (seqRules.resetAfterConsecutiveWins && tracker.consecutiveWins >= seqRules.resetAfterConsecutiveWins) {
+                      tracker.position = 0
+                      tracker.consecutiveWins = 0
+                    }
+                  }
+                  break
+
                 default:
                   // Default to Martingale behavior
                   tracker.position = 0
@@ -573,6 +655,49 @@ export default function HistoryTable({
                 case 'paroli':
                   // Reset on loss (Paroli only progresses on wins)
                   tracker.position = 0
+                  break
+
+                case 'custom':
+                  // Outcome-based custom system - handle consecutive losses
+                  if (bettingSystem?.customRules) {
+                    const rules = bettingSystem.customRules
+                    const consecutiveLosses = tracker.lastOutcome === 'loss' ?
+                      (tracker.consecutiveLosses || 0) + 1 : 1
+                    tracker.consecutiveLosses = consecutiveLosses
+
+                    // Determine which rule to apply based on consecutive losses
+                    let action = rules.onThirdLoss  // Default to 3rd loss rule for 3+ losses
+                    if (consecutiveLosses === 1) action = rules.onFirstLoss
+                    else if (consecutiveLosses === 2) action = rules.onSecondLoss
+
+                    if (action === 'reset') {
+                      tracker.position = 0
+                    } else if (action === 'double') {
+                      tracker.position = Math.min(tracker.position + 1, sequence.length - 1)
+                    } else if (action === 'pause') {
+                      // Keep position same, betting will be paused
+                      console.log('🛑 Custom system: PAUSE triggered')
+                    }
+                    // 'same' = do nothing
+                  }
+                  break
+
+                case 'custom-sequential':
+                  // Sequential progression system
+                  if (bettingSystem?.sequentialRules) {
+                    const seqRules = bettingSystem.sequentialRules
+                    switch (seqRules.onLoss) {
+                      case 'moveForward1':
+                        tracker.position = Math.min(tracker.position + 1, sequence.length - 1)
+                        break
+                      case 'moveForward2':
+                        tracker.position = Math.min(tracker.position + 2, sequence.length - 1)
+                        break
+                      case 'stay':
+                        // Keep current position
+                        break
+                    }
+                  }
                   break
 
                 default:
@@ -636,6 +761,46 @@ export default function HistoryTable({
     setBets({})
     setResults({})
     setShowResults(false)
+  }
+
+  // Helper to map SelectedGroup to BetOptions for rendering
+  const getGroupBetOptions = (group: SelectedGroup): BetOption[] => {
+    // For custom groups created by the player
+    if (group.type === 'custom' && group.customGroup) {
+      return [{
+        label: group.name,
+        betKey: group.id as BetKey,
+        color: 'bg-yellow-600 hover:bg-yellow-700'
+      }]
+    }
+
+    // Map standard group IDs to their bet options
+    switch (group.id) {
+      // Table Groups
+      case 'color': return BET_OPTIONS.color
+      case 'even-odd': return BET_OPTIONS.evenOdd
+      case 'low-high': return BET_OPTIONS.lowHigh
+      case 'column': return BET_OPTIONS.column
+      case 'dozen': return BET_OPTIONS.dozen
+      case 'alt1': return BET_OPTIONS.alt1
+      case 'alt2': return BET_OPTIONS.alt2
+      case 'alt3': return BET_OPTIONS.alt3
+      case 'ec': return BET_OPTIONS.edgeCenter
+      case 'six': return BET_OPTIONS.six
+
+      // Wheel Groups
+      case 'vois-orph-tier': return BET_OPTIONS.specials1
+      case 'voisins-nonvoisins': return BET_OPTIONS.specials2
+      case 'wheel-quarters': return BET_OPTIONS.wheelQuarters
+      case 'ab-split': return BET_OPTIONS.wheelAB
+      case 'aabb-split': return BET_OPTIONS.wheelAABB
+      case 'aaabbb-split': return BET_OPTIONS.wheelAAABBB
+      case 'a6b6-split': return BET_OPTIONS.wheelA6B6
+      case 'a9b9-split': return BET_OPTIONS.wheelA9B9
+      case 'right-left': return BET_OPTIONS.wheelHalves
+
+      default: return []
+    }
   }
 
   // Helper to render a bet button with result display
@@ -980,19 +1145,39 @@ export default function HistoryTable({
               </>
             ) : (
               // Custom Groups - Show message or betting buttons
-              <td colSpan={10} className="px-4 py-16">
-                <div className="flex flex-col items-center justify-center gap-4 mx-auto max-w-xl text-center">
-                  <div className="text-yellow-400 text-lg font-semibold">
-                    💡 Interested in custom groups?
-                  </div>
-                  <div className="text-gray-300 text-sm leading-relaxed">
-                    Go to <span className="text-cyan-400 font-semibold">Session Config</span> in the settings above to create your own custom number groups and track them here with your chosen betting system!
-                  </div>
-                  <div className="text-gray-400 text-xs italic">
-                    (Custom groups allow you to bet on any combination of numbers you choose)
-                  </div>
-                </div>
-              </td>
+              <>
+                {selectedCustomGroups && selectedCustomGroups.length > 0 ? (
+                  // Show custom group bet buttons with proper splits
+                  selectedCustomGroups.slice(0, 10).map((group) => {
+                    const betOptions = getGroupBetOptions(group)
+                    const isSixGroup = group.id === 'six'
+                    const isWheelQuarters = group.id === 'wheel-quarters'
+
+                    return (
+                      <td key={group.id} className="px-1 py-1">
+                        <div className={isSixGroup || isWheelQuarters ? 'grid grid-cols-2 gap-0.5' : 'flex flex-col gap-0.5'}>
+                          {betOptions.map((option) => renderBetButton(option, 'w-full'))}
+                        </div>
+                      </td>
+                    )
+                  })
+                ) : (
+                  // Show onboarding message
+                  <td colSpan={10} className="px-4 py-16">
+                    <div className="flex flex-col items-center justify-center gap-4 mx-auto max-w-xl text-center">
+                      <div className="text-yellow-400 text-lg font-semibold">
+                        💡 Interested in custom groups?
+                      </div>
+                      <div className="text-gray-300 text-sm leading-relaxed">
+                        Go to <span className="text-cyan-400 font-semibold">Session Config</span> in the settings above to create your own custom number groups and track them here with your chosen betting system!
+                      </div>
+                      <div className="text-gray-400 text-xs italic">
+                        (Custom groups allow you to bet on any combination of numbers you choose)
+                      </div>
+                    </div>
+                  </td>
+                )}
+              </>
             )
             })()}
             {/* Wheel Position */}

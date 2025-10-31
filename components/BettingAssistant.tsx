@@ -1300,6 +1300,7 @@ export default function BettingAssistant() {
                         })}
                         baseUnit={session.config.bettingSystem.baseBet}
                         bettingSystem={session.config.bettingSystem}
+                        selectedCustomGroups={session.config.selectedGroups || []}
                         sessionStats={sessionStats}
                         onBetPlaced={handleHistoryTableBet}
                         historicalBets={historicalBets}
