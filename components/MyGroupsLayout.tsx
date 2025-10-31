@@ -727,9 +727,14 @@ export default function MyGroupsLayout({
   if (displayGroups.length === 0) {
     return (
       <div className="bg-gray-800 rounded-lg border border-gray-700 p-8">
-        <p className="text-gray-400 text-center">
-          No groups selected. Use the dropdown above to select groups for tracking.
-        </p>
+        <div className="text-center">
+          <p className="text-gray-400 mb-2">
+            No custom groups selected.
+          </p>
+          <p className="text-gray-500 text-sm">
+            You can build and select custom groups on the Session Config page before starting your session.
+          </p>
+        </div>
       </div>
     )
   }
