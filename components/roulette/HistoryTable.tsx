@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import type { Spin } from '@/lib/types'
 import type { BetKey, SelectedGroup, BettingSystemConfig } from '@/types/bettingAssistant'
-import { WHEEL_ORDER } from '@/lib/roulette-logic'
+import { WHEEL_ORDER, WHEEL_GROUPS } from '@/lib/roulette-logic'
 import TableLayoutModal from './TableLayoutModal'
 
 interface HistoricalBetData {
@@ -397,50 +397,50 @@ export default function HistoryTable({
         case 'six4': won = sixGroup === 4; break
         case 'six5': won = sixGroup === 5; break
         case 'six6': won = sixGroup === 6; break
-        // Wheel groups
+        // Wheel groups - Using centralized WHEEL_GROUPS from lib/roulette-logic.ts
         case 'voisins':
         case 'voisin':
-          won = [22,18,29,7,28,12,35,3,26,0,32,15,19,4,21,2,25].includes(num); break
+          won = WHEEL_GROUPS.voisins.includes(num); break
         case 'orphelins':
-          won = [17,34,6,1,20,14,31,9].includes(num); break
+          won = WHEEL_GROUPS.orphelins.includes(num); break
         case 'tiers':
-          won = [27,13,36,11,30,8,23,10,5,24,16,33].includes(num); break
+          won = WHEEL_GROUPS.tiers.includes(num); break
         case 'jeu_zero':
-          won = [0,12,35,3,26,32,15].includes(num); break
+          won = WHEEL_GROUPS.jeu_zero.includes(num); break
         case 'non_voisin':
-          won = [17,34,6,1,20,14,31,9,27,13,36,11,30,8,23,10,5,24,16,33].includes(num); break
+          won = WHEEL_GROUPS.non_voisin.includes(num); break
         case 'nine_1st':
-          won = [32,15,19,4,21,2,25,17,34].includes(num); break
+          won = WHEEL_GROUPS.first_9.includes(num); break
         case 'nine_2nd':
-          won = [6,27,13,36,11,30,8,23,10].includes(num); break
+          won = WHEEL_GROUPS.second_9.includes(num); break
         case 'nine_3rd':
-          won = [5,24,16,33,1,20,14,31,9].includes(num); break
+          won = WHEEL_GROUPS.third_9.includes(num); break
         case 'nine_4th':
-          won = [22,18,29,7,28,12,35,3,26].includes(num); break
+          won = WHEEL_GROUPS.fourth_9.includes(num); break
         case 'right_18':
-          won = [32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10].includes(num); break
+          won = WHEEL_GROUPS.right.includes(num); break
         case 'left_18':
-          won = [5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26].includes(num); break
+          won = WHEEL_GROUPS.left.includes(num); break
         case 'a':
-          won = [32,19,21,25,34,27,36,30,23,5,16,1,14,9,18,7,12,3].includes(num); break
+          won = WHEEL_GROUPS.a.includes(num); break
         case 'b':
-          won = [15,4,2,17,6,13,11,8,10,24,33,20,31,22,29,28,35,26].includes(num); break
+          won = WHEEL_GROUPS.b.includes(num); break
         case 'aa':
-          won = [32,15,21,2,34,6,36,11,23,10,16,33,14,31,18,29,12,35].includes(num); break
+          won = WHEEL_GROUPS.aa.includes(num); break
         case 'bb':
-          won = [19,4,25,17,27,13,30,8,5,24,1,20,9,22,7,28,3,26].includes(num); break
+          won = WHEEL_GROUPS.bb.includes(num); break
         case 'aaa':
-          won = [32,15,19,25,17,34,36,11,30,5,24,16,14,31,9,7,28,12].includes(num); break
+          won = WHEEL_GROUPS.aaa.includes(num); break
         case 'bbb':
-          won = [4,21,2,6,27,13,8,23,10,33,1,20,22,18,29,35,3,26].includes(num); break
+          won = WHEEL_GROUPS.bbb.includes(num); break
         case 'a6':
-          won = [32,15,19,4,21,2,36,11,30,8,23,10,14,31,9,22,18,29].includes(num); break
+          won = WHEEL_GROUPS.a6.includes(num); break
         case 'b6':
-          won = [25,17,34,6,27,13,5,24,16,33,1,20,7,28,12,35,3,26].includes(num); break
+          won = WHEEL_GROUPS.b6.includes(num); break
         case 'a9':
-          won = [32,15,19,4,21,2,25,17,34,5,24,16,33,1,20,14,31,9].includes(num); break
+          won = WHEEL_GROUPS.a9.includes(num); break
         case 'b9':
-          won = [6,27,13,36,11,30,8,23,10,22,18,29,7,28,12,35,3,26].includes(num); break
+          won = WHEEL_GROUPS.b9.includes(num); break
         default:
           // Check if this is a custom group bet
           if (betKey.startsWith('custom-')) {
@@ -1162,17 +1162,34 @@ export default function HistoryTable({
                     )
                   })
                 ) : (
-                  // Show onboarding message
+                  // Show onboarding message with Elite tier requirement
                   <td colSpan={10} className="px-4 py-16">
                     <div className="flex flex-col items-center justify-center gap-4 mx-auto max-w-xl text-center">
                       <div className="text-yellow-400 text-lg font-semibold">
                         💡 Interested in custom groups?
                       </div>
+
+                      {/* Bet Assistant Badge */}
+                      <div className="bg-gradient-to-r from-purple-900/50 to-pink-900/50 border-2 border-purple-400/50 rounded-lg px-4 py-3">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <span className="text-2xl">👑</span>
+                          <span className="text-purple-300 font-bold text-sm">BET ASSISTANT FEATURE</span>
+                        </div>
+                        <p className="text-purple-200 text-xs">
+                          Custom Groups are available exclusively in Bet Assistant
+                        </p>
+                      </div>
+
                       <div className="text-gray-300 text-sm leading-relaxed">
                         Go to <span className="text-cyan-400 font-semibold">Session Config</span> in the settings above to create your own custom number groups and track them here with your chosen betting system!
                       </div>
                       <div className="text-gray-400 text-xs italic">
                         (Custom groups allow you to bet on any combination of numbers you choose)
+                      </div>
+
+                      {/* Sign Up CTA */}
+                      <div className="mt-2 text-xs text-gray-400">
+                        Want to use custom groups? <span className="text-purple-400 font-semibold">Sign up for Bet Assistant</span> to unlock this feature
                       </div>
                     </div>
                   </td>

@@ -224,7 +224,7 @@ export default function SpecialBetsTable({ spinHistory }: SpecialBetsTableProps)
       <style>{pulseStyles}</style>
       
       <Card className="bg-gray-900 border-gray-700">
-        <div className="overflow-x-auto" style={{ maxHeight: '690px' }}>
+        <div className="overflow-x-auto h-full">
           <table className="w-full text-xs text-white">
             <thead className="sticky top-0 z-10">
               <tr className="bg-gray-800">

@@ -1,6 +1,7 @@
 // WheelBetGroups.tsx
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
+import { WHEEL_GROUPS } from '@/lib/roulette-logic';
 
 const pulseStyles = `
   @keyframes greenPulse {
@@ -36,51 +37,52 @@ export default function WheelBetGroups({ spinHistory }: WheelBetGroupsProps) {
   // European wheel order
   const WHEEL_ORDER = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
 
-  // Define all 20 wheel groups
-  const WHEEL_GROUPS = [
+  // Define all 20 wheel groups with metadata for display
+  // Using centralized WHEEL_GROUPS from lib/roulette-logic.ts as single source of truth
+  const WHEEL_GROUP_DISPLAY = [
     // Common Bets 1 (3 groups)
-    { id: 'voisins', name: 'Voisins', type: 'common1', numbers: [22, 18, 29, 7, 28, 12, 35, 3, 26, 0, 32, 15, 19, 4, 21, 2, 25] },
-    { id: 'orphelins', name: 'Orphelins', type: 'common1', numbers: [17, 34, 6, 1, 20, 14, 31, 9] },
-    { id: 'tiers', name: 'Tiers', type: 'common1', numbers: [27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33] },
+    { id: 'voisins', name: 'Voisins', type: 'common1', numbers: WHEEL_GROUPS.voisins },
+    { id: 'orphelins', name: 'Orphelins', type: 'common1', numbers: WHEEL_GROUPS.orphelins },
+    { id: 'tiers', name: 'Tiers', type: 'common1', numbers: WHEEL_GROUPS.tiers },
 
     // Common Bets 2 (2 groups) - Voisin vs Non-Voisin
-    { id: 'voisin', name: 'Voisin', type: 'common2', numbers: [22, 18, 29, 7, 28, 12, 35, 3, 26, 0, 32, 15, 19, 4, 21, 2, 25] },
-    { id: 'non-voisin', name: 'Non-Voisin', type: 'common2', numbers: [17, 34, 6, 1, 20, 14, 31, 9, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33] },
+    { id: 'voisin', name: 'Voisin', type: 'common2', numbers: WHEEL_GROUPS.voisins },
+    { id: 'non-voisin', name: 'Non-Voisin', type: 'common2', numbers: WHEEL_GROUPS.non_voisin },
 
     // 18's (2 groups) - Split the wheel into left and right halves
-    { id: 'right-18', name: 'Right 18', type: '18s', numbers: [32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10] },
-    { id: 'left-18', name: 'Left 18', type: '18s', numbers: [5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26] },
+    { id: 'right-18', name: 'Right 18', type: '18s', numbers: WHEEL_GROUPS.right },
+    { id: 'left-18', name: 'Left 18', type: '18s', numbers: WHEEL_GROUPS.left },
 
     // 9's (4 groups) - Split wheel into quarters
-    { id: '1st-9', name: '1st 9', type: '9s', numbers: [32, 15, 19, 4, 21, 2, 25, 17, 34] },
-    { id: '2nd-9', name: '2nd 9', type: '9s', numbers: [6, 27, 13, 36, 11, 30, 8, 23, 10] },
-    { id: '3rd-9', name: '3rd 9', type: '9s', numbers: [5, 24, 16, 33, 1, 20, 14, 31, 9] },
-    { id: '4th-9', name: '4th 9', type: '9s', numbers: [22, 18, 29, 7, 28, 12, 35, 3, 26] },
+    { id: '1st-9', name: '1st 9', type: '9s', numbers: WHEEL_GROUPS.first_9 },
+    { id: '2nd-9', name: '2nd 9', type: '9s', numbers: WHEEL_GROUPS.second_9 },
+    { id: '3rd-9', name: '3rd 9', type: '9s', numbers: WHEEL_GROUPS.third_9 },
+    { id: '4th-9', name: '4th 9', type: '9s', numbers: WHEEL_GROUPS.fourth_9 },
 
     // A/B pattern (2 groups) - Alternating single numbers on wheel
-    { id: 'a', name: 'A', type: 'ab', numbers: [32, 19, 21, 25, 34, 27, 36, 30, 23, 5, 16, 1, 14, 9, 18, 7, 12, 3] },
-    { id: 'b', name: 'B', type: 'ab', numbers: [15, 4, 2, 17, 6, 13, 11, 8, 10, 24, 33, 20, 31, 22, 29, 28, 35, 26] },
+    { id: 'a', name: 'A', type: 'ab', numbers: WHEEL_GROUPS.a },
+    { id: 'b', name: 'B', type: 'ab', numbers: WHEEL_GROUPS.b },
 
     // AA/BB pattern (2 groups) - Alternating pairs on wheel
-    { id: 'aa', name: 'AA', type: 'aabb', numbers: [32, 15, 21, 2, 34, 6, 36, 11, 23, 10, 16, 33, 14, 31, 18, 29, 12, 35] },
-    { id: 'bb', name: 'BB', type: 'aabb', numbers: [19, 4, 25, 17, 27, 13, 30, 8, 5, 24, 1, 20, 9, 22, 7, 28, 3, 26] },
+    { id: 'aa', name: 'AA', type: 'aabb', numbers: WHEEL_GROUPS.aa },
+    { id: 'bb', name: 'BB', type: 'aabb', numbers: WHEEL_GROUPS.bb },
 
     // AAA/BBB pattern (2 groups) - Alternating triplets on wheel
-    { id: 'aaa', name: 'AAA', type: 'aaabbb', numbers: [32, 15, 19, 25, 17, 34, 36, 11, 30, 5, 24, 16, 14, 31, 9, 7, 28, 12] },
-    { id: 'bbb', name: 'BBB', type: 'aaabbb', numbers: [4, 21, 2, 6, 27, 13, 8, 23, 10, 33, 1, 20, 22, 18, 29, 35, 3, 26] },
+    { id: 'aaa', name: 'AAA', type: 'aaabbb', numbers: WHEEL_GROUPS.aaa },
+    { id: 'bbb', name: 'BBB', type: 'aaabbb', numbers: WHEEL_GROUPS.bbb },
 
     // A6/B6 pattern (2 groups) - Six-based split on wheel
-    { id: 'a6', name: 'A6', type: 'a6b6', numbers: [32, 15, 19, 4, 21, 2, 36, 11, 30, 8, 23, 10, 14, 31, 9, 22, 18, 29] },
-    { id: 'b6', name: 'B6', type: 'a6b6', numbers: [25, 17, 34, 6, 27, 13, 5, 24, 16, 33, 1, 20, 7, 28, 12, 35, 3, 26] },
+    { id: 'a6', name: 'A6', type: 'a6b6', numbers: WHEEL_GROUPS.a6 },
+    { id: 'b6', name: 'B6', type: 'a6b6', numbers: WHEEL_GROUPS.b6 },
 
     // A9/B9 pattern (2 groups) - Nine-based split on wheel
-    { id: 'a9', name: 'A9', type: 'a9b9', numbers: [32, 15, 19, 4, 21, 2, 25, 17, 34, 5, 24, 16, 33, 1, 20, 14, 31, 9] },
-    { id: 'b9', name: 'B9', type: 'a9b9', numbers: [6, 27, 13, 36, 11, 30, 8, 23, 10, 22, 18, 29, 7, 28, 12, 35, 3, 26] }
+    { id: 'a9', name: 'A9', type: 'a9b9', numbers: WHEEL_GROUPS.a9 },
+    { id: 'b9', name: 'B9', type: 'a9b9', numbers: WHEEL_GROUPS.b9 }
   ];
 
   // Check if number belongs to group
   const isInGroup = (num: number, groupId: string): boolean => {
-    const group = WHEEL_GROUPS.find(g => g.id === groupId);
+    const group = WHEEL_GROUP_DISPLAY.find(g => g.id === groupId);
     return group ? group.numbers.includes(num) : false;
   };
 
@@ -159,7 +161,7 @@ export default function WheelBetGroups({ spinHistory }: WheelBetGroupsProps) {
 
   // Get expected percentage based on group size
   const getExpectedPercentage = (groupId: string): number => {
-    const group = WHEEL_GROUPS.find(g => g.id === groupId);
+    const group = WHEEL_GROUP_DISPLAY.find(g => g.id === groupId);
     if (!group) return 0;
     return (group.numbers.length / 37) * 100;
   };
@@ -183,7 +185,7 @@ export default function WheelBetGroups({ spinHistory }: WheelBetGroupsProps) {
   useEffect(() => {
     const newFlashingRows = new Set<string>();
 
-    WHEEL_GROUPS.forEach(group => {
+    WHEEL_GROUP_DISPLAY.forEach(group => {
       const streak = calculateStreak(group.id, orderedHistory);
       const absence = calculateAbsence(group.id, orderedHistory);
 
@@ -247,7 +249,7 @@ export default function WheelBetGroups({ spinHistory }: WheelBetGroupsProps) {
               </tr>
             </thead>
             <tbody>
-              {WHEEL_GROUPS.map((group, index) => {
+              {WHEEL_GROUP_DISPLAY.map((group, index) => {
                 const hits = {
                   l9: calculateHits(orderedHistory.slice(0, 9), group.id),
                   l18: calculateHits(orderedHistory.slice(0, 18), group.id),
@@ -271,7 +273,7 @@ export default function WheelBetGroups({ spinHistory }: WheelBetGroupsProps) {
                 const isHot = deviation > 10;
                 const isCold = deviation < -10;
 
-                const nextGroup = WHEEL_GROUPS[index + 1];
+                const nextGroup = WHEEL_GROUP_DISPLAY[index + 1];
                 const isLastInGroup = !nextGroup || nextGroup.type !== group.type;
 
                 const groupColors: Record<string, string> = {

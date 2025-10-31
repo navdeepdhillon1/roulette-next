@@ -1044,30 +1044,6 @@ const openSessionSetup = () => {
           ↩ UNDO
         </button>
       </div>
-
-      {/* RIGHT: Table/Wheel Toggle */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => setActionView(actionView.startsWith('wheel') ? 'table-view' : actionView)}
-          className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
-            !actionView.startsWith('wheel')
-              ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg'
-              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-          }`}
-        >
-          📊 Table
-        </button>
-        <button
-          onClick={() => setActionView(actionView.startsWith('table') ? 'wheel-view' : actionView)}
-          className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
-            actionView.startsWith('wheel')
-              ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg'
-              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-          }`}
-        >
-          🎰 Wheel
-        </button>
-      </div>
     </div>
   </Card>
 )}
@@ -1620,21 +1596,52 @@ const openSessionSetup = () => {
                       </div>
                     )}
 
-                    {/* Action Tab Help Panel */}
+                    {/* Table/Wheel Toggle & Help Button */}
                     {assistantSubTab === 'action' && session && (
-                      <div className="mb-6 border border-cyan-400/30 rounded-lg overflow-hidden">
-                        <button
-                          onClick={() => toggleHelp('action')}
-                          className="w-full px-4 py-3 bg-cyan-900/20 hover:bg-cyan-900/30 transition-colors flex items-center justify-between text-left"
-                        >
-                          <span className="text-sm font-semibold text-cyan-300 flex items-center gap-2">
-                            <span className="text-lg">💡</span>
-                            Game Action Help
-                          </span>
-                          <span className="text-cyan-400 text-xl">{showHelp.action ? '−' : '+'}</span>
-                        </button>
+                      <div className="mb-6">
+                        <div className="flex items-center justify-between">
+                          {/* LEFT: Table/Wheel Toggle Buttons */}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setActionView(actionView.startsWith('wheel') ? 'table-view' : actionView)}
+                              className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+                                !actionView.startsWith('wheel')
+                                  ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg'
+                                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                              }`}
+                            >
+                              📊 Table
+                            </button>
+                            <button
+                              onClick={() => setActionView(actionView.startsWith('table') ? 'wheel-view' : actionView)}
+                              className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+                                actionView.startsWith('wheel')
+                                  ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg'
+                                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                              }`}
+                            >
+                              🎰 Wheel
+                            </button>
+                          </div>
+
+                          {/* RIGHT: Compact Help Button */}
+                          <button
+                            onClick={() => toggleHelp('action')}
+                            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
+                              showHelp.action
+                                ? 'bg-cyan-600 text-white'
+                                : 'bg-cyan-900/30 text-cyan-300 hover:bg-cyan-900/50'
+                            }`}
+                            title="Toggle help guide"
+                          >
+                            💡 Help
+                          </button>
+                        </div>
+
+                        {/* Expandable Help Content */}
                         {showHelp.action && (
-                          <div className="bg-cyan-950/30 border-t border-cyan-400/30 p-4 text-sm text-gray-300 space-y-4">
+                          <div className="mt-4 border border-cyan-400/30 rounded-lg overflow-hidden">
+                            <div className="bg-cyan-950/30 p-4 text-sm text-gray-300 space-y-4">
                             <p className="font-semibold text-cyan-300 text-base">How to Use the Professional Tracker</p>
 
                             {/* Getting Started Section */}
@@ -1693,6 +1700,7 @@ const openSessionSetup = () => {
                                 <li>• Once confident, add bet tracking to monitor your actual gameplay profitability</li>
                                 <li>• Use the statistics tabs to identify hot/cold trends across all 47 betting groups</li>
                               </ul>
+                            </div>
                             </div>
                           </div>
                         )}
