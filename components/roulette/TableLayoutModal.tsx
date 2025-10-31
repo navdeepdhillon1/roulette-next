@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { createPortal } from 'react-dom'
 
 interface GroupConfig {
   name: string
@@ -106,7 +107,13 @@ const TABLE_LAYOUT = [
 ]
 
 export default function TableLayoutModal({ isOpen, onClose, groupType }: TableLayoutModalProps) {
-  if (!isOpen || !groupType) return null
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!isOpen || !groupType || !mounted) return null
 
   const config = GROUP_CONFIGS[groupType]
   if (!config) return null
@@ -117,9 +124,9 @@ export default function TableLayoutModal({ isOpen, onClose, groupType }: TableLa
     return group?.color || '#1F2937' // Default gray if not in any group
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none p-4">
-      <div className="bg-gray-800 rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto border-2 border-gray-600" onClick={(e) => e.stopPropagation()}>
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-gray-800 rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto border-2 border-gray-600" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-gray-800">
           <h2 className="text-2xl font-bold text-white">{config.name}</h2>
@@ -192,6 +199,7 @@ export default function TableLayoutModal({ isOpen, onClose, groupType }: TableLa
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

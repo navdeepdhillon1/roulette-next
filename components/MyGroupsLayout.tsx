@@ -347,12 +347,70 @@ export default function MyGroupsLayout({
   // Limit to max 10 groups
   const displayGroups = selectedGroups.slice(0, 10)
 
+  // 🎰 Martingale progression tracking - using ref for synchronous updates
+  const groupProgressionsRef = useRef<Record<string, { position: number; consecutiveWins: number; lastOutcome: 'win' | 'loss' | null }>>({})
+  const processedSpinsRef = useRef<Set<string>>(new Set())
+  const isProcessingRef = useRef<boolean>(false)
+
+  console.log('🔧 MyGroupsLayout render - displayGroups:', displayGroups.map(g => `${g.type}-${g.id}`))
+
+  // Helper: Map a group to its progression category
+  const getGroupCategory = (group: SelectedGroup): string => {
+    const { type, id } = group
+    return `${type}-${id}`
+  }
+
+  // Helper: Get betting sequence for Martingale
+  const getBettingSequence = (): number[] => {
+    return [1, 2, 4, 8, 16, 32, 64, 128]
+  }
+
+  // Helper: Get chip value based on group's progression
+  const getChipValue = (betKey: string): number => {
+    // Find the group for this bet key
+    const group = displayGroups.find(g => {
+      const groupKey = `${g.type}-${g.id}`
+      return betKey.startsWith(groupKey)
+    })
+
+    if (!group) {
+      console.warn(`⚠️ No group found for betKey: ${betKey}`)
+      return playerUnit
+    }
+
+    const category = getGroupCategory(group)
+
+    // Initialize tracker if not exists
+    if (!groupProgressionsRef.current[category]) {
+      groupProgressionsRef.current[category] = { position: 0, consecutiveWins: 0, lastOutcome: null }
+    }
+
+    const tracker = groupProgressionsRef.current[category]
+    const sequence = getBettingSequence()
+    const multiplier = sequence[tracker.position] || 1
+    const chipValue = playerUnit * multiplier
+
+    console.log(`💰 getChipValue(${betKey}): category=${category}, position=${tracker.position}, chipValue=${chipValue}`)
+
+    return chipValue
+  }
+
   const handleBetClick = (groupKey: string, isDoubleClick: boolean) => {
     if (showResults) return // Prevent betting when results are showing
 
+    console.log(`👆 handleBetClick: groupKey=${groupKey}, isDoubleClick=${isDoubleClick}`)
+
     setBets(prev => {
       const currentBet = prev[groupKey] || 0
-      const newBet = isDoubleClick ? Math.min(currentBet * 2, 1000) : Math.min(currentBet + playerUnit, 1000)
+      const chipValue = getChipValue(groupKey)
+
+      // Use progressive chip value from Martingale instead of fixed playerUnit
+      const newBet = isDoubleClick
+        ? Math.min(currentBet * 2, 1000)
+        : Math.min(currentBet + chipValue, 1000)
+
+      console.log(`💵 Bet update: ${currentBet} → ${newBet} (chipValue=${chipValue})`)
+
       return { ...prev, [groupKey]: newBet }
     })
   }
@@ -510,10 +568,86 @@ export default function MyGroupsLayout({
       const currentBets = betsRef.current
 
       if (spinKey !== lastProcessedSpinKey && Object.keys(currentBets).length > 0) {
+        // Prevent concurrent processing
+        if (isProcessingRef.current) {
+          console.log('⏸️ Already processing, skipping...')
+          return
+        }
+
+        // Prevent duplicate spin processing
+        if (processedSpinsRef.current.has(spinKey)) {
+          console.log(`⏸️ Spin ${spinKey} already processed, skipping...`)
+          return
+        }
+
+        isProcessingRef.current = true
+        processedSpinsRef.current.add(spinKey)
+
+        console.log('🎲 Processing spin:', spinKey, 'number:', latestSpin.number)
+        console.log('📋 Current bets:', currentBets)
+
         const calcResults = calculatePayouts(latestSpin.number)
         setResults(calcResults)
         setShowResults(true)
         setLastProcessedSpinKey(spinKey)
+
+        // 🎰 Update Martingale progressions based on results
+        console.log('🔄 Updating progressions for spin:', spinKey)
+        const processedCategories = new Set<string>()
+
+        Object.entries(currentBets).forEach(([betKey, amount]) => {
+          if (amount > 0) {
+            // Find the group for this bet
+            const group = displayGroups.find(g => {
+              const groupKey = `${g.type}-${g.id}`
+              return betKey.startsWith(groupKey)
+            })
+
+            if (!group) {
+              console.warn(`⚠️ No group found for betKey: ${betKey}`)
+              return
+            }
+
+            const category = getGroupCategory(group)
+            console.log(`🔍 Processing bet: ${betKey} → category: ${category}`)
+
+            // Only update each category once per spin
+            if (processedCategories.has(category)) {
+              console.log(`⏭️  Skipping ${betKey} - category ${category} already processed`)
+              return
+            }
+            processedCategories.add(category)
+
+            const won = calcResults[betKey]?.won || false
+
+            // Initialize tracker if not exists
+            if (!groupProgressionsRef.current[category]) {
+              groupProgressionsRef.current[category] = { position: 0, consecutiveWins: 0, lastOutcome: null }
+            }
+
+            const tracker = groupProgressionsRef.current[category]
+            const sequence = getBettingSequence()
+            const oldPosition = tracker.position
+            const oldValue = playerUnit * sequence[oldPosition]
+
+            if (won) {
+              // Standard Martingale: reset to base bet immediately after any win
+              tracker.position = 0
+              tracker.consecutiveWins = 0
+              tracker.lastOutcome = 'win'
+            } else {
+              // Loss: move forward in sequence
+              tracker.consecutiveWins = 0
+              tracker.position = Math.min(tracker.position + 1, sequence.length - 1)
+              tracker.lastOutcome = 'loss'
+            }
+
+            const newValue = playerUnit * sequence[tracker.position]
+            console.log(`📊 ${betKey} (${category}): ${won ? 'WIN ✅' : 'LOSS ❌'} | Position ${oldPosition}→${tracker.position} | Value $${oldValue}→$${newValue}`)
+          }
+        })
+
+        console.log('✅ Final progressions:', groupProgressionsRef.current)
 
         // Update historical bets
         if (onHistoricalBetsUpdate) {
@@ -539,6 +673,8 @@ export default function MyGroupsLayout({
         if (onBetPlaced) {
           onBetPlaced(totalWagered, totalReturned, totalPnL, currentBets, groupResults, latestSpin.number, spinTimestamp)
         }
+
+        isProcessingRef.current = false
 
         // Auto-clear after 3 seconds
         setTimeout(() => {

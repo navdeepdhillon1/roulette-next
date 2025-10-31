@@ -33,6 +33,14 @@ interface Dealer {
   nickname?: string
 }
 
+interface BettingSystemConfig {
+  id: string
+  name: string
+  baseBet: number
+  consecutiveWins?: number
+  consecutiveLosses?: number
+}
+
 interface GameControlBarProps {
   currentDealer: number
   onDealerChange: (dealer: number) => void
@@ -51,6 +59,7 @@ interface GameControlBarProps {
   onViewChange?: (view: 'layout' | 'wheelLayout' | 'my-groups') => void
   hasSelectedGroups?: boolean  // Whether user has configured custom groups
   useCards?: boolean  // Whether session uses structured card system
+  bettingSystem?: BettingSystemConfig  // Current betting system in use
 }
 
 export default function GameControlBar({
@@ -70,7 +79,8 @@ export default function GameControlBar({
   currentView,
   onViewChange,
   hasSelectedGroups = false,
-  useCards = true
+  useCards = true,
+  bettingSystem
 }: GameControlBarProps) {
   const [cardTrackingEnabled, setCardTrackingEnabled] = useState(false)
   const [showHelpModal, setShowHelpModal] = useState(false)
@@ -187,19 +197,16 @@ export default function GameControlBar({
             )}
           </select>
 
-          {/* Switch Layout Button */}
-          {currentView && onViewChange && (
-            <select
-              value={currentView || 'layout'}
-              onChange={(e) => onViewChange(e.target.value as 'layout' | 'wheelLayout' | 'my-groups')}
-              className="px-4 py-1.5 bg-gray-900 hover:bg-gray-700 text-white text-sm font-bold rounded-lg transition-all border border-gray-600 cursor-pointer"
-            >
-              <option value="layout">🎲 Table Groups</option>
-              <option value="wheelLayout">🎡 Wheel Groups</option>
-              {hasSelectedGroups && (
-                <option value="my-groups">⭐ My Groups</option>
-              )}
-            </select>
+          {/* Betting System Display */}
+          {bettingSystem && (
+            <div className="px-4 py-1.5 bg-gradient-to-r from-purple-900/40 to-blue-900/40 border border-purple-500/50 text-white text-sm font-bold rounded-lg flex items-center gap-2">
+              <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <span className="text-purple-200">System:</span>
+              <span className="text-white font-bold">{bettingSystem.name}</span>
+              <span className="text-purple-300 text-xs">(${bettingSystem.baseBet} base)</span>
+            </div>
           )}
 
           {/* Card Tracking Toggle - Only show when NOT using structured card system */}

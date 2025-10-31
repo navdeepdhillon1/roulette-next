@@ -339,6 +339,32 @@ const baseUnit = systemState.currentBet
   const [showMatrix, setShowMatrix] = useState(true)
   const [showBettingGroups, setShowBettingGroups] = useState(true)
   const [betOrder, setBetOrder] = useState<Array<{key: BetKey, amount: number}>>([])
+
+  // Group-level progression tracking
+  const [groupProgressions, setGroupProgressions] = useState<Record<string, { position: number; consecutiveWins: number; lastOutcome: 'win' | 'loss' | null }>>({
+    'red-black': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'even-odd': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'low-high': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'dozens': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'columns': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'six-groups': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'alt1': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'alt2': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'alt3': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'edge-center': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'wheel-special1': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'wheel-special2': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'wheel-jeu-zero': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'wheel-quarters': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'wheel-halves': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'wheel-ab': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'wheel-aabb': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'wheel-aaabbb': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'wheel-a6b6': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'wheel-a9b9': { position: 0, consecutiveWins: 0, lastOutcome: null },
+    'uncategorized': { position: 0, consecutiveWins: 0, lastOutcome: null },
+  })
+
   // Initialize from card props (source of truth)
 const [cardProgress, setCardProgress] = useState({ 
   betsUsed: card.betsUsed || 0, 
@@ -452,6 +478,93 @@ useEffect(() => {
     }
   }
 
+  // Helper: Get betting group category for progression tracking
+  const getGroupCategory = (betKey: BetKey): string => {
+    // Red/Black
+    if (['red', 'black'].includes(betKey)) return 'red-black'
+    // Even/Odd
+    if (['even', 'odd'].includes(betKey)) return 'even-odd'
+    // Low/High
+    if (['low', 'high'].includes(betKey)) return 'low-high'
+    // Dozens
+    if (['dozen1', 'dozen2', 'dozen3'].includes(betKey)) return 'dozens'
+    // Columns
+    if (['col1', 'col2', 'col3'].includes(betKey)) return 'columns'
+    // Six Groups
+    if (['six1', 'six2', 'six3', 'six4', 'six5', 'six6'].includes(betKey)) return 'six-groups'
+    // Alt1 (A/B)
+    if (['alt1_1', 'alt1_2'].includes(betKey)) return 'alt1'
+    // Alt2 (AA/BB)
+    if (['alt2_1', 'alt2_2'].includes(betKey)) return 'alt2'
+    // Alt3 (AAA/BBB)
+    if (['alt3_1', 'alt3_2'].includes(betKey)) return 'alt3'
+    // Edge/Center
+    if (['edge', 'center'].includes(betKey)) return 'edge-center'
+    // Wheel Special 1: Voisins, Orphelins, Tiers
+    if (['voisins', 'orphelins', 'tiers'].includes(betKey)) return 'wheel-special1'
+    // Wheel Special 2: Voisin, Non-Voisin
+    if (['voisin', 'non_voisin'].includes(betKey)) return 'wheel-special2'
+    // Wheel Quarters (9s)
+    if (['nine_1st', 'nine_2nd', 'nine_3rd', 'nine_4th'].includes(betKey)) return 'wheel-quarters'
+    // Wheel Halves (Right/Left 18)
+    if (['right_18', 'left_18'].includes(betKey)) return 'wheel-halves'
+    // Wheel A/B
+    if (['a', 'b'].includes(betKey)) return 'wheel-ab'
+    // Wheel AA/BB
+    if (['aa', 'bb'].includes(betKey)) return 'wheel-aabb'
+    // Wheel AAA/BBB
+    if (['aaa', 'bbb'].includes(betKey)) return 'wheel-aaabbb'
+    // Wheel A6/B6
+    if (['a6', 'b6'].includes(betKey)) return 'wheel-a6b6'
+    // Wheel A9/B9
+    if (['a9', 'b9'].includes(betKey)) return 'wheel-a9b9'
+    // Jeu Zero (separate)
+    if (betKey === 'jeu_zero') return 'wheel-jeu-zero'
+
+    return 'uncategorized'
+  }
+
+  // Helper: Get betting sequences for each system
+  const getBettingSequence = (systemId: string): number[] => {
+    const sequences: Record<string, number[]> = {
+      'custom': [1, 1, 2, 2, 4, 4, 8, 8],
+      'martingale': [1, 2, 4, 8, 16, 32, 64, 128],
+      'dalembert': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      'reverse-dalembert': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      'fibonacci': [1, 1, 2, 3, 5, 8, 13, 21, 34, 55],
+      'paroli': [1, 2, 4, 8],
+      'flat': [1]
+    }
+    return sequences[systemId] || sequences['custom']
+  }
+
+  // Helper: Get chip value for a specific bet based on group progression
+  const getChipValue = (betKey: BetKey): number => {
+    const category = getGroupCategory(betKey)
+    const tracker = groupProgressions[category]
+
+    if (!tracker) {
+      // Fallback to base unit if category not found
+      console.log('⚠️ Tracker not found for category:', category)
+      return baseUnit
+    }
+
+    const sequence = getBettingSequence(systemState.id)
+    const multiplier = sequence[tracker.position] || 1
+
+    console.log(`💰 getChipValue(${betKey}):`, {
+      category,
+      position: tracker.position,
+      systemId: systemState.id,
+      sequence: sequence.slice(0, 5),
+      multiplier,
+      baseBet: systemState.baseBet,
+      result: systemState.baseBet * multiplier
+    })
+
+    return systemState.baseBet * multiplier
+  }
+
   const getGroupPayout = (betKey: BetKey): number => {
     if (['red','black','even','odd','low','high','alt1_1','alt1_2','alt2_1','alt2_2','alt3_1','alt3_2','edge','center'].includes(betKey)) return 1
     if (['dozen1','dozen2','dozen3','col1','col2','col3'].includes(betKey)) return 2
@@ -467,24 +580,28 @@ useEffect(() => {
   }
 
   const placeBet = (betKey: BetKey) => {
+    const chipValue = getChipValue(betKey)
+
     setCurrentBets(prev => ({
       ...prev,
-      [betKey]: (prev[betKey] || 0) + baseUnit
+      [betKey]: (prev[betKey] || 0) + chipValue
     }))
-    setBetOrder(prev => [...prev, { key: betKey, amount: baseUnit }])
+    setBetOrder(prev => [...prev, { key: betKey, amount: chipValue }])
   }
 
   const decreaseBet = (betKey: BetKey) => {
+    const chipValue = getChipValue(betKey)
+
     setCurrentBets(prev => {
       const currentAmount = prev[betKey] || 0
-      if (currentAmount <= baseUnit) {
+      if (currentAmount <= chipValue) {
         const newBets = {...prev}
         delete newBets[betKey]
         return newBets
       }
       return {
         ...prev,
-        [betKey]: currentAmount - baseUnit
+        [betKey]: currentAmount - chipValue
       }
     })
     // Remove last occurrence from bet order
@@ -531,6 +648,55 @@ useEffect(() => {
           }
         }
       })
+
+      // Update group progressions based on results
+      setGroupProgressions(prev => {
+        const updated = { ...prev }
+
+        console.log('🔄 Updating group progressions for spin:', num)
+        console.log('Current bets:', currentBets)
+
+        Object.entries(currentBets).forEach(([key, amount]) => {
+          if (amount > 0) {
+            const betKey = key as BetKey
+            const category = getGroupCategory(betKey)
+            const won = checkGroupWon(num, betKey)
+
+            if (!updated[category]) {
+              // Initialize if category doesn't exist
+              updated[category] = { position: 0, consecutiveWins: 0, lastOutcome: null }
+            }
+
+            const tracker = updated[category]
+            const sequence = getBettingSequence(systemState.id)
+            const oldPosition = tracker.position
+
+            if (won) {
+              // Increment consecutive wins
+              tracker.consecutiveWins += 1
+
+              // Reset to position 0 if we have 2 consecutive wins
+              if (tracker.consecutiveWins >= 2) {
+                tracker.position = 0
+                tracker.consecutiveWins = 0
+              }
+
+              tracker.lastOutcome = 'win'
+            } else {
+              // Loss: move forward in sequence and reset consecutive wins
+              tracker.consecutiveWins = 0
+              tracker.position = Math.min(tracker.position + 1, sequence.length - 1)
+              tracker.lastOutcome = 'loss'
+            }
+
+            console.log(`📊 ${betKey} (${category}): ${won ? 'WIN' : 'LOSS'} | Position: ${oldPosition} → ${tracker.position}`)
+          }
+        })
+
+        console.log('Updated progressions:', updated)
+        return updated
+      })
+
       // Update local state for immediate UI feedback (BEFORE onPlaceBet!)
 const newBetsUsed = cardProgress.betsUsed + 1
 const newPnL = cardProgress.currentPnL + totalPnL
@@ -1317,10 +1483,18 @@ if (newPnL >= card.target) {
                       <h4 className="text-xs font-bold text-red-400 mb-1">Colors (1:1)</h4>
                       <div className="grid grid-cols-2 gap-1">
                         <button onClick={() => placeBet('red')} className="bg-red-600 text-white px-2 py-1 rounded text-xs font-bold relative">
-                          Red {currentBets['red'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['red']}</span>}
+                          <span className="flex flex-col items-center">
+                            <span>Red</span>
+                            <span className="text-[9px] opacity-70">[${getChipValue('red')}]</span>
+                          </span>
+                          {currentBets['red'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['red']}</span>}
                         </button>
                         <button onClick={() => placeBet('black')} className="bg-gray-900 border border-gray-600 text-white px-2 py-1 rounded text-xs font-bold relative">
-                          Black {currentBets['black'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['black']}</span>}
+                          <span className="flex flex-col items-center">
+                            <span>Black</span>
+                            <span className="text-[9px] opacity-70">[${getChipValue('black')}]</span>
+                          </span>
+                          {currentBets['black'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['black']}</span>}
                         </button>
                       </div>
                     </div>
@@ -1330,10 +1504,18 @@ if (newPnL >= card.target) {
                       <h4 className="text-xs font-bold text-blue-400 mb-1">Even/Odd (1:1)</h4>
                       <div className="grid grid-cols-2 gap-1">
                         <button onClick={() => placeBet('even')} className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold relative">
-                          Even {currentBets['even'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['even']}</span>}
+                          <span className="flex flex-col items-center">
+                            <span>Even</span>
+                            <span className="text-[9px] opacity-70">[${getChipValue('even')}]</span>
+                          </span>
+                          {currentBets['even'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['even']}</span>}
                         </button>
                         <button onClick={() => placeBet('odd')} className="bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold relative">
-                          Odd {currentBets['odd'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['odd']}</span>}
+                          <span className="flex flex-col items-center">
+                            <span>Odd</span>
+                            <span className="text-[9px] opacity-70">[${getChipValue('odd')}]</span>
+                          </span>
+                          {currentBets['odd'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['odd']}</span>}
                         </button>
                       </div>
                     </div>
@@ -1343,10 +1525,18 @@ if (newPnL >= card.target) {
                       <h4 className="text-xs font-bold text-purple-400 mb-1">Low/High (1:1)</h4>
                       <div className="grid grid-cols-2 gap-1">
                         <button onClick={() => placeBet('low')} className="bg-purple-600 text-white px-2 py-1 rounded text-xs font-bold relative">
-                          Low (1-18) {currentBets['low'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['low']}</span>}
+                          <span className="flex flex-col items-center">
+                            <span>Low (1-18)</span>
+                            <span className="text-[9px] opacity-70">[${getChipValue('low')}]</span>
+                          </span>
+                          {currentBets['low'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['low']}</span>}
                         </button>
                         <button onClick={() => placeBet('high')} className="bg-pink-600 text-white px-2 py-1 rounded text-xs font-bold relative">
-                          High (19-36) {currentBets['high'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['high']}</span>}
+                          <span className="flex flex-col items-center">
+                            <span>High (19-36)</span>
+                            <span className="text-[9px] opacity-70">[${getChipValue('high')}]</span>
+                          </span>
+                          {currentBets['high'] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets['high']}</span>}
                         </button>
                       </div>
                     </div>
@@ -1358,7 +1548,10 @@ if (newPnL >= card.target) {
                         <div className="grid grid-cols-3 gap-1">
                           {['dozen1', 'dozen2', 'dozen3'].map((bet, i) => (
                             <button key={bet} onClick={() => placeBet(bet as BetKey)} className="bg-amber-600 text-white px-1 py-1 rounded text-[9px] font-bold relative">
-                              {i === 0 ? '1st' : i === 1 ? '2nd' : '3rd'}
+                              <span className="flex flex-col items-center">
+                                <span>{i === 0 ? '1st' : i === 1 ? '2nd' : '3rd'}</span>
+                                <span className="text-[8px] opacity-70">[${getChipValue(bet as BetKey)}]</span>
+                              </span>
                               {currentBets[bet as BetKey] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[7px] rounded-full px-1 py-0.5 font-bold">{currentBets[bet as BetKey]}</span>}
                             </button>
                           ))}
@@ -1370,7 +1563,10 @@ if (newPnL >= card.target) {
                         <div className="grid grid-cols-3 gap-1">
                           {['col1', 'col2', 'col3'].map((bet, i) => (
                             <button key={bet} onClick={() => placeBet(bet as BetKey)} className="bg-emerald-600 text-white px-1 py-1 rounded text-[9px] font-bold relative">
-                              {i === 0 ? 'C1' : i === 1 ? 'C2' : 'C3'}
+                              <span className="flex flex-col items-center">
+                                <span>{i === 0 ? 'C1' : i === 1 ? 'C2' : 'C3'}</span>
+                                <span className="text-[8px] opacity-70">[${getChipValue(bet as BetKey)}]</span>
+                              </span>
                               {currentBets[bet as BetKey] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[7px] rounded-full px-1 py-0.5 font-bold">{currentBets[bet as BetKey]}</span>}
                             </button>
                           ))}
@@ -1389,7 +1585,10 @@ if (newPnL >= card.target) {
                       <div className="grid grid-cols-6 gap-1">
                         {['six1', 'six2', 'six3', 'six4', 'six5', 'six6'].map((bet, i) => (
                           <button key={bet} onClick={() => placeBet(bet as BetKey)} className="bg-teal-600 text-white px-1 py-1 rounded text-[9px] font-bold relative">
-                            {i+1}
+                            <span className="flex flex-col items-center">
+                              <span>{i+1}</span>
+                              <span className="text-[7px] opacity-70">[${getChipValue(bet as BetKey)}]</span>
+                            </span>
                             {currentBets[bet as BetKey] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[7px] rounded-full px-1 py-0.5 font-bold">{currentBets[bet as BetKey]}</span>}
                           </button>
                         ))}
@@ -1403,7 +1602,10 @@ if (newPnL >= card.target) {
                         <div className="grid grid-cols-2 gap-1">
                           {['alt1_1', 'alt1_2'].map((bet) => (
                             <button key={bet} onClick={() => placeBet(bet as BetKey)} className="bg-indigo-600 text-white px-1 py-1 rounded text-[9px] font-bold relative">
-                              {bet === 'alt1_1' ? 'A' : 'B'}
+                              <span className="flex flex-col items-center">
+                                <span>{bet === 'alt1_1' ? 'A' : 'B'}</span>
+                                <span className="text-[7px] opacity-70">[${getChipValue(bet as BetKey)}]</span>
+                              </span>
                               {currentBets[bet as BetKey] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[7px] rounded-full px-1 py-0.5 font-bold">{currentBets[bet as BetKey]}</span>}
                             </button>
                           ))}
@@ -1415,7 +1617,10 @@ if (newPnL >= card.target) {
                         <div className="grid grid-cols-2 gap-1">
                           {['alt2_1', 'alt2_2'].map((bet) => (
                             <button key={bet} onClick={() => placeBet(bet as BetKey)} className="bg-violet-600 text-white px-1 py-1 rounded text-[9px] font-bold relative">
-                              {bet === 'alt2_1' ? 'AA' : 'BB'}
+                              <span className="flex flex-col items-center">
+                                <span>{bet === 'alt2_1' ? 'AA' : 'BB'}</span>
+                                <span className="text-[7px] opacity-70">[${getChipValue(bet as BetKey)}]</span>
+                              </span>
                               {currentBets[bet as BetKey] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[7px] rounded-full px-1 py-0.5 font-bold">{currentBets[bet as BetKey]}</span>}
                             </button>
                           ))}
@@ -1427,7 +1632,10 @@ if (newPnL >= card.target) {
                         <div className="grid grid-cols-2 gap-1">
                           {['alt3_1', 'alt3_2'].map((bet) => (
                             <button key={bet} onClick={() => placeBet(bet as BetKey)} className="bg-fuchsia-600 text-white px-1 py-1 rounded text-[9px] font-bold relative">
-                              {bet === 'alt3_1' ? 'AAA' : 'BBB'}
+                              <span className="flex flex-col items-center">
+                                <span>{bet === 'alt3_1' ? 'AAA' : 'BBB'}</span>
+                                <span className="text-[7px] opacity-70">[${getChipValue(bet as BetKey)}]</span>
+                              </span>
                               {currentBets[bet as BetKey] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[7px] rounded-full px-1 py-0.5 font-bold">{currentBets[bet as BetKey]}</span>}
                             </button>
                           ))}
@@ -1441,7 +1649,10 @@ if (newPnL >= card.target) {
                       <div className="grid grid-cols-2 gap-1">
                         {['edge', 'center'].map((bet) => (
                           <button key={bet} onClick={() => placeBet(bet as BetKey)} className="bg-amber-600 text-white px-2 py-1.5 rounded text-xs font-bold relative">
-                            {bet === 'edge' ? 'Edge' : 'Center'}
+                            <span className="flex flex-col items-center">
+                              <span>{bet === 'edge' ? 'Edge' : 'Center'}</span>
+                              <span className="text-[9px] opacity-70">[${getChipValue(bet as BetKey)}]</span>
+                            </span>
                             {currentBets[bet as BetKey] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets[bet as BetKey]}</span>}
                           </button>
                         ))}
@@ -1466,6 +1677,7 @@ if (newPnL >= card.target) {
                           <button key={bet.key} onClick={() => placeBet(bet.key as BetKey)} className="bg-purple-600 text-white px-1 py-1.5 rounded text-[9px] font-bold relative">
                             <div>{bet.label}</div>
                             <div className="text-[7px] text-purple-200">{bet.sub}</div>
+                            <div className="text-[7px] opacity-70">[${getChipValue(bet.key as BetKey)}]</div>
                             {currentBets[bet.key as BetKey] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[7px] rounded-full px-1 py-0.5 font-bold">{currentBets[bet.key as BetKey]}</span>}
                           </button>
                         ))}
@@ -1481,7 +1693,10 @@ if (newPnL >= card.target) {
                           { key: 'non_voisin', label: 'Non-Voisin' }
                         ].map((bet) => (
                           <button key={bet.key} onClick={() => placeBet(bet.key as BetKey)} className="bg-indigo-600 text-white px-2 py-1.5 rounded text-xs font-bold relative">
-                            {bet.label}
+                            <span className="flex flex-col items-center">
+                              <span>{bet.label}</span>
+                              <span className="text-[9px] opacity-70">[${getChipValue(bet.key as BetKey)}]</span>
+                            </span>
                             {currentBets[bet.key as BetKey] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets[bet.key as BetKey]}</span>}
                           </button>
                         ))}
@@ -1494,7 +1709,10 @@ if (newPnL >= card.target) {
                       <div className="grid grid-cols-4 gap-1">
                         {['nine_1st', 'nine_2nd', 'nine_3rd', 'nine_4th'].map((bet, i) => (
                           <button key={bet} onClick={() => placeBet(bet as BetKey)} className="bg-cyan-600 text-white px-1 py-1.5 rounded text-[9px] font-bold relative">
-                            {i === 0 ? '1st 9' : i === 1 ? '2nd 9' : i === 2 ? '3rd 9' : '4th 9'}
+                            <span className="flex flex-col items-center">
+                              <span>{i === 0 ? '1st 9' : i === 1 ? '2nd 9' : i === 2 ? '3rd 9' : '4th 9'}</span>
+                              <span className="text-[7px] opacity-70">[${getChipValue(bet as BetKey)}]</span>
+                            </span>
                             {currentBets[bet as BetKey] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[7px] rounded-full px-1 py-0.5 font-bold">{currentBets[bet as BetKey]}</span>}
                           </button>
                         ))}
@@ -1510,7 +1728,10 @@ if (newPnL >= card.target) {
                           { key: 'left_18', label: 'Left' }
                         ].map((bet) => (
                           <button key={bet.key} onClick={() => placeBet(bet.key as BetKey)} className="bg-green-600 text-white px-2 py-1.5 rounded text-xs font-bold relative">
-                            {bet.label}
+                            <span className="flex flex-col items-center">
+                              <span>{bet.label}</span>
+                              <span className="text-[9px] opacity-70">[${getChipValue(bet.key as BetKey)}]</span>
+                            </span>
                             {currentBets[bet.key as BetKey] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets[bet.key as BetKey]}</span>}
                           </button>
                         ))}
@@ -1528,7 +1749,10 @@ if (newPnL >= card.target) {
                       <div className="grid grid-cols-2 gap-1">
                         {['a', 'b'].map((bet) => (
                           <button key={bet} onClick={() => placeBet(bet as BetKey)} className="bg-pink-600 text-white px-2 py-1.5 rounded text-xs font-bold relative">
-                            {bet.toUpperCase()}
+                            <span className="flex flex-col items-center">
+                              <span>{bet.toUpperCase()}</span>
+                              <span className="text-[9px] opacity-70">[${getChipValue(bet as BetKey)}]</span>
+                            </span>
                             {currentBets[bet as BetKey] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets[bet as BetKey]}</span>}
                           </button>
                         ))}
@@ -1541,7 +1765,10 @@ if (newPnL >= card.target) {
                       <div className="grid grid-cols-2 gap-1">
                         {['aa', 'bb'].map((bet) => (
                           <button key={bet} onClick={() => placeBet(bet as BetKey)} className="bg-rose-600 text-white px-2 py-1.5 rounded text-xs font-bold relative">
-                            {bet.toUpperCase()}
+                            <span className="flex flex-col items-center">
+                              <span>{bet.toUpperCase()}</span>
+                              <span className="text-[9px] opacity-70">[${getChipValue(bet as BetKey)}]</span>
+                            </span>
                             {currentBets[bet as BetKey] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets[bet as BetKey]}</span>}
                           </button>
                         ))}
@@ -1554,7 +1781,10 @@ if (newPnL >= card.target) {
                       <div className="grid grid-cols-2 gap-1">
                         {['aaa', 'bbb'].map((bet) => (
                           <button key={bet} onClick={() => placeBet(bet as BetKey)} className="bg-fuchsia-600 text-white px-2 py-1.5 rounded text-xs font-bold relative">
-                            {bet.toUpperCase()}
+                            <span className="flex flex-col items-center">
+                              <span>{bet.toUpperCase()}</span>
+                              <span className="text-[9px] opacity-70">[${getChipValue(bet as BetKey)}]</span>
+                            </span>
                             {currentBets[bet as BetKey] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets[bet as BetKey]}</span>}
                           </button>
                         ))}
@@ -1567,7 +1797,10 @@ if (newPnL >= card.target) {
                       <div className="grid grid-cols-2 gap-1">
                         {['a6', 'b6'].map((bet) => (
                           <button key={bet} onClick={() => placeBet(bet as BetKey)} className="bg-violet-600 text-white px-2 py-1.5 rounded text-xs font-bold relative">
-                            {bet.toUpperCase()}
+                            <span className="flex flex-col items-center">
+                              <span>{bet.toUpperCase()}</span>
+                              <span className="text-[9px] opacity-70">[${getChipValue(bet as BetKey)}]</span>
+                            </span>
                             {currentBets[bet as BetKey] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[8px] rounded-full px-1 py-0.5 font-bold">{currentBets[bet as BetKey]}</span>}
                           </button>
                         ))}
@@ -1580,7 +1813,10 @@ if (newPnL >= card.target) {
                       <div className="grid grid-cols-2 gap-1">
                         {['a9', 'b9'].map((bet) => (
                           <button key={bet} onClick={() => placeBet(bet as BetKey)} className="bg-purple-600 text-white px-2 py-1.5 rounded text-xs font-bold relative">
-                            {bet.toUpperCase()}
+                            <span className="flex flex-col items-center">
+                              <span>{bet.toUpperCase()}</span>
+                              <span className="text-[9px] opacity-70">[${getChipValue(bet as BetKey)}]</span>
+                            </span>
                             {currentBets[bet as BetKey] > 0 && <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-[7px] rounded-full px-1 py-0.5 font-bold">{currentBets[bet as BetKey]}</span>}
                           </button>
                         ))}

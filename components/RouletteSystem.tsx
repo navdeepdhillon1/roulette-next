@@ -1701,7 +1701,7 @@ const openSessionSetup = () => {
 
                     {/* EDGE-TO-EDGE LAYOUT FOR TABLE VIEW */}
                     {assistantSubTab === 'action' && session && actionView === 'table-view' && (
-                      <div className="flex gap-2 min-h-screen -m-6">
+                      <div className="flex gap-2 min-h-screen w-full">
                         {/* LEFT SIDE: Table View - Takes up left half */}
                         <div className="w-1/2 p-2 pb-2 overflow-y-auto sticky top-0 self-start max-h-screen">
                           <div className="space-y-1">

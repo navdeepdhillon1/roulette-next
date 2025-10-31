@@ -1,14 +1,19 @@
 // types/bettingAssistant.ts
 
-export type BetKey = 
-  | 'red' | 'black' | 'even' | 'odd' | 'low' | 'high' 
-  | 'dozen1' | 'dozen2' | 'dozen3' 
+export type BetKey =
+  // Table groups
+  | 'red' | 'black' | 'even' | 'odd' | 'low' | 'high'
+  | 'dozen1' | 'dozen2' | 'dozen3'
   | 'col1' | 'col2' | 'col3'
-  | 'alt1_1' | 'alt1_2' 
-  | 'alt2_1' | 'alt2_2' 
+  | 'alt1_1' | 'alt1_2'
+  | 'alt2_1' | 'alt2_2'
   | 'alt3_1' | 'alt3_2'
-  | 'edge' | 'center' 
+  | 'edge' | 'center'
   | 'six1' | 'six2' | 'six3' | 'six4' | 'six5' | 'six6'
+  // Wheel groups
+  | 'voisins' | 'orphelins' | 'tiers' | 'jeu_zero' | 'voisin' | 'non_voisin'
+  | 'nine_1st' | 'nine_2nd' | 'nine_3rd' | 'nine_4th' | 'right_18' | 'left_18'
+  | 'a' | 'b' | 'aa' | 'bb' | 'aaa' | 'bbb' | 'a6' | 'b6' | 'a9' | 'b9'
 
 export interface BetRecord {
   id: string

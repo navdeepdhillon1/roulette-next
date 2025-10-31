@@ -267,6 +267,11 @@ export default function BettingAssistant() {
     getUser()
   }, [])
 
+  // ✅ Scroll to top when component mounts or view mode changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [viewMode])
+
   const handleHistoricalBetsUpdate = (newBets: Record<string, any>) => {
     setHistoricalBets(newBets)
   }
@@ -788,10 +793,10 @@ export default function BettingAssistant() {
       <Navigation />
       {/* Intro/Welcome Page */}
       {viewMode === 'intro' && (
-        <div className="min-h-screen bg-gradient-to-br from-[#0A0E27] via-[#0B5345] to-[#0A0E27] flex items-center justify-center p-8 relative overflow-hidden">
+        <div className="min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-[#0A0E27] via-[#0B5345] to-[#0A0E27] relative">
           {/* Subtle yellow accent overlay */}
           <div className="absolute top-0 left-0 w-full h-[600px] bg-gradient-to-b from-yellow-600/8 via-transparent to-transparent pointer-events-none"></div>
-          <div className="max-w-4xl w-full relative z-10">
+          <div className="mx-auto w-full max-w-4xl px-4 md:px-8 py-12 relative z-10">
             <div className="text-center mb-8">
               <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-teal-600 mb-4">
                 🎯 Betting Assistant
@@ -1023,9 +1028,9 @@ export default function BettingAssistant() {
           )}
 
           {/* Main Content Area */}
-          <div className="flex gap-2 min-h-screen">
+          <div className="flex gap-2 min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
             {/* Left Side: Table View with Spin History - Takes up left half */}
-            <div className="w-1/2 pb-2 overflow-y-auto sticky top-0 self-start max-h-screen">
+            <div className="w-1/2 pb-2 overflow-y-auto sticky top-0 self-start max-h-screen bg-gradient-to-b from-gray-900/95 to-gray-800/95">
 
             {/* Table View showing all betting groups with spin history */}
             <div className="bg-gray-900/50 rounded-lg p-2 border border-gray-700">
@@ -1052,6 +1057,7 @@ export default function BettingAssistant() {
                     onViewChange={setTableView}
                     hasSelectedGroups={session.config.selectedGroups !== undefined && session.config.selectedGroups.length > 0}
                     useCards={session.config.useCards}
+                    bettingSystem={session.config.bettingSystem}
                   />
 
                   {/* Roulette Table Layout */}
@@ -1222,22 +1228,34 @@ export default function BettingAssistant() {
 
                     {/* History Table */}
                     <div className="bg-slate-700 rounded border-2 border-slate-500/50 p-2 shadow-lg">
-                      <div className="flex items-center justify-between gap-3 mb-2 text-[10px] font-bold">
-                        <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-between gap-3 mb-2 px-3 py-2 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg border border-gray-700/50 shadow-md">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                          <svg className="w-3.5 h-3.5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
                           <span className="text-gray-400">Bank:</span>
                           <span className="text-white">${sessionStats.currentBankroll.toFixed(0)}</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                          <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
                           <span className="text-gray-400">Wager:</span>
                           <span className="text-cyan-400">${sessionStats.totalWagered.toFixed(0)}</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                          <svg className="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
                           <span className="text-gray-400">P/L:</span>
                           <span className={`${(sessionStats.totalReturned - sessionStats.totalWagered) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             ${(sessionStats.totalReturned - sessionStats.totalWagered) >= 0 ? '+' : ''}{(sessionStats.totalReturned - sessionStats.totalWagered).toFixed(0)}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                          <svg className="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                          </svg>
                           <span className="text-gray-400">ROI:</span>
                           <span className={`${sessionStats.roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             {sessionStats.roi >= 0 ? '+' : ''}{sessionStats.roi.toFixed(1)}%
@@ -1281,6 +1299,7 @@ export default function BettingAssistant() {
                           }
                         })}
                         baseUnit={session.config.bettingSystem.baseBet}
+                        bettingSystem={session.config.bettingSystem}
                         sessionStats={sessionStats}
                         onBetPlaced={handleHistoryTableBet}
                         historicalBets={historicalBets}
@@ -1313,6 +1332,7 @@ export default function BettingAssistant() {
                     onViewChange={setTableView}
                     hasSelectedGroups={session.config.selectedGroups !== undefined && session.config.selectedGroups.length > 0}
                     useCards={session.config.useCards}
+                    bettingSystem={session.config.bettingSystem}
                   />
 
                   <WheelLayout
@@ -1383,22 +1403,34 @@ export default function BettingAssistant() {
 
                     {/* History Table */}
                     <div className="bg-slate-700 rounded border-2 border-slate-500/50 p-2 shadow-lg">
-                      <div className="flex items-center justify-between gap-3 mb-2 text-[10px] font-bold">
-                        <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-between gap-3 mb-2 px-3 py-2 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg border border-gray-700/50 shadow-md">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                          <svg className="w-3.5 h-3.5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
                           <span className="text-gray-400">Bank:</span>
                           <span className="text-white">${sessionStats.currentBankroll.toFixed(0)}</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                          <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
                           <span className="text-gray-400">Wager:</span>
                           <span className="text-cyan-400">${sessionStats.totalWagered.toFixed(0)}</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                          <svg className="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
                           <span className="text-gray-400">P/L:</span>
                           <span className={`${(sessionStats.totalReturned - sessionStats.totalWagered) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             ${(sessionStats.totalReturned - sessionStats.totalWagered) >= 0 ? '+' : ''}{(sessionStats.totalReturned - sessionStats.totalWagered).toFixed(0)}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                          <svg className="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                          </svg>
                           <span className="text-gray-400">ROI:</span>
                           <span className={`${sessionStats.roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             {sessionStats.roi >= 0 ? '+' : ''}{sessionStats.roi.toFixed(1)}%
@@ -1475,6 +1507,7 @@ export default function BettingAssistant() {
                     onViewChange={setTableView}
                     hasSelectedGroups={session.config.selectedGroups !== undefined && session.config.selectedGroups.length > 0}
                     useCards={session.config.useCards}
+                    bettingSystem={session.config.bettingSystem}
                   />
 
                   {/* Roulette Table Layout */}
@@ -1645,22 +1678,34 @@ export default function BettingAssistant() {
 
                     {/* History Table with Bankroll Stats */}
                     <div className="bg-gray-800 rounded border border-gray-700 p-2">
-                      <div className="flex items-center justify-between gap-3 mb-2 text-[10px] font-bold">
-                        <div className="flex items-center gap-1">
+                      <div className="flex items-center justify-between gap-3 mb-2 px-3 py-2 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg border border-gray-700/50 shadow-md">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                          <svg className="w-3.5 h-3.5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
                           <span className="text-gray-400">Bank:</span>
                           <span className="text-white">${sessionStats.currentBankroll.toFixed(0)}</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                          <svg className="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
                           <span className="text-gray-400">Wager:</span>
                           <span className="text-cyan-400">${sessionStats.totalWagered.toFixed(0)}</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                          <svg className="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
                           <span className="text-gray-400">P/L:</span>
                           <span className={`${(sessionStats.totalReturned - sessionStats.totalWagered) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             ${(sessionStats.totalReturned - sessionStats.totalWagered) >= 0 ? '+' : ''}{(sessionStats.totalReturned - sessionStats.totalWagered).toFixed(0)}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between gap-1">
+                        <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                          <svg className="w-3.5 h-3.5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                          </svg>
                           <span className="text-gray-400">ROI:</span>
                           <span className={`${sessionStats.roi >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             {sessionStats.roi >= 0 ? '+' : ''}{sessionStats.roi.toFixed(1)}%
@@ -1714,7 +1759,7 @@ export default function BettingAssistant() {
           </div>
 
           {/* Right Side: Dashboard + Stats - Takes up right half */}
-          <div className="w-1/2 overflow-y-auto">
+          <div className="w-1/2 overflow-y-auto bg-gradient-to-b from-gray-900/95 to-gray-800/95">
             <RightSideLayout
               session={session}
               spinHistory={spinHistory
@@ -1830,11 +1875,81 @@ export default function BettingAssistant() {
                 <div className="space-y-2 text-sm text-gray-300">
                   <p>The stats bar at the top shows your session performance at a glance:</p>
                   <ul className="list-disc list-inside space-y-1 ml-4">
-                    <li><strong className="text-white">Bank:</strong> Your current bankroll (starting amount + all profits/losses)</li>
-                    <li><strong className="text-cyan-400">Wager:</strong> Total amount you've bet across all spins</li>
-                    <li><strong className="text-green-400/text-red-400">P/L:</strong> Profit/Loss (total returned - total wagered)</li>
-                    <li><strong className="text-green-400/text-red-400">ROI:</strong> Return on Investment percentage</li>
+                    <li><strong className="text-white">Bank:</strong> 💰 Your current bankroll (starting amount + all profits/losses)</li>
+                    <li><strong className="text-cyan-400">Wager:</strong> 💵 Total amount you've bet across all spins</li>
+                    <li><strong className="text-purple-400">P/L:</strong> 📊 Profit/Loss (total returned - total wagered)</li>
+                    <li><strong className="text-green-400">ROI:</strong> 📈 Return on Investment percentage</li>
                   </ul>
+                </div>
+              </div>
+
+              {/* Toggle Buttons */}
+              <div className="bg-gradient-to-r from-cyan-900/20 to-blue-900/20 border border-cyan-500/30 rounded-lg p-4">
+                <h3 className="text-lg font-bold text-cyan-300 mb-3 flex items-center gap-2">
+                  <span className="text-2xl">🔘</span>
+                  Bet Type Toggle Buttons
+                </h3>
+                <div className="space-y-3 text-sm text-gray-300">
+                  <p>Use the toggle buttons to switch between different betting group views:</p>
+                  <div className="grid gap-3">
+                    <div className="bg-gray-800/50 rounded p-3">
+                      <p className="font-semibold text-blue-400 mb-1 flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-blue-600 text-white text-xs rounded">Table Groups</span>
+                      </p>
+                      <p className="ml-4 text-xs">Standard roulette table betting groups: Red/Black, Even/Odd, Low/High, Columns, Dozens, Alternative groups (A/B, AA/BB, AAA/BBB), Edge/Center, and Six Groups.</p>
+                    </div>
+                    <div className="bg-gray-800/50 rounded p-3">
+                      <p className="font-semibold text-purple-400 mb-1 flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-purple-600 text-white text-xs rounded">Wheel Groups</span>
+                      </p>
+                      <p className="ml-4 text-xs">Wheel-based betting groups organized by physical position on the roulette wheel: Voisins, Orphelins, Tiers, Wheel Quarters (9s), Wheel Halves, and alternative wheel splits (A/B, AA/BB, AAA/BBB, A6/B6, A9/B9).</p>
+                    </div>
+                    <div className="bg-gray-800/50 rounded p-3">
+                      <p className="font-semibold text-yellow-400 mb-1 flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-yellow-600 text-white text-xs rounded">Custom Groups</span>
+                      </p>
+                      <p className="ml-4 text-xs">Your own custom number groups (up to 10) configured in Session Config. Create groups based on your strategies, dealer patterns, or favorite numbers. If no groups are configured, you'll see a helpful message to set them up.</p>
+                    </div>
+                  </div>
+                  <p className="text-cyan-300 text-xs mt-2">💡 The active toggle is highlighted in color. Switch anytime to track different betting patterns!</p>
+                </div>
+              </div>
+
+              {/* Betting Progression Systems */}
+              <div className="bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-purple-500/30 rounded-lg p-4">
+                <h3 className="text-lg font-bold text-purple-300 mb-3 flex items-center gap-2">
+                  <span className="text-2xl">💎</span>
+                  Betting Progression Systems
+                </h3>
+                <div className="space-y-2 text-sm text-gray-300">
+                  <p className="mb-2">Your selected betting system (shown in the purple badge) determines how bet sizes progress after wins and losses:</p>
+                  <div className="grid gap-2">
+                    <div className="bg-gray-800/50 rounded p-2">
+                      <p className="font-semibold text-gray-200">🟢 Flat Betting</p>
+                      <p className="text-xs ml-4">Same bet every time. Safest, most conservative approach.</p>
+                    </div>
+                    <div className="bg-gray-800/50 rounded p-2">
+                      <p className="font-semibold text-red-400">🔴 Martingale</p>
+                      <p className="text-xs ml-4">Double after loss, reset on win. High risk, can recover losses quickly but requires large bankroll.</p>
+                    </div>
+                    <div className="bg-gray-800/50 rounded p-2">
+                      <p className="font-semibold text-yellow-400">🟡 Fibonacci</p>
+                      <p className="text-xs ml-4">Follow Fibonacci sequence (1,1,2,3,5,8,13...) on losses, step back 2 on win. Moderate risk.</p>
+                    </div>
+                    <div className="bg-gray-800/50 rounded p-2">
+                      <p className="font-semibold text-blue-400">🔵 D'Alembert</p>
+                      <p className="text-xs ml-4">Increase by 1 unit on loss, decrease by 1 on win. Balanced progression.</p>
+                    </div>
+                    <div className="bg-gray-800/50 rounded p-2">
+                      <p className="font-semibold text-cyan-400">🔷 Reverse D'Alembert</p>
+                      <p className="text-xs ml-4">Increase by 1 unit on WIN, decrease on loss. Capitalizes on winning streaks.</p>
+                    </div>
+                    <div className="bg-gray-800/50 rounded p-2">
+                      <p className="font-semibold text-green-400">🟢 Paroli</p>
+                      <p className="text-xs ml-4">Double after wins (max 3x), reset on loss. Positive progression system.</p>
+                    </div>
+                  </div>
+                  <p className="text-purple-300 text-xs mt-3">⚠️ Each betting group tracks its own progression independently. The shown bet amounts automatically adjust based on your system and win/loss history.</p>
                 </div>
               </div>
 
