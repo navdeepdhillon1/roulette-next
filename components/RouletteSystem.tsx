@@ -77,6 +77,30 @@ export default function RouletteSystem() {
   const [analysisSection, setAnalysisSection] = useState<'patterns' | 'time' | 'streaks'>('patterns')
   const [analysisView, setAnalysisView] = useState<'common' | 'special' | 'wheel' | 'numbers'>('common');
 
+  // Beta Access Control
+  const [hasAccess, setHasAccess] = useState(false)
+  const [accessCode, setAccessCode] = useState('')
+  const BETA_CODE = 'ROULETTE2024' // Change this to your secret code
+
+  useEffect(() => {
+    // Check if user has beta access in localStorage
+    const storedAccess = localStorage.getItem('beta_access')
+    if (storedAccess === BETA_CODE) {
+      setHasAccess(true)
+    }
+  }, [])
+
+  const handleAccessSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (accessCode === BETA_CODE) {
+      localStorage.setItem('beta_access', BETA_CODE)
+      setHasAccess(true)
+    } else {
+      alert('Invalid access code. Please check your email for the correct code.')
+      setAccessCode('')
+    }
+  }
+
   // Help panel state
   const [showHelp, setShowHelp] = useState<Record<string, boolean>>({
     setup: false,
@@ -881,6 +905,81 @@ const openSessionSetup = () => {
     }
   }, [showViewSessionsModal]);
 
+  // Show access gate if no access
+  if (!hasAccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          {/* Logo/Title */}
+          <div className="text-center mb-8">
+            <div className="relative mb-4">
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent blur-3xl"></div>
+              <h1 className="relative text-4xl md:text-5xl font-bold">
+                <span className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-400 bg-clip-text text-transparent">
+                  ROULETTE TRACKER
+                </span>
+              </h1>
+            </div>
+            <p className="text-yellow-400/60 text-sm tracking-widest">PROFESSIONAL EDITION</p>
+          </div>
+
+          {/* Access Card */}
+          <div className="bg-gray-800 border-2 border-yellow-400/30 rounded-xl p-8 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500/20 border border-orange-400/50 rounded-full mb-4">
+                <span className="text-2xl">🔒</span>
+                <span className="text-orange-300 font-bold text-sm">BETA ACCESS REQUIRED</span>
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2">Welcome, Beta Tester!</h2>
+              <p className="text-gray-400 text-sm">
+                Enter your access code to unlock the app
+              </p>
+            </div>
+
+            <form onSubmit={handleAccessSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Access Code
+                </label>
+                <input
+                  type="text"
+                  value={accessCode}
+                  onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
+                  placeholder="Enter code from email"
+                  className="w-full px-4 py-3 bg-gray-900 border-2 border-gray-600 rounded-lg text-white placeholder-gray-500 focus:border-yellow-400 focus:outline-none text-center font-mono text-lg tracking-wider"
+                  autoFocus
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-gray-900 font-bold rounded-lg transition-all transform hover:scale-105"
+              >
+                Unlock Beta Access
+              </button>
+            </form>
+
+            <div className="mt-6 pt-6 border-t border-gray-700">
+              <p className="text-xs text-gray-500 text-center">
+                Don't have a code?{' '}
+                <a
+                  href="mailto:youremail@example.com?subject=Beta Access Request"
+                  className="text-yellow-400 hover:text-yellow-300 underline"
+                >
+                  Request access
+                </a>
+              </p>
+            </div>
+          </div>
+
+          {/* Info Footer */}
+          <div className="mt-6 text-center text-xs text-gray-500">
+            <p>Early Access Program • Limited Spots Available</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="text-white">
       <div className="max-w-[1920px] mx-auto p-4">
@@ -893,6 +992,57 @@ const openSessionSetup = () => {
             </span>
           </h1>
           <p className="text-yellow-400/60 mt-2 text-sm tracking-widest">PROFESSIONAL EDITION</p>
+        </div>
+
+        {/* EARLY ACCESS BANNER */}
+        <div className="bg-gradient-to-r from-orange-900/40 via-orange-800/40 to-orange-900/40 border-2 border-orange-400/50 rounded-lg p-4 mb-4 shadow-lg">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">⚡</span>
+                <h3 className="text-lg font-bold text-orange-300">EARLY ACCESS PROGRAM</h3>
+                <span className="px-2 py-0.5 bg-orange-500 text-white text-xs font-bold rounded">FREE BETA</span>
+              </div>
+              <p className="text-sm text-gray-300 mb-2">
+                You're testing an early version of Roulette Tracker Pro. Your feedback shapes the future of this tool!
+              </p>
+
+              {/* Mobile Warning */}
+              <div className="md:hidden bg-yellow-900/30 border border-yellow-400/40 rounded p-2 mb-2">
+                <div className="flex items-start gap-2">
+                  <span className="text-yellow-400 text-lg">📱</span>
+                  <div>
+                    <p className="text-xs font-semibold text-yellow-300 mb-1">Mobile Notice</p>
+                    <p className="text-xs text-gray-300">
+                      Best experience on desktop/tablet. Assistant & Analysis features not yet optimized for mobile.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 text-xs text-gray-400">
+                <span className="flex items-center gap-1">✓ All features unlocked</span>
+                <span>•</span>
+                <span className="flex items-center gap-1">✓ Free during beta</span>
+                <span>•</span>
+                <span className="flex items-center gap-1">⚠️ Occasional bugs expected</span>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => window.open('https://forms.gle/YOUR_FEEDBACK_FORM_ID', '_blank')}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-all flex items-center gap-2 whitespace-nowrap"
+              >
+                💬 Share Feedback
+              </button>
+              <button
+                onClick={() => window.open('https://forms.gle/YOUR_BUG_REPORT_FORM_ID', '_blank')}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all flex items-center gap-2 whitespace-nowrap"
+              >
+                🐛 Report Bug
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* OPTIMIZED: Combined Session + Financial Bar - Only show when session exists */}
