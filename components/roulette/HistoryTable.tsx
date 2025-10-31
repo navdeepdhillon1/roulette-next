@@ -3,6 +3,7 @@ import type { Spin } from '@/lib/types'
 import type { BetKey, SelectedGroup, BettingSystemConfig } from '@/types/bettingAssistant'
 import { WHEEL_ORDER, WHEEL_GROUPS } from '@/lib/roulette-logic'
 import TableLayoutModal from './TableLayoutModal'
+import WheelLayoutModal from '../WheelLayoutModal'
 
 interface HistoricalBetData {
   bets: Record<BetKey, number>
@@ -33,6 +34,8 @@ interface HistoryTableProps {
   onHistoricalBetsUpdate?: (newBets: Record<string, HistoricalBetData>) => void
   dealers?: Array<{ id: string; name: string; nickname?: string }>
   selectedCustomGroups?: SelectedGroup[]  // Custom groups from session config
+  onViewChange?: (view: string) => void  // Callback to switch parent view (table-view / wheel-view)
+  onBetModeChange?: (mode: 'table' | 'wheel' | 'custom') => void  // Callback to notify parent of bet mode changes
 }
 
 // Mapping of betting groups to their display info and BetKey
@@ -141,12 +144,15 @@ export default function HistoryTable({
   sessionStats,
   historicalBets = {},
   onHistoricalBetsUpdate,
-  dealers = []
+  dealers = [],
+  onViewChange,
+  onBetModeChange
 }: HistoryTableProps) {
   const [bets, setBets] = useState<Record<BetKey, number>>({} as Record<BetKey, number>)
   const [results, setResults] = useState<Record<BetKey, { won: boolean, amount: number }>>({})
   const [showResults, setShowResults] = useState(false)
   const [modalOpen, setModalOpen] = useState<'dozen' | 'column' | 'color' | 'evenOdd' | 'lowHigh' | 'alt1' | 'alt2' | 'alt3' | 'edgeCenter' | 'six' | null>(null)
+  const [wheelModalOpen, setWheelModalOpen] = useState<'specials1' | 'specials2' | 'voisins' | 'orphelins' | 'tiers' | 'non_voisin' | 'a' | 'b' | 'aa' | 'bb' | 'aaa' | 'bbb' | 'a6' | 'b6' | 'a9' | 'b9' | 'right' | 'left' | 'first_9' | 'second_9' | 'third_9' | 'fourth_9' | null>(null)
   const [betMode, setBetMode] = useState<'table' | 'wheel' | 'custom'>('table')
 
   console.log('🎮 Current betMode:', betMode)
@@ -853,6 +859,11 @@ export default function HistoryTable({
         onClose={() => setModalOpen(null)}
         groupType={modalOpen}
       />
+      <WheelLayoutModal
+        isOpen={wheelModalOpen !== null}
+        onClose={() => setWheelModalOpen(null)}
+        groupType={wheelModalOpen}
+      />
       {/* Mode Selector */}
       <div className="mb-2 flex items-center gap-2 px-2">
         <span className="text-xs text-gray-400 font-semibold">Bet Type:</span>
@@ -861,6 +872,7 @@ export default function HistoryTable({
             onClick={() => {
               console.log('🔄 Switching to TABLE mode')
               setBetMode('table')
+              onBetModeChange?.('table')  // Notify parent of bet mode change
             }}
             className={`px-3 py-1 text-xs font-semibold rounded ${
               betMode === 'table'
@@ -874,6 +886,7 @@ export default function HistoryTable({
             onClick={() => {
               console.log('🔄 Switching to WHEEL mode')
               setBetMode('wheel')
+              onBetModeChange?.('wheel')  // Notify parent of bet mode change
             }}
             className={`px-3 py-1 text-xs font-semibold rounded ${
               betMode === 'wheel'
@@ -887,6 +900,7 @@ export default function HistoryTable({
             onClick={() => {
               console.log('🔄 Switching to CUSTOM mode')
               setBetMode('custom')
+              onBetModeChange?.('custom')  // Notify parent of bet mode change
             }}
             className={`px-3 py-1 text-xs font-semibold rounded ${
               betMode === 'custom'
@@ -981,15 +995,69 @@ export default function HistoryTable({
               ) : betMode === 'wheel' ? (
                 // Wheel Groups Headers
                 <>
-              <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300">Specials 1</th>
-              <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300">Specials 2</th>
-              <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300">A/B</th>
-              <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300">AA/BB</th>
-              <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300">AAA/BBB</th>
-              <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300">Alt 6</th>
-              <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300">Alt 9</th>
-              <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300">Right/Left</th>
-              <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300">Quarters</th>
+              <th
+                className="px-1 py-1 text-center font-semibold text-xs text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors"
+                onClick={() => setWheelModalOpen('specials1')}
+                title="Click to view Specials 1 layout"
+              >
+                Specials 1 🔍
+              </th>
+              <th
+                className="px-1 py-1 text-center font-semibold text-xs text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors"
+                onClick={() => setWheelModalOpen('specials2')}
+                title="Click to view Specials 2 layout"
+              >
+                Specials 2 🔍
+              </th>
+              <th
+                className="px-1 py-1 text-center font-semibold text-xs text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors"
+                onClick={() => setWheelModalOpen('a')}
+                title="Click to view A/B layout"
+              >
+                A/B 🔍
+              </th>
+              <th
+                className="px-1 py-1 text-center font-semibold text-xs text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors"
+                onClick={() => setWheelModalOpen('aa')}
+                title="Click to view AA/BB layout"
+              >
+                AA/BB 🔍
+              </th>
+              <th
+                className="px-1 py-1 text-center font-semibold text-xs text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors"
+                onClick={() => setWheelModalOpen('aaa')}
+                title="Click to view AAA/BBB layout"
+              >
+                AAA/BBB 🔍
+              </th>
+              <th
+                className="px-1 py-1 text-center font-semibold text-xs text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors"
+                onClick={() => setWheelModalOpen('a6')}
+                title="Click to view Alternate 6's layout"
+              >
+                Alt 6 🔍
+              </th>
+              <th
+                className="px-1 py-1 text-center font-semibold text-xs text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors"
+                onClick={() => setWheelModalOpen('a9')}
+                title="Click to view Alternate 9's layout"
+              >
+                Alt 9 🔍
+              </th>
+              <th
+                className="px-1 py-1 text-center font-semibold text-xs text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors"
+                onClick={() => setWheelModalOpen('right')}
+                title="Click to view Right/Left layout"
+              >
+                Right/Left 🔍
+              </th>
+              <th
+                className="px-1 py-1 text-center font-semibold text-xs text-gray-300 cursor-pointer hover:bg-gray-700 transition-colors"
+                onClick={() => setWheelModalOpen('first_9')}
+                title="Click to view Quarters layout"
+              >
+                Quarters 🔍
+              </th>
               <th className="px-1 py-1 text-center font-semibold text-xs text-gray-300 w-14">Wheel Pos</th>
                 </>
               ) : (

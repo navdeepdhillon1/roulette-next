@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';  // Add useEffect
 import { Card } from '@/components/ui/card';
+import TableLayoutModal from './roulette/TableLayoutModal';
+import WheelLayoutModal from './WheelLayoutModal';
 
 interface SpecialBetsTableProps {
   spinHistory: number[];
@@ -33,6 +35,8 @@ interface SpecialBetsTableProps {
 }
 export default function SpecialBetsTable({ spinHistory }: SpecialBetsTableProps) {
     const [flashingRows, setFlashingRows] = useState<Set<string>>(new Set());
+    const [tableModalOpen, setTableModalOpen] = useState<'dozen' | 'column' | 'color' | 'evenOdd' | 'lowHigh' | 'alt1' | 'alt2' | 'alt3' | 'edgeCenter' | 'six' | null>(null);
+    const [wheelModalOpen, setWheelModalOpen] = useState<'voisins' | 'orphelins' | 'tiers' | 'first_9' | null>(null);
     const orderedHistory = spinHistory;
     
     
@@ -47,12 +51,12 @@ export default function SpecialBetsTable({ spinHistory }: SpecialBetsTableProps)
     { id: 's5', name: 'S5 (25-30)', type: 'six' },
     { id: 's6', name: 'S6 (31-36)', type: 'six' },
     // Alternative Groups
-    { id: 'a1a', name: 'Alt1 A', type: 'alternative' },
-    { id: 'a1b', name: 'Alt1 B', type: 'alternative' },
-    { id: 'a2a', name: 'Alt2 AA', type: 'alternative' },
-    { id: 'a2b', name: 'Alt2 BB', type: 'alternative' },
-    { id: 'a3a', name: 'Alt3 AAA', type: 'alternative' },
-    { id: 'a3b', name: 'Alt3 BBB', type: 'alternative' },
+    { id: 'a1a', name: 'A', type: 'alternative' },
+    { id: 'a1b', name: 'B', type: 'alternative' },
+    { id: 'a2a', name: 'AA', type: 'alternative' },
+    { id: 'a2b', name: 'BB', type: 'alternative' },
+    { id: 'a3a', name: 'AAA', type: 'alternative' },
+    { id: 'a3b', name: 'BBB', type: 'alternative' },
     // Position Groups
     { id: 'edge', name: 'Edge', type: 'position' },
     { id: 'center', name: 'Center', type: 'position' },
@@ -222,7 +226,19 @@ export default function SpecialBetsTable({ spinHistory }: SpecialBetsTableProps)
   return (
     <div className="space-y-4">
       <style>{pulseStyles}</style>
-      
+
+      <TableLayoutModal
+        isOpen={tableModalOpen !== null}
+        onClose={() => setTableModalOpen(null)}
+        groupType={tableModalOpen}
+      />
+
+      <WheelLayoutModal
+        isOpen={wheelModalOpen !== null}
+        onClose={() => setWheelModalOpen(null)}
+        groupType={wheelModalOpen}
+      />
+
       <Card className="bg-gray-900 border-gray-700">
         <div className="overflow-x-auto h-full">
           <table className="w-full text-xs text-white">
@@ -316,15 +332,39 @@ export default function SpecialBetsTable({ spinHistory }: SpecialBetsTableProps)
                       ${isLastInGroup ? groupColors[group.type] : 'border-gray-800'}
                     `}
                   >
-                    <td className={`
-                      px-2 py-2 font-semibold border-r border-gray-700 sticky left-0 bg-gray-900
-                      ${group.type === 'six' ? 'text-cyan-400' : ''}
-                      ${group.type === 'alternative' ? 'text-purple-400' : ''}
-                      ${group.type === 'position' ? 'text-pink-400' : ''}
-                      ${group.type === 'wheelquarter' ? 'text-yellow-400' : ''}
-                      ${group.type === 'wheelbets' ? 'text-indigo-400' : ''}
-                    `}>
-                      {group.name}
+                    <td
+                      className={`
+                        px-2 py-2 font-semibold border-r border-gray-700 sticky left-0 bg-gray-900 cursor-pointer hover:bg-gray-800 transition-colors
+                        ${group.type === 'six' ? 'text-cyan-400' : ''}
+                        ${group.type === 'alternative' ? 'text-purple-400' : ''}
+                        ${group.type === 'position' ? 'text-pink-400' : ''}
+                        ${group.type === 'wheelquarter' ? 'text-yellow-400' : ''}
+                        ${group.type === 'wheelbets' ? 'text-indigo-400' : ''}
+                      `}
+                      onClick={() => {
+                        // Wheel-based groups use WheelLayoutModal
+                        if (group.type === 'wheelquarter') {
+                          setWheelModalOpen('first_9'); // All wheel quarters show the 4-quarter view
+                        } else if (group.type === 'wheelbets') {
+                          if (group.id === 'voisins') setWheelModalOpen('voisins');
+                          else if (group.id === 'tiers') setWheelModalOpen('tiers');
+                          else if (group.id === 'orphelins') setWheelModalOpen('orphelins');
+                        }
+                        // Table-based groups use TableLayoutModal
+                        else if (group.type === 'six') {
+                          setTableModalOpen('six');
+                        } else if (group.type === 'alternative') {
+                          const modalType =
+                            (group.id === 'a1a' || group.id === 'a1b') ? 'alt1' :
+                            (group.id === 'a2a' || group.id === 'a2b') ? 'alt2' : 'alt3';
+                          setTableModalOpen(modalType);
+                        } else if (group.type === 'position') {
+                          setTableModalOpen('edgeCenter');
+                        }
+                      }}
+                      title={`Click to view ${group.name} layout`}
+                    >
+                      {group.name} {(group.type === 'six' || group.type === 'alternative' || group.type === 'position' || group.type === 'wheelquarter' || group.type === 'wheelbets') && '🔍'}
                     </td>
                     
                     <td className={`px-1 py-2 text-center border-r border-gray-700 bg-blue-900/20 ${

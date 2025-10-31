@@ -103,6 +103,7 @@ export default function RouletteSystem() {
   
   const [inputNumber, setInputNumber] = useState('')
   const [actionView, setActionView] = useState('table-view')
+  const [betMode, setBetMode] = useState<'table' | 'wheel' | 'custom'>('table')
   const [showHeatMap, setShowHeatMap] = useState(false)
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<MainTab>('table-view')
@@ -897,9 +898,9 @@ const openSessionSetup = () => {
         {/* OPTIMIZED: Combined Session + Financial Bar - Only show when session exists */}
 {session && (
   <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border border-yellow-400/30 rounded-lg p-3 mb-4">
-    <div className="flex items-center justify-between">
+    <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
       {/* LEFT: Session Info */}
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-3 sm:gap-6 overflow-x-auto w-full lg:w-auto">
         <div>
           <span className="text-yellow-400/60 text-[10px] uppercase tracking-wider">Session</span>
           <p className="text-sm font-bold text-yellow-400">{session.id.slice(0, 12)}...</p>
@@ -945,38 +946,38 @@ const openSessionSetup = () => {
       </div>
 
       {/* RIGHT: Session Management Buttons */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 overflow-x-auto w-full lg:w-auto">
         <button
           onClick={() => setShowViewSessionsModal(true)}
-          className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5"
+          className="px-2 sm:px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap"
           title="View saved sessions"
         >
           📁 Saved
         </button>
         <button
           onClick={() => setShowSaveSessionModal(true)}
-          className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5"
+          className="px-2 sm:px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap"
           title="Save current session to cloud"
         >
           💾 Save
         </button>
         <button
           onClick={() => setShowRestartSessionModal(true)}
-          className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5"
+          className="px-2 sm:px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap"
           title="Start fresh - clears all data"
         >
           🔄 Restart
         </button>
         <button
           onClick={() => setShowEndSessionModal(true)}
-          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5"
+          className="px-2 sm:px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 whitespace-nowrap"
           title="Archive session and return to setup"
         >
           🏁 End
         </button>
         <button
           onClick={downloadSessionCSV}
-          className="px-4 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+          className="px-2 sm:px-4 py-1.5 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 whitespace-nowrap"
           title="Download session data as CSV"
         >
           📊 Export CSV
@@ -986,63 +987,28 @@ const openSessionSetup = () => {
   </div>
 )}
 
-        {/* OPTIMIZED: Combined Input Bar + View Toggle - Only show when session exists */}
+        {/* Last 20 Spins Bar - Only show when session exists */}
 {session && assistantSubTab === 'action' && (
   <Card className="mb-4 p-3 bg-gray-900 border-gray-700">
-    <div className="flex items-center justify-between">
-      {/* LEFT: Last 20 Spins */}
-      <div className="flex items-center gap-2">
-        <span className="text-yellow-400 font-bold text-sm">Last 20:</span>
-        <div className="flex gap-1">
-          {spins.slice(0, 20).map((spin, idx) => (
-            <div
-              key={idx}
-              className={`
-                w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
-                ${idx === 0 ? 'ring-2 ring-yellow-400 animate-pulse' : ''}
-                ${spin.number === 0 ? 'bg-green-600' :
-                  [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(spin.number)
-                    ? 'bg-red-600' : 'bg-black border border-gray-600'}
-                text-white cursor-pointer hover:scale-110 transition-all
-              `}
-              onClick={() => addNumber(spin.number)}
-            >
-              {spin.number}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* MIDDLE: Input Controls */}
-      <div className="flex items-center gap-2">
-        <input
-          type="number"
-          min="0"
-          max="36"
-          value={inputNumber}
-          onChange={(e) => setInputNumber(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && addNumber()}
-          className="w-14 px-2 py-1 bg-black border border-gray-600 rounded text-center text-sm text-white"
-          placeholder="0-36"
-        />
-        <button
-          onClick={() => addNumber()}
-          className="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm font-bold"
-        >
-          ADD
-        </button>
-        <button
-          onClick={undoLastSpin}
-          disabled={spins.length === 0}
-          className={`px-3 py-1 rounded text-sm font-bold transition-all ${
-            spins.length === 0
-              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-              : 'bg-orange-600 hover:bg-orange-700 text-white'
-          }`}
-          title="Undo last spin"
-        >
-          ↩ UNDO
-        </button>
+    <div className="flex items-center gap-2">
+      <span className="text-yellow-400 font-bold text-sm">Last 20:</span>
+      <div className="flex gap-1">
+        {spins.slice(0, 20).map((spin, idx) => (
+          <div
+            key={idx}
+            className={`
+              w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
+              ${idx === 0 ? 'ring-2 ring-yellow-400 animate-pulse' : ''}
+              ${spin.number === 0 ? 'bg-green-600' :
+                [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(spin.number)
+                  ? 'bg-red-600' : 'bg-black border border-gray-600'}
+              text-white cursor-pointer hover:scale-110 transition-all
+            `}
+            onClick={() => addNumber(spin.number)}
+          >
+            {spin.number}
+          </div>
+        ))}
       </div>
     </div>
   </Card>
@@ -1405,49 +1371,97 @@ const openSessionSetup = () => {
               <div>
 
                 <div className="bg-black/40 backdrop-blur rounded-xl border border-yellow-400/20">
-                  <div className="flex gap-0 border-b border-yellow-400/20">
+                  <div className="flex gap-0 border-b border-yellow-400/20 overflow-x-auto">
                     <button
                       onClick={() => setAssistantSubTab('setup')}
-                      className={`px-6 py-3 font-semibold transition-all border-r border-yellow-400/20 ${
+                      className={`px-4 sm:px-6 py-3 font-semibold transition-all border-r border-yellow-400/20 whitespace-nowrap ${
                         assistantSubTab === 'setup'
                           ? 'bg-gradient-to-b from-yellow-400/20 to-transparent text-yellow-400'
                           : 'text-gray-400 hover:text-white'
                       }`}
                     >
-                      Setup
+                      <span className="flex items-center gap-2">
+                        Setup
+                        <span
+                          onClick={(e) => { e.stopPropagation(); toggleHelp('setup'); }}
+                          className="text-xs opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+                          title="Show setup help"
+                        >
+                          ℹ️
+                        </span>
+                      </span>
                     </button>
                     <button
                       onClick={() => setAssistantSubTab('action')}
-                      className={`px-6 py-3 font-semibold transition-all border-r border-yellow-400/20 ${
+                      className={`px-4 sm:px-6 py-3 font-semibold transition-all border-r border-yellow-400/20 whitespace-nowrap ${
                         assistantSubTab === 'action'
                           ? 'bg-gradient-to-b from-yellow-400/20 to-transparent text-yellow-400'
                           : 'text-gray-400 hover:text-white'
                       } ${!session ? 'opacity-50 cursor-not-allowed' : ''}`}
                       disabled={!session}
                     >
-                      Game Action
+                      <span className="flex items-center gap-2">
+                        Game Action
+                        <span
+                          onClick={(e) => { if (session) { e.stopPropagation(); toggleHelp('action'); } }}
+                          className={`text-xs opacity-60 hover:opacity-100 transition-opacity ${session ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                          title="Show game action help"
+                        >
+                          ℹ️
+                        </span>
+                      </span>
                     </button>
                     <button
                       onClick={() => setAssistantSubTab('analysis')}
-                      className={`px-6 py-3 font-semibold transition-all border-r border-yellow-400/20 ${
+                      className={`px-4 sm:px-6 py-3 font-semibold transition-all border-r border-yellow-400/20 whitespace-nowrap ${
                         assistantSubTab === 'analysis'
                           ? 'bg-gradient-to-b from-yellow-400/20 to-transparent text-yellow-400'
                           : 'text-gray-400 hover:text-white'
                       } ${!session ? 'opacity-50 cursor-not-allowed' : ''}`}
                       disabled={!session}
                     >
-                      Analysis
+                      <span className="flex items-center gap-2">
+                        Analysis
+                        <span
+                          onClick={(e) => { if (session) { e.stopPropagation(); toggleHelp('analysis'); } }}
+                          className={`text-xs opacity-60 hover:opacity-100 transition-opacity ${session ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                          title="Show analysis help"
+                        >
+                          ℹ️
+                        </span>
+                      </span>
                     </button>
                     <button
                       onClick={() => setAssistantSubTab('performance')}
-                      className={`px-6 py-3 font-semibold transition-all ${
+                      className={`px-4 sm:px-6 py-3 font-semibold transition-all border-r border-yellow-400/20 whitespace-nowrap ${
                         assistantSubTab === 'performance'
                           ? 'bg-gradient-to-b from-yellow-400/20 to-transparent text-yellow-400'
                           : 'text-gray-400 hover:text-white'
                       } ${!session ? 'opacity-50 cursor-not-allowed' : ''}`}
                       disabled={!session}
                     >
-                      Performance
+                      <span className="flex items-center gap-2">
+                        Performance
+                        <span
+                          onClick={(e) => { if (session) { e.stopPropagation(); toggleHelp('performance'); } }}
+                          className={`text-xs opacity-60 hover:opacity-100 transition-opacity ${session ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                          title="Show performance help"
+                        >
+                          ℹ️
+                        </span>
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        // Toggle all help sections when Help tab is clicked
+                        const currentTab = assistantSubTab;
+                        toggleHelp(currentTab);
+                      }}
+                      className="px-4 sm:px-6 py-3 font-semibold transition-all text-cyan-400 hover:text-cyan-300 flex items-center gap-2 whitespace-nowrap"
+                      title="Show help for current tab"
+                    >
+                      <span className="text-lg">💡</span>
+                      Help
                     </button>
 
 
@@ -1596,123 +1610,24 @@ const openSessionSetup = () => {
                       </div>
                     )}
 
-                    {/* Table/Wheel Toggle & Help Button */}
-                    {assistantSubTab === 'action' && session && (
-                      <div className="mb-6">
-                        <div className="flex items-center justify-between">
-                          {/* LEFT: Table/Wheel Toggle Buttons */}
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setActionView(actionView.startsWith('wheel') ? 'table-view' : actionView)}
-                              className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
-                                !actionView.startsWith('wheel')
-                                  ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg'
-                                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                              }`}
-                            >
-                              📊 Table
-                            </button>
-                            <button
-                              onClick={() => setActionView(actionView.startsWith('table') ? 'wheel-view' : actionView)}
-                              className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
-                                actionView.startsWith('wheel')
-                                  ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-black shadow-lg'
-                                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                              }`}
-                            >
-                              🎰 Wheel
-                            </button>
-                          </div>
-
-                          {/* RIGHT: Compact Help Button */}
-                          <button
-                            onClick={() => toggleHelp('action')}
-                            className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
-                              showHelp.action
-                                ? 'bg-cyan-600 text-white'
-                                : 'bg-cyan-900/30 text-cyan-300 hover:bg-cyan-900/50'
-                            }`}
-                            title="Toggle help guide"
-                          >
-                            💡 Help
-                          </button>
-                        </div>
-
-                        {/* Expandable Help Content */}
-                        {showHelp.action && (
-                          <div className="mt-4 border border-cyan-400/30 rounded-lg overflow-hidden">
-                            <div className="bg-cyan-950/30 p-4 text-sm text-gray-300 space-y-4">
-                            <p className="font-semibold text-cyan-300 text-base">How to Use the Professional Tracker</p>
-
-                            {/* Getting Started Section */}
-                            <div className="bg-gradient-to-r from-yellow-900/20 to-transparent border-l-4 border-yellow-400 rounded-lg p-3">
-                              <p className="text-yellow-300 font-semibold mb-2">🎓 Getting Started</p>
-                              <div className="space-y-2 text-xs">
-                                <p><span className="font-semibold">Step 1 - Master Number Tracking:</span> If you're new, start by learning how to add number results quickly and get familiar with the interface. Practice adding numbers until you feel comfortable with the flow.</p>
-                                <p><span className="font-semibold">Step 2 - Learn Bet Tracking:</span> Once you're comfortable tracking numbers, you can start learning how to track your bets alongside the results. This helps you monitor your actual gameplay and profitability.</p>
-                              </div>
-                            </div>
-
-                            {/* Number Tracking */}
-                            <div className="space-y-3">
-                              <div className="bg-black/30 rounded-lg p-3 border-l-2 border-blue-400">
-                                <p className="mb-2"><span className="text-cyan-400 font-semibold">🎯 Adding Numbers (Result Tracking)</span></p>
-                                <p className="text-xs mb-2">Click any number on the table/wheel or type 0-36 in the input box and press ADD. The spin will be recorded instantly and all statistics update in real-time.</p>
-                                <p className="text-xs text-gray-400">Hot numbers (3+ hits) will pulse with yellow rings to help you spot trends quickly.</p>
-                              </div>
-
-                              {/* Bet Tracking */}
-                              <div className="bg-black/30 rounded-lg p-3 border-l-2 border-green-400">
-                                <p className="mb-2"><span className="text-cyan-400 font-semibold">💰 Bet Tracking (Track Your Actual Bets)</span></p>
-                                <div className="text-xs space-y-2">
-                                  <p><span className="font-semibold">Placing Bets:</span></p>
-                                  <ul className="ml-4 space-y-1">
-                                    <li>• <span className="font-semibold">One click</span> on a betting group places 1 unit bet</li>
-                                    <li>• <span className="font-semibold">Multiple clicks</span> keep adding unit bets to that group (e.g., 3 clicks = 3 units)</li>
-                                    <li>• You can bet on multiple groups simultaneously</li>
-                                  </ul>
-                                  <p><span className="font-semibold">Correcting Mistakes:</span> If you selected a wrong bet, use the <span className="text-red-400 font-semibold">'Clear Bet'</span> button to remove it before adding the result.</p>
-                                  <p><span className="font-semibold">Instant Results:</span> As soon as you add a winning number, the system automatically calculates results for all betting groups you placed bets on. Win/loss amounts update instantly.</p>
-                                </div>
-                              </div>
-
-                              <div className="bg-black/30 rounded-lg p-3 border-l-2 border-purple-400">
-                                <p className="mb-2"><span className="text-cyan-400 font-semibold">📊 Views & Analysis</span></p>
-                                <div className="text-xs space-y-1">
-                                  <p><span className="font-semibold">Table View:</span> Traditional roulette table layout with color-coded numbers and hit counts.</p>
-                                  <p><span className="font-semibold">Wheel View:</span> Physical wheel layout showing Voisins, Tiers, and Orphelins sectors.</p>
-                                  <p><span className="font-semibold">Statistics Tabs:</span> Switch between Common (red/black, dozens), Special (A/B groupings), Wheel (sectors), and Numbers (individual analysis).</p>
-                                </div>
-                              </div>
-
-                              <div className="bg-black/30 rounded-lg p-3 border-l-2 border-orange-400">
-                                <p className="mb-2"><span className="text-cyan-400 font-semibold">↩ Undo & Corrections</span></p>
-                                <p className="text-xs">Made a mistake? Use the Undo button to remove the last spin. This works for local sessions and helps you maintain accurate tracking.</p>
-                              </div>
-                            </div>
-
-                            {/* Pro Tips */}
-                            <div className="bg-cyan-900/20 rounded-lg p-3 border border-cyan-400/30">
-                              <p className="text-xs text-cyan-300 mb-2"><span className="font-bold">💡 Pro Tips:</span></p>
-                              <ul className="text-xs text-gray-300 space-y-1 ml-4">
-                                <li>• Watch the "Last 20" spins bar at the top - shows recent patterns at a glance</li>
-                                <li>• Start with just number tracking until you're fast and comfortable</li>
-                                <li>• Once confident, add bet tracking to monitor your actual gameplay profitability</li>
-                                <li>• Use the statistics tabs to identify hot/cold trends across all 47 betting groups</li>
-                              </ul>
-                            </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
                     {/* EDGE-TO-EDGE LAYOUT FOR TABLE VIEW */}
                     {assistantSubTab === 'action' && session && actionView === 'table-view' && (
-                      <div className="flex gap-2 min-h-screen w-full">
+                      <div className="flex flex-col lg:flex-row gap-2 min-h-screen w-full">
                         {/* LEFT SIDE: Table View - Takes up left half */}
-                        <div className="w-1/2 p-2 pb-2 overflow-y-auto sticky top-0 self-start max-h-screen">
+                        <div className="w-full lg:w-1/2 p-2 pb-2 overflow-y-auto lg:sticky lg:top-0 lg:self-start lg:max-h-screen">
                           <div className="space-y-1">
+                              {/* Conditional Visual: Table Grid or Wheel Train */}
+                              {betMode === 'wheel' ? (
+                                /* WHEEL TRAIN VIEW */
+                                <div className="mb-4">
+                                  <WheelLayout
+                                    spinHistory={spins}
+                                    onNumberAdded={addNumber}
+                                  />
+                                </div>
+                              ) : (
+                                /* TABLE GRID VIEW (for 'table' and 'custom' modes) */
+                                <>
                               {/* Zero with hit count */}
                               <div className="relative">
                                 <button
@@ -1730,7 +1645,8 @@ const openSessionSetup = () => {
                               </div>
 
                               {/* Main number grid with heat map */}
-                              <div className="grid grid-cols-12 gap-1">
+                              <div className="overflow-x-auto">
+                              <div className="grid grid-cols-12 gap-1 min-w-[600px]">
                                 {/* Top row */}
                                 {[3,6,9,12,15,18,21,24,27,30,33,36].map(num => {
                                   const hitCount = spins.slice(0, 36).filter(s => s.number === num).length;
@@ -1821,66 +1737,105 @@ const openSessionSetup = () => {
                                   );
                                 })}
                               </div>
+                              </div>
+                              </>
+                              )}
+                              {/* End Conditional Visual */}
+
+                              {/* ADD/UNDO CONTROLS */}
+                              <div className="flex items-center justify-end gap-2 my-3 p-2 bg-gray-800/50 rounded-lg border border-gray-700">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max="36"
+                                  value={inputNumber}
+                                  onChange={(e) => setInputNumber(e.target.value)}
+                                  onKeyPress={(e) => e.key === 'Enter' && addNumber()}
+                                  className="w-20 px-2 py-1.5 bg-black border border-gray-600 rounded text-center text-sm font-bold text-white"
+                                  placeholder="0-36"
+                                />
+                                <button
+                                  onClick={() => addNumber()}
+                                  className="px-4 py-1.5 bg-green-600 hover:bg-green-700 rounded text-sm font-bold transition-all"
+                                >
+                                  ADD
+                                </button>
+                                <button
+                                  onClick={undoLastSpin}
+                                  disabled={spins.length === 0}
+                                  className={`px-4 py-1.5 rounded text-sm font-bold transition-all ${
+                                    spins.length === 0
+                                      ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                      : 'bg-orange-600 hover:bg-orange-700 text-white'
+                                  }`}
+                                  title="Undo last spin"
+                                >
+                                  ↩ UNDO
+                                </button>
+                              </div>
 
                               {/* HISTORY SECTION */}
                               <div className="bg-gray-800 rounded-lg border border-gray-700 p-4">
                                 <h3 className="text-xl font-bold text-yellow-400 mb-4">History</h3>
                                 <HistoryTable
                                   spins={spins}
+                                  baseUnit={playerSetup.betUnit}
                                   historicalBets={historicalBets}
                                   onHistoricalBetsUpdate={setHistoricalBets}
                                   onBetPlaced={handleBetPlaced}
+                                  onViewChange={setActionView}
+                                  onBetModeChange={setBetMode}
                                 />
                               </div>
                             </div>
                           </div>
 
                         {/* RIGHT SIDE: Analysis Tables - Takes up right half */}
-                        <div className="w-1/2 p-2 overflow-y-auto">
+                        <div className="w-full lg:w-1/2 p-2 overflow-y-auto">
                           {/* Quick Scan Title */}
                           <h3 className="text-lg font-bold text-cyan-400 mb-3">⚡ Quick Scan</h3>
 
                           {/* Analysis View Tabs */}
-                          <div className="flex gap-1 mb-3 bg-gray-900/50 p-1 rounded-lg">
+                          <div className="flex gap-1 mb-3 bg-gray-900/50 p-1 rounded-lg overflow-x-auto">
                             <button
                               onClick={() => setAnalysisView('common')}
-                              className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
+                              className={`px-3 py-1.5 rounded text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
                                 analysisView === 'common'
                                   ? 'bg-cyan-600 text-white'
                                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                               }`}
                             >
-                              Common
+                              Table Common Groups
                             </button>
                             <button
                               onClick={() => setAnalysisView('special')}
-                              className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
+                              className={`px-3 py-1.5 rounded text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
                                 analysisView === 'special'
                                   ? 'bg-cyan-600 text-white'
                                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                               }`}
                             >
-                              Special
+                              Table Special Groups
                             </button>
                             <button
                               onClick={() => setAnalysisView('wheel')}
-                              className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
+                              className={`px-3 py-1.5 rounded text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
                                 analysisView === 'wheel'
                                   ? 'bg-cyan-600 text-white'
                                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                               }`}
                             >
-                              Wheel
+                              Wheel Groups
                             </button>
                             <button
                               onClick={() => setAnalysisView('numbers')}
-                              className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
+                              className={`px-3 py-1.5 rounded text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
                                 analysisView === 'numbers'
                                   ? 'bg-cyan-600 text-white'
                                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                               }`}
                             >
-                              Numbers
+                              Individual Numbers
                             </button>
                           </div>
 
@@ -1905,9 +1860,9 @@ const openSessionSetup = () => {
 
                     {/* WHEEL VIEWS */}
                     {assistantSubTab === 'action' && session && actionView.startsWith('wheel') && (
-  <div className="flex gap-2 min-h-screen -m-6">
+  <div className="flex flex-col lg:flex-row gap-2 min-h-screen -m-6">
     {/* Left Side: Wheel Train + History */}
-    <div className="w-1/2 p-2 overflow-y-auto sticky top-0 self-start max-h-screen space-y-2">
+    <div className="w-full lg:w-1/2 p-2 overflow-y-auto lg:sticky lg:top-0 lg:self-start lg:max-h-screen space-y-2">
       <WheelLayout
         spinHistory={spins}
         onNumberAdded={(num) => addNumber(num)}
@@ -1921,51 +1876,51 @@ const openSessionSetup = () => {
       />
     </div>
     {/* Right Side: Analysis Tables */}
-    <div className="w-1/2 p-2 overflow-y-auto">
+    <div className="w-full lg:w-1/2 p-2 overflow-y-auto">
       {/* Quick Scan Title */}
       <h3 className="text-lg font-bold text-cyan-400 mb-3">⚡ Quick Scan</h3>
 
       {/* Analysis View Tabs */}
-      <div className="flex gap-1 mb-3 bg-gray-900/50 p-1 rounded-lg">
+      <div className="flex gap-1 mb-3 bg-gray-900/50 p-1 rounded-lg overflow-x-auto">
         <button
           onClick={() => setAnalysisView('common')}
-          className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
+          className={`px-3 py-1.5 rounded text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
             analysisView === 'common'
               ? 'bg-cyan-600 text-white'
               : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
           }`}
         >
-          Common
+          Table Common Groups
         </button>
         <button
           onClick={() => setAnalysisView('special')}
-          className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
+          className={`px-3 py-1.5 rounded text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
             analysisView === 'special'
               ? 'bg-cyan-600 text-white'
               : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
           }`}
         >
-          Special
+          Table Special Groups
         </button>
         <button
           onClick={() => setAnalysisView('wheel')}
-          className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
+          className={`px-3 py-1.5 rounded text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
             analysisView === 'wheel'
               ? 'bg-cyan-600 text-white'
               : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
           }`}
         >
-          Wheel
+          Wheel Groups
         </button>
         <button
           onClick={() => setAnalysisView('numbers')}
-          className={`px-3 py-1.5 rounded text-sm font-semibold transition-all ${
+          className={`px-3 py-1.5 rounded text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
             analysisView === 'numbers'
               ? 'bg-cyan-600 text-white'
               : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
           }`}
         >
-          Numbers
+          Individual Numbers
         </button>
       </div>
 
@@ -2086,46 +2041,46 @@ const openSessionSetup = () => {
 
   {/* Stats type selector */}
   <div className="flex justify-between items-center mb-4">
-  <div className="flex gap-2">
+  <div className="flex gap-2 overflow-x-auto">
     <button
       onClick={() => setAnalysisView('common')}
-      className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+      className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
         analysisView === 'common'
           ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50'
           : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
       }`}
     >
-      Common
+      Table Common Groups
     </button>
     <button
       onClick={() => setAnalysisView('special')}
-      className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+      className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
         analysisView === 'special'
           ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50'
           : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
       }`}
     >
-      Special
+      Table Special Groups
     </button>
     <button
       onClick={() => setAnalysisView('wheel')}
-      className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+      className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
         analysisView === 'wheel'
           ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50'
           : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
       }`}
     >
-      Wheel
+      Wheel Groups
     </button>
     <button
       onClick={() => setAnalysisView('numbers')}
-      className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+      className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
         analysisView === 'numbers'
           ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50'
           : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
       }`}
     >
-      Numbers
+      Individual Numbers
     </button>
   </div>
   </div>

@@ -1,6 +1,7 @@
 // WheelBetStats.tsx
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
+import WheelLayoutModal from './WheelLayoutModal';
 
 interface WheelBetStatsProps {
   spinHistory: number[];
@@ -30,6 +31,7 @@ const pulseStyles = `
 `;
 export default function WheelBetStats({ spinHistory }: WheelBetStatsProps) {
   const [flashingRows, setFlashingRows] = useState<Set<string>>(new Set());
+  const [modalOpen, setModalOpen] = useState<'voisins' | 'orphelins' | 'tiers' | 'non_voisin' | 'a' | 'b' | 'aa' | 'bb' | 'aaa' | 'bbb' | 'a6' | 'b6' | 'a9' | 'b9' | 'right' | 'left' | 'first_9' | 'second_9' | 'third_9' | 'fourth_9' | null>(null);
   const orderedHistory = spinHistory;
   
   // Define wheel bet groups
@@ -323,13 +325,34 @@ export default function WheelBetStats({ spinHistory }: WheelBetStatsProps) {
                     ${isLastInGroup ? groupColors[group.type] : 'border-gray-800'}
                   `}
                 >
-                  <td className={`
-                    px-2 py-2 font-semibold border-r border-gray-700 sticky left-0 bg-gray-900
-                    ${group.type === 'special' ? 'text-purple-400' : ''}
-                    ${group.type === 'eighteen' ? 'text-green-400' : ''}
-                    ${group.type === 'sectors' ? 'text-cyan-400' : ''}
-                  `}>
-                    {group.name}
+                  <td
+                    className={`
+                      px-2 py-2 font-semibold border-r border-gray-700 sticky left-0 bg-gray-900 cursor-pointer hover:bg-gray-800 transition-colors
+                      ${group.type === 'special' ? 'text-purple-400' : ''}
+                      ${group.type === 'eighteen' ? 'text-green-400' : ''}
+                      ${group.type === 'sectors' ? 'text-cyan-400' : ''}
+                    `}
+                    onClick={() => {
+                      // Map all groups to their wheel modal IDs
+                      if (group.type === 'special') {
+                        if (group.id === 'voisins') setModalOpen('voisins');
+                        else if (group.id === 'orphelins') setModalOpen('orphelins');
+                        else if (group.id === 'tiers') setModalOpen('tiers');
+                        else if (group.id === 'non-voisin') setModalOpen('non_voisin');
+                      } else if (group.type === 'sectors') {
+                        // Map sector groups to wheel quadrant IDs
+                        if (group.id === '1st9') setModalOpen('first_9');
+                        else if (group.id === '2nd9') setModalOpen('second_9');
+                        else if (group.id === '3rd9') setModalOpen('third_9');
+                        else if (group.id === '4th9') setModalOpen('fourth_9');
+                      } else if (group.type === 'eighteen') {
+                        // All eighteen groups use wheel modal
+                        setModalOpen(group.id as any);
+                      }
+                    }}
+                    title={`Click to view ${group.name} layout`}
+                  >
+                    {group.name} 🔍
                   </td>
                   
                   <td className={`px-1 py-2 text-center border-r border-gray-700 bg-blue-900/20 ${
@@ -387,6 +410,13 @@ export default function WheelBetStats({ spinHistory }: WheelBetStatsProps) {
         </table>
       </div>
     </Card>
+
+    {/* Wheel Layout Modal */}
+    <WheelLayoutModal
+      isOpen={modalOpen !== null}
+      onClose={() => setModalOpen(null)}
+      groupType={modalOpen}
+    />
     </div>
   );
 }

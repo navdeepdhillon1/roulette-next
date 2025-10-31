@@ -15,7 +15,7 @@ interface GroupConfig {
 interface TableLayoutModalProps {
   isOpen: boolean
   onClose: () => void
-  groupType: 'dozen' | 'column' | 'color' | 'evenOdd' | 'lowHigh' | 'alt1' | 'alt2' | 'alt3' | 'edgeCenter' | 'six' | null
+  groupType: 'dozen' | 'column' | 'color' | 'evenOdd' | 'lowHigh' | 'alt1' | 'alt2' | 'alt3' | 'edgeCenter' | 'six' | 'wheelQuarters' | 'voisins' | 'tiers' | 'orphelins' | null
 }
 
 const GROUP_CONFIGS: Record<string, GroupConfig> = {
@@ -93,6 +93,33 @@ const GROUP_CONFIGS: Record<string, GroupConfig> = {
       { label: '4th Six (19-24)', numbers: [19,20,21,22,23,24], color: '#15803D' },
       { label: '5th Six (25-30)', numbers: [25,26,27,28,29,30], color: '#1D4ED8' },
       { label: '6th Six (31-36)', numbers: [31,32,33,34,35,36], color: '#B91C1C' }
+    ]
+  },
+  wheelQuarters: {
+    name: 'Wheel Quarters',
+    groups: [
+      { label: 'Wheel Q1', numbers: [0,32,15,19,4,21,2,25,17], color: '#EAB308' },
+      { label: 'Wheel Q2', numbers: [34,6,27,13,36,11,30,8,23], color: '#06B6D4' },
+      { label: 'Wheel Q3', numbers: [10,5,24,16,33,1,20,14,31], color: '#8B5CF6' },
+      { label: 'Wheel Q4', numbers: [9,22,18,29,7,28,12,35,3,26], color: '#EC4899' }
+    ]
+  },
+  voisins: {
+    name: 'Voisins du Zéro',
+    groups: [
+      { label: 'Voisins (Neighbors of Zero)', numbers: [0,2,3,4,7,12,15,18,19,21,22,25,26,28,29,32,35], color: '#6366F1' }
+    ]
+  },
+  tiers: {
+    name: 'Tiers du Cylindre',
+    groups: [
+      { label: 'Tiers (Third of the Wheel)', numbers: [5,8,10,11,13,16,23,24,27,30,33,36], color: '#14B8A6' }
+    ]
+  },
+  orphelins: {
+    name: 'Orphelins',
+    groups: [
+      { label: 'Orphelins (Orphans)', numbers: [1,6,9,14,17,20,31,34], color: '#F59E0B' }
     ]
   }
 }

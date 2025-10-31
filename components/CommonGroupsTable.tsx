@@ -1,6 +1,7 @@
 // CommonGroupsTable.tsx
 import React, { useState, useEffect } from 'react';  // Add useEffect
 import { Card } from '@/components/ui/card';
+import TableLayoutModal from './roulette/TableLayoutModal';
 
 // Add this style tag right before your component function
 const pulseStyles = `
@@ -33,6 +34,7 @@ interface CommonGroupsTableProps {
 
 export default function CommonGroupsTable({ spinHistory }: CommonGroupsTableProps) {
   const [flashingRows, setFlashingRows] = useState<Set<string>>(new Set());
+  const [modalOpen, setModalOpen] = useState<'dozen' | 'column' | 'color' | 'evenOdd' | 'lowHigh' | null>(null);
   const orderedHistory = spinHistory;
  
   
@@ -224,7 +226,12 @@ export default function CommonGroupsTable({ spinHistory }: CommonGroupsTableProp
   return (
     <div className="space-y-4">
       <style>{pulseStyles}</style>
-      
+
+      <TableLayoutModal
+        isOpen={modalOpen !== null}
+        onClose={() => setModalOpen(null)}
+        groupType={modalOpen}
+      />
 
       {/* Statistics Table */}
 <Card className="bg-gray-900 border-gray-700">
@@ -330,19 +337,32 @@ export default function CommonGroupsTable({ spinHistory }: CommonGroupsTableProp
                 ${isLastInGroup ? groupColors[group.type] : 'border-gray-800'}
               `}
             >
-              <td className={`
-                px-2 py-2 font-semibold border-r border-gray-700 sticky left-0 bg-gray-900
-                ${group.type === 'color' && group.id === 'red' ? 'text-red-400' : ''}
-                ${group.type === 'color' && group.id === 'black' ? 'text-gray-300' : ''}
-                ${group.type === 'color' && group.id === 'green' ? 'text-green-400' : ''}
-                ${group.type === 'evenodd' ? 'text-purple-400' : ''}
-                ${group.type === 'lowhigh' ? 'text-blue-400' : ''}
-                ${group.type === 'dozen' ? 'text-orange-400' : ''}
-                ${group.type === 'column' ? 'text-green-400' : ''}
-                ${group.type === 'quarter' ? 'text-yellow-400' : ''}
-                ${group.type === 'sector' ? 'text-teal-400' : ''}
-              `}>
-                {group.name}
+              <td
+                className={`
+                  px-2 py-2 font-semibold border-r border-gray-700 sticky left-0 bg-gray-900 cursor-pointer hover:bg-gray-800 transition-colors
+                  ${group.type === 'color' && group.id === 'red' ? 'text-red-400' : ''}
+                  ${group.type === 'color' && group.id === 'black' ? 'text-gray-300' : ''}
+                  ${group.type === 'color' && group.id === 'green' ? 'text-green-400' : ''}
+                  ${group.type === 'evenodd' ? 'text-purple-400' : ''}
+                  ${group.type === 'lowhigh' ? 'text-blue-400' : ''}
+                  ${group.type === 'dozen' ? 'text-orange-400' : ''}
+                  ${group.type === 'column' ? 'text-green-400' : ''}
+                  ${group.type === 'quarter' ? 'text-yellow-400' : ''}
+                  ${group.type === 'sector' ? 'text-teal-400' : ''}
+                `}
+                onClick={() => {
+                  const modalType =
+                    group.type === 'color' ? 'color' :
+                    group.type === 'evenodd' ? 'evenOdd' :
+                    group.type === 'lowhigh' ? 'lowHigh' :
+                    group.type === 'dozen' ? 'dozen' :
+                    group.type === 'column' ? 'column' :
+                    null;
+                  if (modalType) setModalOpen(modalType);
+                }}
+                title={`Click to view ${group.name} layout`}
+              >
+                {group.name} {(group.type === 'color' || group.type === 'evenodd' || group.type === 'lowhigh' || group.type === 'dozen' || group.type === 'column') && '🔍'}
               </td>
               
               {/* STREAKS - FIRST */}
