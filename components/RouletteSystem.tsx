@@ -1030,13 +1030,13 @@ const openSessionSetup = () => {
             </div>
             <div className="flex gap-2">
               <button
-                onClick={() => window.open('https://forms.gle/YOUR_FEEDBACK_FORM_ID', '_blank')}
+                onClick={() => window.open('https://forms.gle/tb2ZhKLSABER4UAd6', '_blank')}
                 className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold transition-all flex items-center gap-2 whitespace-nowrap"
               >
                 💬 Share Feedback
               </button>
               <button
-                onClick={() => window.open('https://forms.gle/YOUR_BUG_REPORT_FORM_ID', '_blank')}
+                onClick={() => window.open('https://forms.gle/mZPFtZWAfEcGSs2J9', '_blank')}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-all flex items-center gap-2 whitespace-nowrap"
               >
                 🐛 Report Bug
