@@ -1554,6 +1554,44 @@ export default function BettingAssistant() {
                           Help
                         </button>
                       </div>
+
+                      {/* Bet Type Selector */}
+                      <div className="mb-2 flex items-center gap-2 px-2">
+                        <span className="text-xs text-gray-400 font-semibold">Bet Type:</span>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => setTableView('layout')}
+                            className={`px-3 py-1 text-xs font-semibold rounded ${
+                              tableView === 'layout'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            }`}
+                          >
+                            Table Groups
+                          </button>
+                          <button
+                            onClick={() => setTableView('wheelLayout')}
+                            className={`px-3 py-1 text-xs font-semibold rounded ${
+                              tableView === 'wheelLayout'
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            }`}
+                          >
+                            Wheel Groups
+                          </button>
+                          <button
+                            onClick={() => setTableView('my-groups')}
+                            className={`px-3 py-1 text-xs font-semibold rounded ${
+                              tableView === 'my-groups'
+                                ? 'bg-yellow-600 text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            }`}
+                          >
+                            Custom Groups
+                          </button>
+                        </div>
+                      </div>
+
                       <WheelHistory
                         spins={spinHistory.slice(0, 50).map(s => {
                           // If it's a dealer change, preserve those properties
@@ -1822,6 +1860,44 @@ export default function BettingAssistant() {
                           </span>
                         </div>
                       </div>
+
+                      {/* Bet Type Selector */}
+                      <div className="mb-2 flex items-center gap-2 px-2">
+                        <span className="text-xs text-gray-400 font-semibold">Bet Type:</span>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => setTableView('layout')}
+                            className={`px-3 py-1 text-xs font-semibold rounded ${
+                              tableView === 'layout'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            }`}
+                          >
+                            Table Groups
+                          </button>
+                          <button
+                            onClick={() => setTableView('wheelLayout')}
+                            className={`px-3 py-1 text-xs font-semibold rounded ${
+                              tableView === 'wheelLayout'
+                                ? 'bg-purple-600 text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            }`}
+                          >
+                            Wheel Groups
+                          </button>
+                          <button
+                            onClick={() => setTableView('my-groups')}
+                            className={`px-3 py-1 text-xs font-semibold rounded ${
+                              tableView === 'my-groups'
+                                ? 'bg-yellow-600 text-white'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            }`}
+                          >
+                            Custom Groups
+                          </button>
+                        </div>
+                      </div>
+
                       <MyGroupsLayout
                         spins={spinHistory.map((s) => {
                           // Handle dealer change events
