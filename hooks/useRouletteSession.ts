@@ -8,9 +8,10 @@ export function useRouletteSession() {
   const [spins, setSpins] = useState<Spin[]>([])
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    initializeSession()
-  }, [])
+  // Remove auto-initialization - let user decide when to load session
+  // useEffect(() => {
+  //   initializeSession()
+  // }, [])
 
   useEffect(() => {
     if (session) {
@@ -29,18 +30,20 @@ export function useRouletteSession() {
 
       if (existingSession) {
         setSession(existingSession)
-      } else {
-        const { data: newSession } = await supabase
-          .from('sessions')
-          .insert({ is_active: true })
-          .select()
-          .single()
-
-        if (newSession) {
-          setSession(newSession)
-          await supabase.rpc('set_active_session', { session_uuid: newSession.id })
-        }
       }
+      // Don't auto-create session - user must explicitly create one
+      // else {
+      //   const { data: newSession } = await supabase
+      //     .from('sessions')
+      //     .insert({ is_active: true })
+      //     .select()
+      //     .single()
+
+      //   if (newSession) {
+      //     setSession(newSession)
+      //     await supabase.rpc('set_active_session', { session_uuid: newSession.id })
+      //   }
+      // }
     } finally {
       setLoading(false)
     }
@@ -104,6 +107,7 @@ export function useRouletteSession() {
     addSpin,
     resetSession,
     reload: loadSpins,
+    initializeSession, // Expose for manual initialization
   }
 }
 
